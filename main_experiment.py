@@ -40,11 +40,14 @@ class MoodSARTExperimentSimple:
         """Initialize the experiment"""
         self.setup_experiment()
         self.setup_stimuli()
-        self.setup_data_collection()
         self.setup_video_preloader()
         
         # UPDATED: Track Velten statement set usage for proper counterbalancing
         self.velten_phase_counter = {'positive': 0, 'negative': 0}  # Track which set to use
+        
+        # Initialize participant data variables (will be set up later)
+        self.participant_data = {}
+        self.data_filename = None
         
     def setup_experiment(self):
         """Set up PsychoPy window and basic experiment parameters"""
@@ -66,7 +69,6 @@ class MoodSARTExperimentSimple:
         self.trial_clock = core.Clock()
         
         # Initialize experiment variables
-        self.participant_data = {}
         self.trial_data = []
         self.current_block = 0
         self.probe_counter = 0
@@ -368,13 +370,11 @@ class MoodSARTExperimentSimple:
         # Get email address using keyboard input (as per specification)
         email = self.get_text_input("Enter the email address you provided when completing the consent form:")
         
+        # Get counterbalancing order selection from user
+        condition = self.get_counterbalancing_order()
+        
         # Generate participant code
         participant_code = config.DATA_PARAMS['participant_code_prefix'] + datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-        # Auto-assign counterbalancing condition based on email hash (for consistent assignment)
-        import hashlib
-        email_hash = int(hashlib.md5(email.lower().encode()).hexdigest()[:8], 16)
-        condition = email_hash % 4 + 1  # Cycles through orders 1-4
         
         self.participant_data = {
             'email': email,
@@ -384,6 +384,36 @@ class MoodSARTExperimentSimple:
             'counterbalancing': config.COUNTERBALANCING_ORDERS[condition]
         }
         
+    def get_counterbalancing_order(self):
+        """Get counterbalancing order selection from user (1-4)"""
+        self.instruction_text.text = """Please select the counterbalancing order for this participant:
+
+1 - Order 1: V(+) → V(+) → M(-) → M(-)
+2 - Order 2: M(-) → M(-) → V(+) → V(+) 
+3 - Order 3: V(-) → V(-) → M(+) → M(+)
+4 - Order 4: M(+) → M(+) → V(-) → V(-)
+
+Where:
+V = Velten statements, M = Movie clips
+(+) = Positive mood, (-) = Negative mood
+
+Press 1, 2, 3, or 4 to select the order:"""
+        
+        self.instruction_text.draw()
+        self.win.flip()
+        
+        # Wait for valid input (1-4)
+        while True:
+            keys = event.waitKeys()
+            if keys:
+                key = keys[0]
+                if key in ['1', '2', '3', '4']:
+                    condition = int(key)
+                    print(f"Selected counterbalancing order: {condition}")
+                    return condition
+                elif key == 'escape':
+                    core.quit()
+    
     def get_text_input(self, prompt):
         """Get text input using keyboard - Normal typing for email addresses"""
         input_text = ""
@@ -463,6 +493,10 @@ class MoodSARTExperimentSimple:
     
     def save_trial_data(self, trial_data):
         """Save trial data to CSV file"""
+        # Check if participant data is available yet
+        if not self.participant_data or not self.data_filename:
+            return  # Skip saving if participant info is not yet collected
+            
         # Add participant info to trial data
         full_data = {
             'participant_code': self.participant_data['participant_code'],
@@ -618,9 +652,24 @@ class MoodSARTExperimentSimple:
                 video.draw()
                 self.win.flip()
                 
-                # Check for escape key
-                if 'escape' in event.getKeys():
+                # Check for escape key - but only allow during playback, not after
+                keys = event.getKeys()
+                if 'escape' in keys:
                     break
+                    
+            # Video finished playing - wait for any key to continue (except escape)
+            if video.status == visual.FINISHED:
+                # Show completion message
+                self.instruction_text.text = "Video completed.\n\nPress any key to continue..."
+                self.instruction_text.draw()
+                self.win.flip()
+                
+                # Wait for any key except escape
+                while True:
+                    keys = event.waitKeys()
+                    if keys and 'escape' not in keys:
+                        break
+                        
         except Exception as e:
             print(f"Error playing video: {e}")
             self.show_video_placeholder(video_key)
@@ -1247,13 +1296,16 @@ class MoodSARTExperimentSimple:
     def run_experiment(self):
         """Run the complete experiment following the exact step sequence provided"""
         try:
-            # Welcome screen
+            # Step 1: Welcome screen
             self.show_instruction('welcome')
+            
+            # Step 2: Collect participant info (email and counterbalancing)
+            self.setup_data_collection()
             
             # FIXED: Preload videos during intro to prevent delays
             self.preload_videos_for_experiment()
             
-            # Overview instructions
+            # Step 3: Overview instructions
             self.show_instruction('overview')
             
             # Get counterbalancing order for this participant
