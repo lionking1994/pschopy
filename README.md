@@ -9,9 +9,17 @@ This experiment is **fully functional** and uses modern PsychoPy components with
 ## 🚀 **Quick Start**
 
 ### **Run the Experiment:**
+
+**Full Experiment (45-60 minutes):**
 ```bash
 python main_experiment.py
 ```
+
+**Demo Mode (20-25 minutes):**
+```bash
+python demo_experiment.py
+```
+*Shortened version with 10 trials per SART block and 3 Velten statements per phase*
 
 ### **Install Dependencies (if needed):**
 ```bash

@@ -5,6 +5,10 @@ Experiment Configuration for PsychoPy Mood Induction + SART Study
 import os
 from pathlib import Path
 
+# ===== DEMO MODE SETTINGS =====
+# Set to True for shortened experiment (10 trials per SART block, 3 Velten statements)
+DEMO_MODE = False
+
 # Base paths
 BASE_DIR = Path(__file__).parent.parent
 STIMULI_DIR = BASE_DIR / "stimuli"
@@ -157,6 +161,17 @@ TEXT_STYLE = {
     'wrapWidth': 800,
     'alignText': 'left',  # FIXED: Left-align text instead of center
     'anchorHoriz': 'left'  # FIXED: Anchor text to left
+}
+
+# Velten text styling (centered)
+VELTEN_TEXT_STYLE = {
+    'font': 'Arial',
+    'height': 30,
+    'color': [1, 1, 1],    # White text
+    'wrapWidth': 800,
+    'pos': (0, 0),         # Centered position
+    'alignText': 'center',
+    'anchorHoriz': 'center'
 }
 
 # Mood rating scale parameters (0-100 horizontal slider)

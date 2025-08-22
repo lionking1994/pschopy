@@ -36,7 +36,9 @@ class VideoPreloader:
                         filename=str(video_path),
                         size=(800, 600),
                         pos=(0, 0),
-                        noAudio=False
+                        noAudio=False,
+                        loop=False,
+                        autoStart=False
                     )
                 except (AttributeError, Exception) as e:
                     # Fallback to MovieStim if MovieStim3 not available or fails
@@ -46,7 +48,9 @@ class VideoPreloader:
                             filename=str(video_path),
                             size=(800, 600),
                             pos=(0, 0),
-                            noAudio=False
+                            noAudio=False,
+                            loop=False,
+                            autoStart=False
                         )
                     except (AttributeError, Exception) as e:
                         # Final fallback - skip video preloading but don't fail

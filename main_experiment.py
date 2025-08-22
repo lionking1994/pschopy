@@ -38,6 +38,16 @@ class MoodSARTExperimentSimple:
     
     def __init__(self):
         """Initialize the experiment"""
+        # Check if demo mode is enabled
+        if config.DEMO_MODE:
+            print("🎯 DEMO MODE ACTIVE:")
+            print(f"   📊 SART blocks: {config.SART_PARAMS['trials_per_block']} trials each (shortened)")
+            print(f"   📝 Velten statements: 3 per phase (shortened from 12)")
+            print(f"   ⏱️  Velten duration: {config.TIMING['velten_statement_duration']}s per statement (same as main)")
+            print(f"   🧠 MW probes: Every {config.SART_PARAMS['probe_interval_min']}-{config.SART_PARAMS['probe_interval_max']} trials (same as main)")
+            print(f"   🎬 Videos and other phases: Same as main experiment")
+            print()
+        
         self.setup_experiment()
         self.setup_stimuli()
         self.setup_video_preloader()
@@ -86,6 +96,19 @@ class MoodSARTExperimentSimple:
             pos=(-400, 0),  # FIXED: Move text to left side of screen
             alignText=config.TEXT_STYLE.get('alignText', 'left'),  # FIXED: Left align
             anchorHoriz=config.TEXT_STYLE.get('anchorHoriz', 'left')  # FIXED: Anchor left
+        )
+         
+        # Centered text stimulus for Velten statements
+        self.velten_text = visual.TextStim(
+            win=self.win,
+            text='',
+            font=config.VELTEN_TEXT_STYLE['font'],
+            height=config.VELTEN_TEXT_STYLE['height'],
+            color=config.VELTEN_TEXT_STYLE['color'],
+            wrapWidth=config.VELTEN_TEXT_STYLE['wrapWidth'],
+            pos=config.VELTEN_TEXT_STYLE['pos'],
+            alignText=config.VELTEN_TEXT_STYLE.get('alignText', 'center'),
+            anchorHoriz=config.VELTEN_TEXT_STYLE.get('anchorHoriz', 'center')
         )
         
         # SART stimuli
@@ -413,7 +436,7 @@ Press 1, 2, 3, or 4 to select the order:"""
                     return condition
                 elif key == 'escape':
                     core.quit()
-    
+        
     def get_text_input(self, prompt):
         """Get text input using keyboard - Normal typing for email addresses"""
         input_text = ""
@@ -528,17 +551,29 @@ Press 1, 2, 3, or 4 to select the order:"""
             event.waitKeys()
     
     def collect_mood_rating(self, phase):
-        """MODERN: Collect mood rating using Slider component"""
+        """MODERN: Collect mood rating using Slider component with mouse click to advance"""
         print(f"📊 COLLECTING MOOD RATING: {phase}")
-        self.instruction_text.text = config.INSTRUCTIONS['mood_rating']['text']
+        self.instruction_text.text = config.INSTRUCTIONS['mood_rating']['text'] + "\n\nClick anywhere to continue after making your selection."
         self.mood_slider.reset()
         
-        # Show slider and wait for rating
-        while self.mood_slider.getRating() is None:
+        rating_selected = False
+        mouse = event.Mouse(win=self.win)
+         
+        # Show slider and wait for rating + mouse click
+        while True:
             self.instruction_text.draw()
             self.mood_slider.draw()
             self.win.flip()
             
+            # Check if rating has been made
+            if self.mood_slider.getRating() is not None and not rating_selected:
+                rating_selected = True
+                print(f"📝 Rating selected: {self.mood_slider.getRating()}")
+            
+            # Check for mouse click after rating is selected
+            if rating_selected and mouse.getPressed()[0]:  # Left mouse button
+                break
+                
             # Check for escape
             if 'escape' in event.getKeys():
                 core.quit()
@@ -587,7 +622,7 @@ Press 1, 2, 3, or 4 to select the order:"""
                         'mw_tut_rating': None, 'mw_fmt_rating': None, 'velten_rating': None,
                         'video_file': None, 'audio_file': None, 'velten_statement': None
                     })
-                    
+                   
                     return rating
     
     def play_video(self, video_key, instruction_key=None):
@@ -618,7 +653,9 @@ Press 1, 2, 3, or 4 to select the order:"""
                         win=self.win,
                         filename=str(video_path),
                         size=(800, 600),
-                        pos=(0, 0)
+                        pos=(0, 0),
+                        loop=False,
+                        autoStart=False
                     )
                 except Exception as e:
                     video_errors.append(f"MovieStim3: {str(e)[:60]}...")
@@ -629,7 +666,9 @@ Press 1, 2, 3, or 4 to select the order:"""
                             win=self.win,
                             filename=str(video_path),
                             size=(800, 600),
-                            pos=(0, 0)
+                            pos=(0, 0),
+                            loop=False,
+                            autoStart=False
                         )
                     except Exception as e:
                         video_errors.append(f"MovieStim: {str(e)[:60]}...")
@@ -648,27 +687,198 @@ Press 1, 2, 3, or 4 to select the order:"""
         
         # Play video
         try:
-            while video.status != visual.FINISHED:
+            print(f"🎬 Starting video playback: {video_key}")
+            print(f"🔍 Initial video status: {video.status}")
+            video_skipped = False
+            frame_count = 0
+            
+            # Add safety limit to prevent infinite loops
+            max_frames = 18000  # About 10 minutes at 30fps - way more than any video should be
+            
+            video_naturally_ended = False
+            consecutive_same_status = 0
+            last_status = video.status
+            
+            # Get video duration if available
+            video_duration = None
+            try:
+                if hasattr(video, 'duration') and video.duration:
+                    video_duration = video.duration
+                    print(f"📏 Video duration: {video_duration:.1f} seconds")
+            except:
+                pass
+            
+            # CRITICAL: Explicitly start video playback
+            video.play()
+            print("▶️ Video.play() called - starting playback")
+            
+            while True:
+                # CRITICAL: Only draw video - NO TEXT during playback
                 video.draw()
                 self.win.flip()
+                frame_count += 1
                 
-                # Check for escape key - but only allow during playback, not after
+                current_status = video.status
+                
+                # Track status changes
+                if current_status == last_status:
+                    consecutive_same_status += 1
+                else:
+                    print(f"📝 Status changed from {last_status} to {current_status} at frame {frame_count}")
+                    consecutive_same_status = 0
+                    last_status = current_status
+                
+                # Debug every 60 frames (about 2 seconds at 30fps)
+                if frame_count % 60 == 0:
+                    current_time = frame_count / 30.0
+                    print(f"🎞️ Frame {frame_count}: Video status = {current_status}")
+                    print(f"   Current time: {current_time:.1f}s")
+                    if video_duration:
+                        progress_pct = (current_time / video_duration) * 100
+                        remaining_time = video_duration - current_time
+                        print(f"   Progress: {progress_pct:.1f}% of {video_duration:.1f}s (remaining: {remaining_time:.1f}s)")
+                
+                # Check for escape key during playback
                 keys = event.getKeys()
                 if 'escape' in keys:
+                    video_skipped = True
+                    print(f"🔄 Video skipped by user (ESC pressed) at frame {frame_count}")
                     break
-                    
-            # Video finished playing - wait for any key to continue (except escape)
-            if video.status == visual.FINISHED:
-                # Show completion message
-                self.instruction_text.text = "Video completed.\n\nPress any key to continue..."
-                self.instruction_text.draw()
-                self.win.flip()
                 
-                # Wait for any key except escape
-                while True:
-                    keys = event.waitKeys()
-                    if keys and 'escape' not in keys:
+                # Method 1: Check if status changed to FINISHED
+                if current_status == visual.FINISHED:
+                    video_naturally_ended = True
+                    print(f"✅ Video status changed to FINISHED at frame {frame_count}")
+                    break
+                
+                # Method 2: Use video duration if available - wait for FULL duration
+                if video_duration:
+                    estimated_current_time = frame_count / 30.0  # Assume 30fps
+                    # Only consider video finished if we're past the actual duration
+                    if estimated_current_time >= video_duration:  # Wait for full duration
+                        video_naturally_ended = True
+                        print(f"✅ Video reached full duration ({estimated_current_time:.1f}s >= {video_duration:.1f}s)")
                         break
+                
+                # Method 3: Detect if video appears to be looping - but ONLY after full expected duration
+                # Don't assume looping until we're well past the expected end time
+                if video_duration:
+                    # Only check for looping after we're past the full duration + buffer
+                    expected_frames = int(video_duration * 30)  # Full expected duration in frames
+                    buffer_frames = 300  # 10 seconds buffer after expected end
+                    
+                    if frame_count > (expected_frames + buffer_frames) and consecutive_same_status > 300:
+                        print(f"🔄 Video playing beyond expected duration + buffer")
+                        print(f"   Expected end: {video_duration:.1f}s ({expected_frames} frames)")
+                        print(f"   Current time: {frame_count / 30.0:.1f}s ({frame_count} frames)")
+                        print(f"   Status unchanged for: {consecutive_same_status} frames")
+                        video_naturally_ended = True
+                        print(f"✅ Assuming video finished - playing beyond expected duration")
+                        break
+                else:
+                    # Fallback if no duration available - use longer time limits
+                    if consecutive_same_status > 1800 and frame_count > 7200:  # 1 minute unchanged after 4 minutes
+                        print(f"🔄 Video status unchanged for {consecutive_same_status} frames after {frame_count} total frames")
+                        video_naturally_ended = True
+                        print(f"✅ Assuming video finished due to long static status")
+                        break
+                
+                # Safety: Absolute maximum to prevent infinite loops
+                if frame_count >= max_frames:
+                    print(f"🔄 Safety limit reached at {frame_count} frames")
+                    video_naturally_ended = True
+                    break
+            
+            print(f"📝 Video playback ended - Status: {video.status}, Skipped: {video_skipped}, Frames: {frame_count}")
+            print(f"   - Naturally ended: {video_naturally_ended}")
+            print(f"🔍 Video status constants - FINISHED: {visual.FINISHED}")
+            
+            # CRITICAL: Only show completion text if video has ACTUALLY finished
+            # Be very strict about this to prevent text appearing during playback
+            should_show_completion = (video_naturally_ended or video_skipped) and frame_count > 60
+            
+            if should_show_completion:
+                print("✅ Video has ACTUALLY finished - NOW showing completion message...")
+                print(f"   - Video naturally ended: {video_naturally_ended}")
+                print(f"   - Video was skipped: {video_skipped}")
+                print(f"   - Total frames played: {frame_count}")
+                
+                # CRITICAL: Stop the video completely to freeze on final frame
+                print("🛑 Stopping video to freeze final frame...")
+                try:
+                    if hasattr(video, 'stop'):
+                        video.stop()
+                        print("✅ Video.stop() called")
+                    if hasattr(video, 'pause'):
+                        video.pause()
+                        print("✅ Video.pause() called")
+                except Exception as e:
+                    print(f"⚠️ Could not stop video: {e}")
+                
+                # Wait longer for video to completely stop
+                print("⏳ Waiting for video to fully stop...")
+                core.wait(0.5)
+                
+                # Verify video has stopped by checking status
+                final_status = video.status
+                print(f"🔍 Final video status after stopping: {final_status}")
+                
+                # Now draw the FINAL STATIC frame with completion text
+                self.instruction_text.text = "Video completed.\n\nPress ESC key to continue..."
+                self.instruction_text.pos = (0, -200)  # Below video
+                self.instruction_text.color = [1, 1, 1]  # White text
+                print(f"🔍 Text properties - Color: {self.instruction_text.color}, Pos: {self.instruction_text.pos}")
+                
+                print("🎨 Drawing FINAL STATIC frame with completion text...")
+                print("   ⚠️  IMPORTANT: Video should be completely stopped now")
+                
+                # Draw the stopped video frame
+                try:
+                    video.draw()
+                    print("✅ Final STATIC video frame drawn")
+                except Exception as e:
+                    print(f"⚠️ Could not draw final frame: {e}")
+                
+                # Draw completion text over the STATIC frame
+                try:
+                    self.instruction_text.draw()
+                    print("✅ Completion text drawn over STATIC frame")
+                except Exception as e:
+                    print(f"❌ Could not draw text: {e}")
+                
+                # Display the final result
+                self.win.flip()
+                print("💡 FINAL RESULT: STATIC video frame + completion text should now be visible")
+                print("👀 Check the window - you should see:")
+                print("   1. A COMPLETELY STATIC (not moving) video frame")
+                print("   2. White text saying 'Video completed. Press ESC key to continue...'")
+                print("   3. NO MOVEMENT in the video")
+            else:
+                print("❌ Video did not properly finish - NOT showing completion text")
+                print("   This prevents text from appearing while video is still playing")
+                print(f"   - Video naturally ended: {video_naturally_ended}")
+                print(f"   - Video was skipped: {video_skipped}")
+                print(f"   - Frame count: {frame_count}")
+                return  # Exit without showing completion text
+            
+            # Stop the video after displaying the message
+            if hasattr(video, 'stop'):
+                try:
+                    video.stop()
+                    print("🛑 Video stopped")
+                except Exception as e:
+                    print(f"⚠️ Could not stop video: {e}")
+            
+            # Wait for escape key specifically
+            print("⏳ Waiting for ESC key press...")
+            while True:
+                keys = event.waitKeys()
+                if keys and 'escape' in keys:
+                    print("✅ ESC pressed - continuing experiment")
+                    break
+            
+            # Reset text position to original left-aligned position
+            self.instruction_text.pos = (-400, 0)
                         
         except Exception as e:
             print(f"Error playing video: {e}")
@@ -797,18 +1007,24 @@ Press 1, 2, 3, or 4 to select the order:"""
                     print("ℹ️ Audio unavailable")
                     self.current_audio = None
         
-        # UPDATED: Present all statements (not shortened for demo)
+        # Use fewer statements in demo mode
+        if config.DEMO_MODE:
+            original_count = len(statements)
+            statements = statements[:3]  # Only use first 3 statements in demo
+            print(f"📝 Demo mode: Using {len(statements)} statements instead of full set ({original_count} total)")
+        
+        # Present statements
         for i, statement in enumerate(statements):
-            # Show statement for specified duration
-            self.instruction_text.text = statement
-            self.instruction_text.draw()
+            # Show statement for specified duration using centered text
+            self.velten_text.text = statement
+            self.velten_text.draw()
             self.win.flip()
             
             # Wait for statement duration while keeping audio playing
             core.wait(config.TIMING['velten_statement_duration'])
             
-            # UPDATED: Get rating using slider (as specified in PDF)
-            rating = self.get_velten_rating_slider()
+            # UPDATED: Get rating using numbered Likert scale
+            rating = self.get_velten_rating_likert()
             
             # Save Velten data
             self.save_trial_data({
@@ -878,6 +1094,88 @@ Press 1, 2, 3, or 4 to select the order:"""
         print(f"📝 Velten Statement Rating: {rating}/7 (mood alignment)")
         
         return rating
+    
+    def get_velten_rating_likert(self):
+        """Get Velten rating using numbered Likert scale (1-7)"""
+        # Display question with numbered scale
+        question_text = config.VELTEN_RATING_SCALE['question']
+        scale_text = "\n\n1 = Not at all\n2 = Very little\n3 = A little\n4 = Moderately\n5 = Quite a bit\n6 = Very much\n7 = Completely"
+        instruction_text = question_text + scale_text + "\n\nPress a number key (1-7):"
+        
+        self.instruction_text.text = instruction_text
+        self.instruction_text.draw()
+        self.win.flip()
+        
+        # Wait for number key press
+        while True:
+            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'escape'])
+            if keys:
+                key = keys[0]
+                if key == 'escape':
+                    core.quit()
+                else:
+                    rating = int(key)
+                    print(f"📝 Velten Statement Rating: {rating}/7 (mood alignment)")
+                    return rating
+    
+    def run_mind_wandering_probe_likert(self, condition, block_number, trial_number):
+        """Present mind-wandering probes using numbered Likert scale"""
+        print(f"Presenting mind-wandering probe at trial {trial_number}")
+        
+        # TUT probe
+        tut_question = config.MW_PROBES['tut']
+        scale_text = "\n\n1 = Not at all\n2 = Very little\n3 = A little\n4 = Moderately\n5 = Quite a bit\n6 = Very much\n7 = Very much"
+        tut_instruction = tut_question + scale_text + "\n\nPress a number key (1-7):"
+        
+        self.instruction_text.text = tut_instruction
+        self.instruction_text.draw()
+        self.win.flip()
+        
+        # Get TUT rating
+        while True:
+            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'escape'])
+            if keys:
+                key = keys[0]
+                if key == 'escape':
+                    core.quit()
+                else:
+                    tut_rating = int(key)
+                    break
+        
+        # FMT probe
+        fmt_question = config.MW_PROBES['fmt']
+        fmt_instruction = fmt_question + scale_text + "\n\nPress a number key (1-7):"
+        
+        self.instruction_text.text = fmt_instruction
+        self.instruction_text.draw()
+        self.win.flip()
+        
+        # Get FMT rating
+        while True:
+            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'escape'])
+            if keys:
+                key = keys[0]
+                if key == 'escape':
+                    core.quit()
+                else:
+                    fmt_rating = int(key)
+                    break
+        
+        # Save mind-wandering data
+        self.save_trial_data({
+            'phase': 'mind_wandering_probe',
+            'block_type': condition, 'block_number': block_number, 'trial_number': trial_number,
+            'mw_tut_rating': tut_rating, 'mw_fmt_rating': fmt_rating,
+            'stimulus': None, 'stimulus_position': None, 'response': None,
+            'correct_response': None, 'accuracy': None, 'reaction_time': None,
+            'mood_rating': None, 'velten_rating': None, 'velten_statement': None,
+            'video_file': None, 'audio_file': None
+        })
+        
+        # Print MW probe results to console
+        print(f"📝 Mind-Wandering Probe Results:")
+        print(f"   TUT (thinking about something else): {tut_rating}/7")
+        print(f"   FMT (thoughts moving freely): {fmt_rating}/7")
     
     def run_mind_wandering_probe_slider(self, condition, block_number, trial_number):
         """Present mind-wandering probes using slider with custom tick marks"""
@@ -954,10 +1252,29 @@ Press 1, 2, 3, or 4 to select the order:"""
             cue_circle = self.non_inhibition_cue
             self.show_instruction('sart_non_inhibition', condition_cue=cue_circle)
         
-        # Generate trial sequence (full length for complete experiment)
+        # Generate trial sequence with exactly 15% No-Go trials (digit 3)
         trials = []
-        for trial_num in range(config.SART_PARAMS['trials_per_block']):  # Full 120 trials
-            digit = random.choice(config.SART_PARAMS['digits'])
+        total_trials = config.SART_PARAMS['trials_per_block']
+        
+        # Calculate exact number of No-Go trials (15% of total)
+        nogo_trials = int(total_trials * 0.15)  # 18 trials out of 120
+        go_trials = total_trials - nogo_trials  # 102 trials
+        
+        # Create digit list with correct proportions
+        digit_list = []
+        # Add No-Go trials (digit 3)
+        digit_list.extend([3] * nogo_trials)
+        # Add Go trials (other digits 0-2, 4-9) - distribute evenly
+        other_digits = [d for d in config.SART_PARAMS['digits'] if d != 3]  # [0,1,2,4,5,6,7,8,9]
+        for i in range(go_trials):
+            digit_list.append(other_digits[i % len(other_digits)])
+        
+        # Shuffle to randomize order
+        random.shuffle(digit_list)
+        
+        # Create trials
+        for trial_num in range(total_trials):
+            digit = digit_list[trial_num]
             position = random.choice(['left', 'right'])
             trials.append({
                 'trial_number': trial_num + 1,
@@ -965,6 +1282,8 @@ Press 1, 2, 3, or 4 to select the order:"""
                 'position': position,
                 'is_target': digit == config.SART_PARAMS['target_digit'] and condition == 'RI'
             })
+        
+        print(f"📊 SART Block {block_number} ({condition}): Generated {nogo_trials} No-Go trials ({nogo_trials/total_trials*100:.1f}%) out of {total_trials} total trials")
         
         # FIXED: Initialize probe timing - probes occur DURING the block
         # Schedule probes at random intervals (every 13-17 trials as per config)
@@ -993,7 +1312,7 @@ Press 1, 2, 3, or 4 to select the order:"""
         for trial in trials:
             # FIXED: Check if it's time for a mind-wandering probe BEFORE the trial
             if trial['trial_number'] in probe_trials:
-                self.run_mind_wandering_probe_slider(condition, block_number, trial['trial_number'])
+                self.run_mind_wandering_probe_likert(condition, block_number, trial['trial_number'])
             
             # Run SART trial
             response, rt, accuracy = self.run_sart_trial(trial, condition, block_number, cue_circle)
@@ -1067,22 +1386,32 @@ Press 1, 2, 3, or 4 to select the order:"""
         self.trial_clock.reset()
         self.kb.clearEvents()
         
-        # Wait for stimulus duration
+        # FIXED: Display digit for full duration regardless of key press
         response = None
         rt = None
         
-        keys = self.kb.waitKeys(
-            maxWait=config.SART_PARAMS['stimulus_duration'],
-            keyList=['left', 'right', 'escape'],
-            waitRelease=False
-        )
+        # Collect keys during the full stimulus duration
+        start_time = self.trial_clock.getTime()
+        keys_pressed = []
         
-        if keys:
-            if keys[0].name == 'escape':
-                self.cleanup_and_quit()
-            else:
-                response = keys[0].name
-                rt = keys[0].rt
+        while self.trial_clock.getTime() - start_time < config.SART_PARAMS['stimulus_duration']:
+            # Check for key presses but don't break the loop
+            keys = self.kb.getKeys(keyList=['left', 'right', 'escape'], waitRelease=False)
+            if keys:
+                # Record the first key press (if multiple keys pressed)
+                if not keys_pressed:
+                    keys_pressed = keys
+                # Handle escape immediately
+                if keys[0].name == 'escape':
+                    self.cleanup_and_quit()
+            
+            # Small wait to prevent excessive CPU usage
+            core.wait(0.001)
+        
+        # Process the first key press if any occurred
+        if keys_pressed:
+            response = keys_pressed[0].name
+            rt = keys_pressed[0].rt
         
         # FIXED: Keep fixation cross and condition indicator visible during ISI
         self.fixation.draw()
@@ -1196,11 +1525,11 @@ Press 1, 2, 3, or 4 to select the order:"""
                 else:
                     self.play_video('positive_clip2', 'film_positive_clip2')
             else:  # negative
-                # Use different negative clips for variety
-                if phase_number == 1:
-                    self.play_video('negative_clip', 'film_general')
+                # Use specific negative clips based on phase
+                if phase_number == 1 or phase_number == 3:
+                    self.play_video('negative_clip', 'film_general')  # Phase 1 and 3 use negative_clip
                 else:
-                    self.play_video('negative_clip2', 'film_general')
+                    self.play_video('negative_clip2', 'film_general')  # Phase 2 and 4 use negative_clip2
         
         elif induction_type == 'V':  # Velten + music
             valence_word = 'positive' if valence == '+' else 'negative'
