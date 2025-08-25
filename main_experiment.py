@@ -380,19 +380,25 @@ class MoodSARTExperimentSimple:
                     # Try pygame first (usually faster)
                     import pygame.mixer
                     if not pygame.mixer.get_init():
-                        pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
+                        # Mac-specific audio configuration for better compatibility
+                        if config.IS_MAC:
+                            pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=1024)
+                        else:
+                            pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
                         pygame.mixer.init()
                     
                     self.preloaded_audio[audio_key] = pygame.mixer.Sound(str(audio_path))
                     print(f"  ✓ {audio_key}")
                     
-                except Exception:
+                except Exception as e:
                     try:
                         # Fallback to PsychoPy
                         self.preloaded_audio[audio_key] = sound.Sound(str(audio_path))
                         print(f"  ✓ {audio_key} (PsychoPy)")
-                    except Exception:
-                        print(f"  ✗ Failed: {audio_key}")
+                    except Exception as e2:
+                        print(f"  ✗ Failed: {audio_key} - {str(e2)[:50]}...")
+                        # Create a placeholder to avoid errors
+                        self.preloaded_audio[audio_key] = None
         
     def setup_video_preloader(self):
         """Set up video preloader to fix loading delays"""
@@ -999,7 +1005,7 @@ Press 1, 2, 3, or 4 to select the order:"""
         audio_key = f'{valence}_music'
         
         # Try preloaded audio first (instant playback)
-        if hasattr(self, 'preloaded_audio') and audio_key in self.preloaded_audio:
+        if hasattr(self, 'preloaded_audio') and audio_key in self.preloaded_audio and self.preloaded_audio[audio_key] is not None:
             try:
                 self.current_audio = self.preloaded_audio[audio_key]
                 self.current_audio.set_volume(0.7)
@@ -1007,16 +1013,20 @@ Press 1, 2, 3, or 4 to select the order:"""
                 audio_loaded = True
                 print(f"🎵 Audio started instantly: {audio_file.name}")
                 
-            except Exception:
+            except Exception as e:
                 # If preloaded fails, fall back to loading
-                print("Preloaded audio failed, loading fresh...")
+                print(f"Preloaded audio failed ({str(e)[:30]}...), loading fresh...")
                 
         # Fallback to regular loading if preload unavailable
         if not audio_loaded and audio_file.exists():
             try:
                 import pygame.mixer
                 if not pygame.mixer.get_init():
-                    pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
+                    # Mac-specific audio configuration
+                    if config.IS_MAC:
+                        pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=1024)
+                    else:
+                        pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
                     pygame.mixer.init()
                 
                 self.current_audio = pygame.mixer.Sound(str(audio_file))
@@ -1025,16 +1035,16 @@ Press 1, 2, 3, or 4 to select the order:"""
                 audio_loaded = True
                 print(f"🎵 Audio loaded: {audio_file.name}")
                 
-            except Exception:
+            except Exception as e:
                 try:
                     self.current_audio = sound.Sound(str(audio_file))
                     self.current_audio.setVolume(0.7)
                     self.current_audio.play()
                     audio_loaded = True
                     print(f"🎵 Audio loaded (PsychoPy): {audio_file.name}")
-                except Exception:
-                    print("ℹ️ Audio unavailable")
-            self.current_audio = None
+                except Exception as e2:
+                    print(f"⚠️ Audio unavailable: {str(e2)[:50]}...")
+                    self.current_audio = None
         
         # Use fewer statements in demo mode
         if config.DEMO_MODE:

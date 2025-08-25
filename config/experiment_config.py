@@ -167,11 +167,22 @@ CONDITION_CUES = {
 def get_system_font():
     """Get the best available system font for the current platform."""
     if IS_MAC:
+        # Use system fonts that are guaranteed to exist on Mac
         return 'Helvetica'  # Use regular Helvetica on Mac (no Bold variant issues)
     elif IS_WINDOWS:
         return 'Arial'
     else:
         return 'DejaVu Sans'  # Linux fallback
+
+def get_system_font_bold():
+    """Get the best available bold system font for the current platform."""
+    if IS_MAC:
+        # Use Helvetica-Bold instead of 'Helvetica Bold' to avoid font warnings
+        return 'Helvetica-Bold'  
+    elif IS_WINDOWS:
+        return 'Arial Bold'
+    else:
+        return 'DejaVu Sans Bold'  # Linux fallback
 
 # Text styling
 TEXT_STYLE = {
