@@ -62,17 +62,46 @@ class MoodSARTExperimentSimple:
     def setup_experiment(self):
         """Set up PsychoPy window and basic experiment parameters"""
         # Create window - FIXED: Use windowed mode and enable GUI
-        self.win = visual.Window(
-            size=config.SCREEN_PARAMS['size'],
-            fullscr=config.SCREEN_PARAMS['fullscr'],
-            color=config.SCREEN_PARAMS['color'],
-            units=config.SCREEN_PARAMS['units'],
-            allowGUI=config.SCREEN_PARAMS['allowGUI'],  # FIXED: Enable GUI elements
-            winType=config.SCREEN_PARAMS.get('winType', 'pyglet')  # FIXED: Better window type
-        )
+        # Mac-specific window initialization to reduce HID errors
+        screen_params = {
+            'size': config.SCREEN_PARAMS['size'],
+            'fullscr': config.SCREEN_PARAMS['fullscr'],
+            'color': config.SCREEN_PARAMS['color'],
+            'units': config.SCREEN_PARAMS['units'],
+            'allowGUI': config.SCREEN_PARAMS['allowGUI'],
+            'winType': config.SCREEN_PARAMS.get('winType', 'pyglet')
+        }
         
-        # Set up keyboard
-        self.kb = keyboard.Keyboard()
+        if config.IS_MAC:
+            # Additional Mac-specific settings to reduce HID and timing issues
+            screen_params.update({
+                'allowStencil': False,
+                'monitor': None,  # Let PsychoPy auto-detect
+                'waitBlanking': config.SCREEN_PARAMS.get('waitBlanking', True),
+                'useFBO': config.SCREEN_PARAMS.get('useFBO', False),
+                'checkTiming': config.SCREEN_PARAMS.get('checkTiming', False)
+            })
+            print("🍎 Mac detected - using Mac-optimized settings")
+        
+        self.win = visual.Window(**screen_params)
+        
+        # Set up keyboard with Mac-specific handling
+        if config.IS_MAC:
+            # Mac-specific keyboard setup to reduce HID errors
+            try:
+                self.kb = keyboard.Keyboard()
+                print("🍎 Mac keyboard initialized successfully")
+            except Exception as e:
+                print(f"🍎 Mac keyboard warning (continuing anyway): {e}")
+                self.kb = keyboard.Keyboard()  # Try again
+        else:
+            self.kb = keyboard.Keyboard()
+        
+        # Mac-specific timing setup
+        if config.IS_MAC:
+            # Disable frame interval recording on Mac to reduce timing warnings
+            self.win.recordFrameIntervals = False
+            print("🍎 Mac timing optimizations applied")
         
         # Set up clocks
         self.global_clock = core.Clock()
@@ -573,7 +602,7 @@ Press 1, 2, 3, or 4 to select the order:"""
             # Check for mouse click after rating is selected
             if rating_selected and mouse.getPressed()[0]:  # Left mouse button
                 break
-                
+            
             # Check for escape
             if 'escape' in event.getKeys():
                 core.quit()
@@ -622,7 +651,7 @@ Press 1, 2, 3, or 4 to select the order:"""
                         'mw_tut_rating': None, 'mw_fmt_rating': None, 'velten_rating': None,
                         'video_file': None, 'audio_file': None, 'velten_statement': None
                     })
-                   
+                    
                     return rating
     
     def play_video(self, video_key, instruction_key=None):
@@ -1005,7 +1034,7 @@ Press 1, 2, 3, or 4 to select the order:"""
                     print(f"🎵 Audio loaded (PsychoPy): {audio_file.name}")
                 except Exception:
                     print("ℹ️ Audio unavailable")
-                    self.current_audio = None
+            self.current_audio = None
         
         # Use fewer statements in demo mode
         if config.DEMO_MODE:
@@ -1397,13 +1426,13 @@ Press 1, 2, 3, or 4 to select the order:"""
         while self.trial_clock.getTime() - start_time < config.SART_PARAMS['stimulus_duration']:
             # Check for key presses but don't break the loop
             keys = self.kb.getKeys(keyList=['left', 'right', 'escape'], waitRelease=False)
-            if keys:
+        if keys:
                 # Record the first key press (if multiple keys pressed)
-                if not keys_pressed:
-                    keys_pressed = keys
+            if not keys_pressed:
+                keys_pressed = keys
                 # Handle escape immediately
-                if keys[0].name == 'escape':
-                    self.cleanup_and_quit()
+            if keys[0].name == 'escape':
+                self.cleanup_and_quit()
             
             # Small wait to prevent excessive CPU usage
             core.wait(0.001)

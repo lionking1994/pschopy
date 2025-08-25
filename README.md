@@ -8,23 +8,40 @@ This experiment is **fully functional** and uses modern PsychoPy components with
 
 ## 🚀 **Quick Start**
 
-### **Run the Experiment:**
-
-**Full Experiment (45-60 minutes):**
-```bash
-python main_experiment.py
-```
-
-**Demo Mode (20-25 minutes):**
-```bash
-python demo_experiment.py
-```
-*Shortened version with 10 trials per SART block and 3 Velten statements per phase*
-
 ### **Install Dependencies (if needed):**
 ```bash
 pip install -r requirements.txt
 ```
+
+### **Run the Experiment:**
+
+**Full Experiment (45-60 minutes):**
+```bash
+# Windows/Linux:
+python main_experiment.py
+
+# macOS (recommended):
+python mac_main_experiment.py
+```
+
+**Demo Mode (20-25 minutes):**
+```bash
+# Windows/Linux:
+python demo_experiment.py
+
+# macOS (recommended):
+python mac_demo_experiment.py
+```
+*Shortened version with 10 trials per SART block and 3 Velten statements per phase*
+
+### **🍎 macOS Users**
+The Mac-optimized launchers include:
+- **HID Error Suppression**: Reduces keyboard/mouse device warnings
+- **Font Compatibility**: Uses Helvetica instead of Helvetica Bold
+- **Timing Optimizations**: More lenient frame rate checking
+- **Graphics Settings**: Optimized window and rendering parameters
+
+**Note**: HID warnings are normal on Mac and don't affect experiment functionality.
 
 ## 📋 **Project Structure**
 

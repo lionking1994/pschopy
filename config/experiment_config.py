@@ -3,11 +3,17 @@ Experiment Configuration for PsychoPy Mood Induction + SART Study
 """
 
 import os
+import sys
 from pathlib import Path
 
 # ===== DEMO MODE SETTINGS =====
 # Set to True for shortened experiment (10 trials per SART block, 3 Velten statements)
 DEMO_MODE = False
+
+# ===== PLATFORM-SPECIFIC SETTINGS =====
+IS_MAC = sys.platform == 'darwin'
+IS_WINDOWS = sys.platform == 'win32'
+IS_LINUX = sys.platform == 'linux'
 
 # Base paths
 BASE_DIR = Path(__file__).parent.parent
@@ -136,7 +142,11 @@ SCREEN_PARAMS = {
     'color': [-1, -1, -1],      # Black background (PsychoPy uses -1 to 1 range)
     'units': 'pix',
     'allowGUI': True,           # ADDED: Allow GUI elements
-    'winType': 'pyglet'         # ADDED: Specify window type for better compatibility
+    'winType': 'pyglet',        # ADDED: Specify window type for better compatibility
+    # Mac-specific settings to reduce HID and timing issues
+    'waitBlanking': IS_MAC,     # Enable VSync on Mac for better timing
+    'useFBO': not IS_MAC,       # Disable FBO on Mac to avoid graphics issues
+    'checkTiming': not IS_MAC,  # Disable strict timing checks on Mac
 }
 
 # Visual cue parameters
@@ -153,9 +163,19 @@ CONDITION_CUES = {
     }
 }
 
+# Cross-platform font selection
+def get_system_font():
+    """Get the best available system font for the current platform."""
+    if IS_MAC:
+        return 'Helvetica'  # Use regular Helvetica on Mac (no Bold variant issues)
+    elif IS_WINDOWS:
+        return 'Arial'
+    else:
+        return 'DejaVu Sans'  # Linux fallback
+
 # Text styling
 TEXT_STYLE = {
-    'font': 'Arial',
+    'font': get_system_font(),
     'height': 30,
     'color': [1, 1, 1],    # White text (PsychoPy uses -1 to 1 range)
     'wrapWidth': 800,
@@ -165,7 +185,7 @@ TEXT_STYLE = {
 
 # Velten text styling (centered)
 VELTEN_TEXT_STYLE = {
-    'font': 'Arial',
+    'font': get_system_font(),
     'height': 30,
     'color': [1, 1, 1],    # White text
     'wrapWidth': 800,
@@ -312,7 +332,10 @@ TIMING = {
     'velten_statement_duration': 8.0,  # 8 seconds per statement
     'fixation_duration': 0.5,
     'feedback_duration': 1.0,
-    'inter_trial_interval': 0.5
+    'inter_trial_interval': 0.5,
+    # Mac-specific timing adjustments
+    'mac_frame_tolerance': 0.01 if IS_MAC else 0.005,  # More lenient frame timing on Mac
+    'mac_refresh_rate': 60.0 if IS_MAC else None,      # Assume 60Hz on Mac
 }
 
 # Data collection parameters
