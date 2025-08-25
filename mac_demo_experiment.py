@@ -50,14 +50,20 @@ if sys.platform == 'darwin':  # macOS
         """Context manager to suppress all warnings and HID output"""
         return contextlib.redirect_stderr(io.StringIO())
 
-# Import and configure experiment
+# Import and configure experiment config FIRST
 from config import experiment_config as config
+
+# Force demo mode configuration BEFORE importing main experiment
+print("🔧 Configuring demo mode...")
+print(f"   Before: DEMO_MODE = {getattr(config, 'DEMO_MODE', 'NOT_SET')}")
+print(f"   Before: SART trials = {config.SART_PARAMS.get('trials_per_block', 'NOT_SET')}")
 
 # Enable demo mode and configure reduced parameters
 config.DEMO_MODE = True
+config.SART_PARAMS['trials_per_block'] = 10  # Force to 10
 
-# Reduce SART trials for demo mode - force override
-config.SART_PARAMS['trials_per_block'] = 10  # Reduced from 120
+print(f"   After: DEMO_MODE = {config.DEMO_MODE}")
+print(f"   After: SART trials = {config.SART_PARAMS['trials_per_block']}")
 
 # Verify demo mode is properly set
 assert config.DEMO_MODE == True, "Demo mode not properly enabled"
@@ -69,15 +75,17 @@ print(f"   📝 Velten statements: 3 per phase (reduced from 12)")
 print(f"   ⏱️  Total estimated time: ~15-20 minutes")
 print()
 
-# Import main experiment class
+# Now import main experiment class AFTER configuration is set
+print("📦 Importing main experiment class...")
 try:
     if sys.platform == 'darwin':
         with suppress_hid_output():
             from main_experiment import MoodSARTExperimentSimple
     else:
         from main_experiment import MoodSARTExperimentSimple
+    print("✅ Main experiment class imported successfully")
 except Exception as e:
-    print(f"Import error: {e}")
+    print(f"❌ Import error: {e}")
     sys.exit(1)
 
 def main():

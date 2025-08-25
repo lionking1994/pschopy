@@ -15,11 +15,36 @@ IS_MAC = sys.platform == 'darwin'
 IS_WINDOWS = sys.platform == 'win32'
 IS_LINUX = sys.platform == 'linux'
 
-# Base paths
+# Base paths with debugging and fallback
 BASE_DIR = Path(__file__).parent.parent
+print(f"🔍 Path debugging:")
+print(f"   __file__: {__file__}")
+print(f"   BASE_DIR calculated: {BASE_DIR}")
+print(f"   BASE_DIR absolute: {BASE_DIR.resolve()}")
+print(f"   BASE_DIR exists: {BASE_DIR.exists()}")
+
+# Fallback path resolution if BASE_DIR doesn't exist
+if not BASE_DIR.exists():
+    # Try current working directory
+    import os
+    cwd_base = Path(os.getcwd())
+    print(f"   Trying CWD: {cwd_base}")
+    if cwd_base.exists() and (cwd_base / "stimuli").exists():
+        BASE_DIR = cwd_base
+        print(f"   ✅ Using CWD as BASE_DIR: {BASE_DIR}")
+    else:
+        print(f"   ❌ CWD fallback failed")
+
 STIMULI_DIR = BASE_DIR / "stimuli"
 DATA_DIR = BASE_DIR / "data"
 SCRIPTS_DIR = BASE_DIR / "scripts"
+
+print(f"   STIMULI_DIR: {STIMULI_DIR}")
+print(f"   STIMULI_DIR exists: {STIMULI_DIR.exists()}")
+if STIMULI_DIR.exists():
+    print(f"   Videos dir exists: {(STIMULI_DIR / 'videos').exists()}")
+    print(f"   Audio dir exists: {(STIMULI_DIR / 'audio').exists()}")
+print()
 
 # Stimulus file paths
 VIDEO_DIR = STIMULI_DIR / "videos"

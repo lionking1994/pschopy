@@ -1013,10 +1013,26 @@ Press 1, 2, 3, or 4 to select the order:"""
         statements = self.load_velten_statements(valence)
         audio_file = config.AUDIO_FILES[f'{valence}_music']
         
+        # Debug audio file existence
+        print(f"🔍 Audio file check: {audio_file}")
+        print(f"   Exists: {audio_file.exists()}")
+        if audio_file.exists():
+            print(f"   Size: {audio_file.stat().st_size} bytes")
+        else:
+            print(f"   ❌ Audio file not found!")
+        
         # Instant audio playback using preloaded files
         audio_loaded = False
         self.current_audio = None
         audio_key = f'{valence}_music'
+        
+        # Debug preloaded audio
+        print(f"🔍 Preloaded audio check:")
+        print(f"   Has preloaded_audio: {hasattr(self, 'preloaded_audio')}")
+        if hasattr(self, 'preloaded_audio'):
+            print(f"   Audio key '{audio_key}' in preloaded: {audio_key in self.preloaded_audio}")
+            if audio_key in self.preloaded_audio:
+                print(f"   Audio object is not None: {self.preloaded_audio[audio_key] is not None}")
         
         # Try preloaded audio first (instant playback)
         if hasattr(self, 'preloaded_audio') and audio_key in self.preloaded_audio and self.preloaded_audio[audio_key] is not None:
@@ -1036,7 +1052,14 @@ Press 1, 2, 3, or 4 to select the order:"""
                 print(f"Preloaded audio failed ({str(e)[:30]}...), loading fresh...")
                 
         # Fallback to regular loading if preload unavailable
-        if not audio_loaded and audio_file.exists():
+        if not audio_loaded:
+            if not audio_file.exists():
+                print(f"⚠️ Audio file missing: {audio_file}")
+                print(f"   Continuing without background music...")
+                self.current_audio = None
+                return  # Skip audio loading but continue with experiment
+                
+            print(f"🎵 Loading audio file: {audio_file}")
             try:
                 import pygame.mixer
                 if not pygame.mixer.get_init():

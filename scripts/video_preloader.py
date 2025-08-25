@@ -27,8 +27,15 @@ class VideoPreloader:
     def preload_video(self, video_key, video_path):
         """Preload a single video"""
         try:
+            print(f"🎬 Checking video: {video_key}")
+            print(f"   Path: {video_path}")
+            print(f"   Absolute path: {video_path.resolve()}")
+            print(f"   Exists: {video_path.exists()}")
+            
             if video_path.exists():
-                print(f"Preloading {video_key}...")
+                file_size = video_path.stat().st_size / (1024*1024)  # Size in MB
+                print(f"   Size: {file_size:.1f} MB")
+                print(f"   Preloading {video_key}...")
                 # Try different video components based on availability
                 try:
                     video = visual.MovieStim3(
@@ -60,7 +67,15 @@ class VideoPreloader:
                 self.preloaded_videos[video_key] = video
                 print(f"Successfully preloaded {video_key}")
             else:
-                print(f"Video file not found: {video_path}")
+                print(f"   ❌ Video file not found: {video_path}")
+                print(f"   Parent directory exists: {video_path.parent.exists()}")
+                if video_path.parent.exists():
+                    # List what files ARE in the directory
+                    try:
+                        files_in_dir = list(video_path.parent.glob("*"))
+                        print(f"   Files in {video_path.parent.name}: {[f.name for f in files_in_dir]}")
+                    except Exception as e:
+                        print(f"   Could not list directory: {e}")
                 self.preloaded_videos[video_key] = None
         except Exception as e:
             print(f"Error preloading {video_key}: {e}")
