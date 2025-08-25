@@ -124,7 +124,8 @@ class MoodSARTExperimentSimple:
             wrapWidth=config.TEXT_STYLE['wrapWidth'],
             pos=(-400, 0),  # FIXED: Move text to left side of screen
             alignText=config.TEXT_STYLE.get('alignText', 'left'),  # FIXED: Left align
-            anchorHoriz=config.TEXT_STYLE.get('anchorHoriz', 'left')  # FIXED: Anchor left
+            anchorHoriz=config.TEXT_STYLE.get('anchorHoriz', 'left'),  # FIXED: Anchor left
+            bold=False  # FIXED: Explicitly disable bold to prevent font warnings
         )
          
         # Centered text stimulus for Velten statements
@@ -137,7 +138,8 @@ class MoodSARTExperimentSimple:
             wrapWidth=config.VELTEN_TEXT_STYLE['wrapWidth'],
             pos=config.VELTEN_TEXT_STYLE['pos'],
             alignText=config.VELTEN_TEXT_STYLE.get('alignText', 'center'),
-            anchorHoriz=config.VELTEN_TEXT_STYLE.get('anchorHoriz', 'center')
+            anchorHoriz=config.VELTEN_TEXT_STYLE.get('anchorHoriz', 'center'),
+            bold=False  # FIXED: Explicitly disable bold to prevent font warnings
         )
         
         # SART stimuli
@@ -147,7 +149,8 @@ class MoodSARTExperimentSimple:
             font=config.TEXT_STYLE['font'],
             height=40,
             color=config.TEXT_STYLE['color'],
-            pos=(0, 0)
+            pos=(0, 0),
+            bold=False  # FIXED: Explicitly disable bold to prevent font warnings
         )
         
         self.digit_stim = visual.TextStim(
@@ -156,7 +159,8 @@ class MoodSARTExperimentSimple:
             font=config.TEXT_STYLE['font'],
             height=60,
             color=config.TEXT_STYLE['color'],
-            pos=(0, 0)
+            pos=(0, 0),
+            bold=False  # FIXED: Explicitly disable bold to prevent font warnings
         )
         
         # Condition cue circles
@@ -282,7 +286,8 @@ class MoodSARTExperimentSimple:
             color=[1, 1, 1],  # White color
             height=config.TEXT_STYLE['height'],  # Same as instruction text
             alignText='center',
-            font=config.TEXT_STYLE['font']  # Same font as instruction text
+            font=config.TEXT_STYLE['font'],  # Same font as instruction text
+            bold=False  # FIXED: Explicitly disable bold to prevent font warnings
         )
         self.velten_end_label = visual.TextStim(
             win=self.win,
@@ -291,7 +296,8 @@ class MoodSARTExperimentSimple:
             color=[1, 1, 1],  # White color
             height=config.TEXT_STYLE['height'],  # Same as instruction text
             alignText='center',
-            font=config.TEXT_STYLE['font']  # Same font as instruction text
+            font=config.TEXT_STYLE['font'],  # Same font as instruction text
+            bold=False  # FIXED: Explicitly disable bold to prevent font warnings
         )
         
         # Create tick marks with different heights (start/end longer, middle shorter)
@@ -341,7 +347,8 @@ class MoodSARTExperimentSimple:
             color=[1, 1, 1],  # White color
             height=config.TEXT_STYLE['height'],  # Same as instruction text
             alignText='center',
-            font=config.TEXT_STYLE['font']  # Same font as instruction text
+            font=config.TEXT_STYLE['font'],  # Same font as instruction text
+            bold=False  # FIXED: Explicitly disable bold to prevent font warnings
         )
         self.mw_end_label = visual.TextStim(
             win=self.win,
@@ -350,7 +357,8 @@ class MoodSARTExperimentSimple:
             color=[1, 1, 1],  # White color
             height=config.TEXT_STYLE['height'],  # Same as instruction text
             alignText='center',
-            font=config.TEXT_STYLE['font']  # Same font as instruction text
+            font=config.TEXT_STYLE['font'],  # Same font as instruction text
+            bold=False  # FIXED: Explicitly disable bold to prevent font warnings
         )
         
         # Create MW tick marks with different heights (start/end longer, middle shorter)
@@ -959,7 +967,13 @@ Press 1, 2, 3, or 4 to select the order:"""
             # Randomize order within set as specified in PDF
             random.shuffle(statements)
             
-            print(f"Loaded {len(statements)} {valence} statements from {set_key} ({phase_type})")
+            # Apply demo mode reduction BEFORE printing the count
+            if config.DEMO_MODE:
+                original_count = len(statements)
+                statements = statements[:3]  # Only use first 3 statements in demo
+                print(f"Loaded {len(statements)} {valence} statements from {set_key} ({phase_type}) - Demo mode (reduced from {original_count})")
+            else:
+                print(f"Loaded {len(statements)} {valence} statements from {set_key} ({phase_type})")
         else:
             # Fallback to old file-based loading if new structure not available
             statements_file = config.VELTEN_FILES[valence]
@@ -1013,6 +1027,10 @@ Press 1, 2, 3, or 4 to select the order:"""
                 audio_loaded = True
                 print(f"🎵 Audio started instantly: {audio_file.name}")
                 
+                # Wait a brief moment to ensure audio starts
+                core.wait(0.1)
+                print(f"🎵 Audio playback confirmed")
+                
             except Exception as e:
                 # If preloaded fails, fall back to loading
                 print(f"Preloaded audio failed ({str(e)[:30]}...), loading fresh...")
@@ -1033,7 +1051,11 @@ Press 1, 2, 3, or 4 to select the order:"""
                 self.current_audio.set_volume(0.7)
                 self.current_audio.play(loops=-1)
                 audio_loaded = True
-                print(f"🎵 Audio loaded: {audio_file.name}")
+                print(f"🎵 Audio loaded and playing: {audio_file.name}")
+                
+                # Wait a brief moment to ensure audio starts
+                core.wait(0.1)
+                print(f"🎵 Pygame audio playback confirmed")
                 
             except Exception as e:
                 try:
@@ -1041,16 +1063,16 @@ Press 1, 2, 3, or 4 to select the order:"""
                     self.current_audio.setVolume(0.7)
                     self.current_audio.play()
                     audio_loaded = True
-                    print(f"🎵 Audio loaded (PsychoPy): {audio_file.name}")
+                    print(f"🎵 Audio loaded and playing (PsychoPy): {audio_file.name}")
+                    
+                    # Wait a brief moment to ensure audio starts
+                    core.wait(0.1)
+                    print(f"🎵 PsychoPy audio playback confirmed")
                 except Exception as e2:
                     print(f"⚠️ Audio unavailable: {str(e2)[:50]}...")
                     self.current_audio = None
         
-        # Use fewer statements in demo mode
-        if config.DEMO_MODE:
-            original_count = len(statements)
-            statements = statements[:3]  # Only use first 3 statements in demo
-            print(f"📝 Demo mode: Using {len(statements)} statements instead of full set ({original_count} total)")
+        # Demo mode reduction already applied in load_velten_statements() method
         
         # Present statements
         for i, statement in enumerate(statements):

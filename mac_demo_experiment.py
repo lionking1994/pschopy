@@ -45,6 +45,10 @@ if sys.platform == 'darwin':  # macOS
     def suppress_hid_output():
         """Context manager to suppress HID error output"""
         return contextlib.redirect_stderr(io.StringIO())
+    
+    def suppress_all_warnings():
+        """Context manager to suppress all warnings and HID output"""
+        return contextlib.redirect_stderr(io.StringIO())
 
 # Import and configure experiment
 from config import experiment_config as config
@@ -52,8 +56,12 @@ from config import experiment_config as config
 # Enable demo mode and configure reduced parameters
 config.DEMO_MODE = True
 
-# Reduce SART trials for demo mode
+# Reduce SART trials for demo mode - force override
 config.SART_PARAMS['trials_per_block'] = 10  # Reduced from 120
+
+# Verify demo mode is properly set
+assert config.DEMO_MODE == True, "Demo mode not properly enabled"
+assert config.SART_PARAMS['trials_per_block'] == 10, f"SART trials not reduced: {config.SART_PARAMS['trials_per_block']}"
 
 print("🎯 DEMO MODE ENABLED")
 print(f"   📊 SART trials per block: {config.SART_PARAMS['trials_per_block']} (reduced from 120)")
@@ -79,14 +87,15 @@ def main():
         
         # Create and run experiment with Mac-specific error handling
         if sys.platform == 'darwin':
-            # Suppress HID output during initialization
-            with suppress_hid_output():
+            # Suppress HID output during initialization and experiment
+            with suppress_all_warnings():
                 experiment = MoodSARTExperimentSimple()
+                print("✅ Experiment initialized successfully")
+                experiment.run_experiment()
         else:
             experiment = MoodSARTExperimentSimple()
-            
-        print("✅ Experiment initialized successfully")
-        experiment.run_experiment()
+            print("✅ Experiment initialized successfully")
+            experiment.run_experiment()
         
     except KeyboardInterrupt:
         print("\n⚠️  Experiment interrupted by user")
