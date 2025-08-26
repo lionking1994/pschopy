@@ -50,33 +50,59 @@ if sys.platform == 'darwin':  # macOS
         """Context manager to suppress all warnings and HID output"""
         return contextlib.redirect_stderr(io.StringIO())
 
+# Clear any cached modules to ensure fresh import
+import sys
+if 'experiment_config' in sys.modules:
+    del sys.modules['experiment_config']
+if 'config.experiment_config' in sys.modules:
+    del sys.modules['config.experiment_config']
+
 # Import and configure experiment config FIRST
 from config import experiment_config as config
 
 # Force demo mode configuration BEFORE importing main experiment
-print("🔧 Configuring demo mode...")
+print("🔧 CONFIGURING DEMO MODE - FORCED OVERRIDE")
+print(f"   Script: {__file__}")
+print(f"   Config module: {config.__file__}")
 print(f"   Before: DEMO_MODE = {getattr(config, 'DEMO_MODE', 'NOT_SET')}")
 print(f"   Before: SART trials = {config.SART_PARAMS.get('trials_per_block', 'NOT_SET')}")
 
-# Enable demo mode and configure reduced parameters
+# FORCE demo mode settings with absolute certainty
 config.DEMO_MODE = True
-config.SART_PARAMS['trials_per_block'] = 10  # Force to 10
+config.SART_PARAMS['trials_per_block'] = 10
 
+# Double-check the assignment worked
 print(f"   After: DEMO_MODE = {config.DEMO_MODE}")
 print(f"   After: SART trials = {config.SART_PARAMS['trials_per_block']}")
 
-# Verify demo mode is properly set
-assert config.DEMO_MODE == True, "Demo mode not properly enabled"
-assert config.SART_PARAMS['trials_per_block'] == 10, f"SART trials not reduced: {config.SART_PARAMS['trials_per_block']}"
+# Verify settings with assertions
+try:
+    assert config.DEMO_MODE == True, f"DEMO_MODE is {config.DEMO_MODE}, should be True"
+    assert config.SART_PARAMS['trials_per_block'] == 10, f"SART trials is {config.SART_PARAMS['trials_per_block']}, should be 10"
+    print("✅ Configuration verification PASSED")
+except AssertionError as e:
+    print(f"❌ Configuration verification FAILED: {e}")
+    sys.exit(1)
 
-print("🎯 DEMO MODE ENABLED")
+print("🎯 DEMO MODE ENABLED (FORCED)")
 print(f"   📊 SART trials per block: {config.SART_PARAMS['trials_per_block']} (reduced from 120)")
 print(f"   📝 Velten statements: 3 per phase (reduced from 12)")
 print(f"   ⏱️  Total estimated time: ~15-20 minutes")
-print()
+print("=" * 60)
+
+# Force the config module in sys.modules so main_experiment gets our modified version
+sys.modules['experiment_config'] = config
+sys.modules['config.experiment_config'] = config
 
 # Now import main experiment class AFTER configuration is set
 print("📦 Importing main experiment class...")
+print(f"   Forcing config module in sys.modules...")
+
+# Clear main_experiment from cache if it exists
+if 'main_experiment' in sys.modules:
+    del sys.modules['main_experiment']
+    print("   Cleared main_experiment from cache")
+
 try:
     if sys.platform == 'darwin':
         with suppress_hid_output():
@@ -84,8 +110,17 @@ try:
     else:
         from main_experiment import MoodSARTExperimentSimple
     print("✅ Main experiment class imported successfully")
+    
+    # Verify the main experiment sees our config
+    import main_experiment
+    main_config = main_experiment.config
+    print(f"   Main experiment config DEMO_MODE: {main_config.DEMO_MODE}")
+    print(f"   Main experiment config SART trials: {main_config.SART_PARAMS['trials_per_block']}")
+    
 except Exception as e:
     print(f"❌ Import error: {e}")
+    import traceback
+    traceback.print_exc()
     sys.exit(1)
 
 def main():
@@ -93,16 +128,33 @@ def main():
     try:
         print("🚀 Starting Mac-optimized DEMO experiment...")
         
+        # Final configuration verification before creating experiment
+        print("🔍 FINAL CONFIGURATION CHECK:")
+        print(f"   config.DEMO_MODE: {config.DEMO_MODE}")
+        print(f"   config.SART_PARAMS['trials_per_block']: {config.SART_PARAMS['trials_per_block']}")
+        
         # Create and run experiment with Mac-specific error handling
         if sys.platform == 'darwin':
             # Suppress HID output during initialization and experiment
             with suppress_all_warnings():
                 experiment = MoodSARTExperimentSimple()
                 print("✅ Experiment initialized successfully")
+                
+                # Verify experiment instance has correct config
+                print("🔍 EXPERIMENT INSTANCE CONFIG CHECK:")
+                print(f"   Experiment sees DEMO_MODE: {config.DEMO_MODE}")
+                print(f"   Experiment sees SART trials: {config.SART_PARAMS['trials_per_block']}")
+                
                 experiment.run_experiment()
         else:
             experiment = MoodSARTExperimentSimple()
             print("✅ Experiment initialized successfully")
+            
+            # Verify experiment instance has correct config
+            print("🔍 EXPERIMENT INSTANCE CONFIG CHECK:")
+            print(f"   Experiment sees DEMO_MODE: {config.DEMO_MODE}")
+            print(f"   Experiment sees SART trials: {config.SART_PARAMS['trials_per_block']}")
+            
             experiment.run_experiment()
         
     except KeyboardInterrupt:
