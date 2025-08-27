@@ -742,18 +742,72 @@ Press 1, 2, 3, or 4 to select the order:"""
             consecutive_same_status = 0
             last_status = video.status
             
-            # Get video duration if available
+            # Get video duration and frame rate for accurate completion detection
             video_duration = None
+            video_fps = 30.0  # Default fallback
+            
+            # Try to get monitor refresh rate as a better fallback
+            try:
+                if hasattr(self.win, 'getActualFrameRate'):
+                    monitor_fps = self.win.getActualFrameRate()
+                    if monitor_fps and monitor_fps > 0:
+                        video_fps = monitor_fps
+                        print(f"📏 Using monitor refresh rate: {video_fps:.1f} fps")
+                    else:
+                        video_fps = 60.0  # Common default for modern displays
+                        print(f"📏 Using common display rate fallback: {video_fps} fps")
+                else:
+                    video_fps = 60.0  # Most modern displays are 60fps
+                    print(f"📏 Using modern display fallback: {video_fps} fps")
+            except:
+                video_fps = 60.0
+                print(f"📏 Using safe fallback: {video_fps} fps")
+            
             try:
                 if hasattr(video, 'duration') and video.duration:
                     video_duration = video.duration
                     print(f"📏 Video duration: {video_duration:.1f} seconds")
-            except:
-                pass
+                
+                # Try multiple ways to get actual video frame rate
+                actual_video_fps = None
+                
+                # Method 1: Try video._player.source.video_format
+                if hasattr(video, '_player') and video._player:
+                    if hasattr(video._player, 'source') and video._player.source:
+                        if hasattr(video._player.source, 'video_format'):
+                            if hasattr(video._player.source.video_format, 'frame_rate'):
+                                actual_video_fps = video._player.source.video_format.frame_rate
+                                print(f"📏 Video frame rate (method 1): {actual_video_fps:.1f} fps")
+                
+                # Method 2: Try accessing fps property directly
+                if not actual_video_fps and hasattr(video, 'fps'):
+                    actual_video_fps = video.fps
+                    print(f"📏 Video frame rate (method 2): {actual_video_fps:.1f} fps")
+                
+                # Method 3: Try video._player properties
+                if not actual_video_fps and hasattr(video, '_player') and video._player:
+                    if hasattr(video._player, 'fps'):
+                        actual_video_fps = video._player.fps
+                        print(f"📏 Video frame rate (method 3): {actual_video_fps:.1f} fps")
+                
+                # Use actual video fps if we found it and it's reasonable
+                if actual_video_fps and actual_video_fps > 0 and actual_video_fps <= 120:
+                    video_fps = actual_video_fps
+                    print(f"✅ Using actual video frame rate: {video_fps:.1f} fps")
+                else:
+                    print(f"📏 Keeping display-based frame rate: {video_fps:.1f} fps")
+                    
+            except Exception as e:
+                print(f"⚠️ Could not get video properties: {e}")
+                print(f"📏 Keeping fallback frame rate: {video_fps:.1f} fps")
             
             # CRITICAL: Explicitly start video playback
             video.play()
             print("▶️ Video.play() called - starting playback")
+            
+            # Record actual start time for accurate timing
+            playback_start_time = core.getTime()
+            print(f"⏰ Playback started at: {playback_start_time:.3f}")
             
             while True:
                 # CRITICAL: Only draw video - NO TEXT during playback
@@ -771,15 +825,46 @@ Press 1, 2, 3, or 4 to select the order:"""
                     consecutive_same_status = 0
                     last_status = current_status
                 
-                # Debug every 60 frames (about 2 seconds at 30fps)
+                # Debug every 60 frames (about 1 second at 60fps)
                 if frame_count % 60 == 0:
-                    current_time = frame_count / 30.0
+                    # Calculate ACTUAL elapsed time since playback started
+                    current_real_time = core.getTime()
+                    elapsed_time = current_real_time - playback_start_time
+                    
+                    # Try multiple methods to get video's internal time
+                    actual_video_time = None
+                    percentage_complete = None
+                    
+                    try:
+                        # Method 1: _player.time
+                        if hasattr(video, '_player') and video._player and hasattr(video._player, 'time'):
+                            actual_video_time = video._player.time
+                        # Method 2: getCurrentFrameTime (VLC)
+                        elif hasattr(video, 'getCurrentFrameTime'):
+                            actual_video_time = video.getCurrentFrameTime()
+                        # Method 3: percentage completion
+                        if hasattr(video, 'getPercentageComplete'):
+                            percentage_complete = video.getPercentageComplete()
+                    except:
+                        pass
+                    
+                    # Calculate different time estimates
+                    frame_time_30fps = frame_count / 30.0  # Based on video metadata fps
+                    frame_time_60fps = frame_count / 60.0  # Based on monitor refresh
+                    
                     print(f"🎞️ Frame {frame_count}: Video status = {current_status}")
-                    print(f"   Current time: {current_time:.1f}s")
+                    print(f"   ⏰ REAL elapsed time: {elapsed_time:.1f}s")
+                    if actual_video_time is not None:
+                        print(f"   🎯 Video internal time: {actual_video_time:.1f}s")
+                    if percentage_complete is not None:
+                        print(f"   📊 Completion: {percentage_complete:.1f}%")
+                    print(f"   📐 Frame estimates: 30fps={frame_time_30fps:.1f}s, 60fps={frame_time_60fps:.1f}s")
+                    
                     if video_duration:
-                        progress_pct = (current_time / video_duration) * 100
-                        remaining_time = video_duration - current_time
-                        print(f"   Progress: {progress_pct:.1f}% of {video_duration:.1f}s (remaining: {remaining_time:.1f}s)")
+                        # Use REAL elapsed time as the most accurate measure
+                        progress_pct = (elapsed_time / video_duration) * 100
+                        remaining_time = video_duration - elapsed_time
+                        print(f"   📈 Progress: {progress_pct:.1f}% of {video_duration:.1f}s (remaining: {remaining_time:.1f}s)")
                 
                 # Check for escape key during playback
                 keys = event.getKeys()
@@ -794,29 +879,53 @@ Press 1, 2, 3, or 4 to select the order:"""
                     print(f"✅ Video status changed to FINISHED at frame {frame_count}")
                     break
                 
-                # Method 2: Use video duration if available - wait for FULL duration
+                                # Method 2: Use video's actual time property if available (PRIMARY METHOD)
+                actual_video_time = None
+                try:
+                    if hasattr(video, '_player') and video._player and hasattr(video._player, 'time'):
+                        actual_video_time = video._player.time
+                        if video_duration and actual_video_time >= video_duration:
+                            video_naturally_ended = True
+                            print(f"✅ Video actual time reached duration ({actual_video_time:.1f}s >= {video_duration:.1f}s)")
+                            break
+                    # Try VLC player time method
+                    elif hasattr(video, 'getCurrentFrameTime'):
+                        actual_video_time = video.getCurrentFrameTime()
+                        if video_duration and actual_video_time >= video_duration:
+                            video_naturally_ended = True
+                            print(f"✅ Video frame time reached duration ({actual_video_time:.1f}s >= {video_duration:.1f}s)")
+                            break
+                    # DISABLED: Percentage completion method (unreliable)
+                    # elif hasattr(video, 'getPercentageComplete'):
+                    #     percentage = video.getPercentageComplete()
+                    #     if percentage >= 99.0:  # 99% to account for rounding
+                    #         video_naturally_ended = True
+                    #         print(f"✅ Video percentage reached completion ({percentage:.1f}% >= 99%)")
+                    #         break
+                except Exception as e:
+                    print(f"⚠️ Video time check failed: {e}")
+
+                # Method 3: Use REAL ELAPSED TIME (most accurate)
                 if video_duration:
-                    estimated_current_time = frame_count / 30.0  # Assume 30fps
-                    # Only consider video finished if we're past the actual duration
-                    if estimated_current_time >= video_duration:  # Wait for full duration
+                    current_real_time = core.getTime()
+                    elapsed_time = current_real_time - playback_start_time
+                    if elapsed_time >= video_duration:
                         video_naturally_ended = True
-                        print(f"✅ Video reached full duration ({estimated_current_time:.1f}s >= {video_duration:.1f}s)")
+                        print(f"✅ Real elapsed time reached duration ({elapsed_time:.1f}s >= {video_duration:.1f}s)")
                         break
                 
-                # Method 3: Detect if video appears to be looping - but ONLY after full expected duration
-                # Don't assume looping until we're well past the expected end time
+                                # Method 4: Safety fallback - only if REAL elapsed time is way beyond expected
                 if video_duration:
-                    # Only check for looping after we're past the full duration + buffer
-                    expected_frames = int(video_duration * 30)  # Full expected duration in frames
-                    buffer_frames = 300  # 10 seconds buffer after expected end
-                    
-                    if frame_count > (expected_frames + buffer_frames) and consecutive_same_status > 300:
-                        print(f"🔄 Video playing beyond expected duration + buffer")
-                        print(f"   Expected end: {video_duration:.1f}s ({expected_frames} frames)")
-                        print(f"   Current time: {frame_count / 30.0:.1f}s ({frame_count} frames)")
+                    current_real_time = core.getTime()
+                    elapsed_time = current_real_time - playback_start_time
+                    # Only trigger if we're 30+ seconds past expected duration (something is really wrong)
+                    if elapsed_time > (video_duration + 30) and consecutive_same_status > 300:
+                        print(f"🔄 SAFETY: Video playing way beyond expected duration")
+                        print(f"   Expected end: {video_duration:.1f}s")
+                        print(f"   REAL elapsed time: {elapsed_time:.1f}s")
                         print(f"   Status unchanged for: {consecutive_same_status} frames")
                         video_naturally_ended = True
-                        print(f"✅ Assuming video finished - playing beyond expected duration")
+                        print(f"✅ SAFETY: Assuming video finished - playing way beyond expected duration")
                         break
                 else:
                     # Fallback if no duration available - use longer time limits
