@@ -85,31 +85,6 @@ class MoodSARTExperimentSimple:
         
         self.win = visual.Window(**screen_params)
         
-        # Mac-specific window setup to fix blank screen issue
-        if config.IS_MAC:
-            # Force window to be active and visible
-            try:
-                # Try multiple approaches to ensure window visibility
-                if hasattr(self.win, 'winHandle') and self.win.winHandle:
-                    self.win.winHandle.activate()
-                    self.win.winHandle.raise_()
-                
-                # Multiple flips to ensure window is properly drawn on Mac
-                for _ in range(3):
-                    self.win.flip()
-                    core.wait(0.03)  # Brief pause between flips
-                
-                print("🍎 Mac window focus and visibility applied")
-            except Exception as e:
-                print(f"🍎 Mac window setup warning (continuing): {e}")
-                # Fallback: just do multiple flips
-                try:
-                    for _ in range(3):
-                        self.win.flip()
-                        core.wait(0.03)
-                except:
-                    pass
-        
         # Set up keyboard with Mac-specific handling
         if config.IS_MAC:
             # Mac-specific keyboard setup to reduce HID errors
@@ -607,22 +582,6 @@ Press 1, 2, 3, or 4 to select the order:"""
         """Display instruction screen - FIXED: Can show condition indicators for SART"""
         instruction = config.INSTRUCTIONS[instruction_key]
         self.instruction_text.text = instruction['text']
-        
-        # Mac-specific fix: Ensure window is properly focused and visible
-        if config.IS_MAC:
-            try:
-                # Force window to front and ensure it's active
-                if hasattr(self.win, 'winHandle') and self.win.winHandle:
-                    self.win.winHandle.activate()
-                    self.win.winHandle.raise_()
-                # Initial flip to prepare window
-                self.win.flip()
-                core.wait(0.05)  # Small delay for Mac window system
-            except Exception:
-                # Fallback: just do a simple flip
-                self.win.flip()
-                core.wait(0.05)
-        
         self.instruction_text.draw()
         
         # FIXED: Draw condition cue if provided (for SART instructions)
@@ -630,11 +589,6 @@ Press 1, 2, 3, or 4 to select the order:"""
             condition_cue.draw()
         
         self.win.flip()
-        
-        # Mac-specific: Additional flip to ensure visibility
-        if config.IS_MAC:
-            core.wait(0.05)  # Brief pause
-            self.win.flip()
         
         if wait_for_key:
             event.waitKeys()
@@ -1790,14 +1744,6 @@ Press 1, 2, 3, or 4 to select the order:"""
     def run_experiment(self):
         """Run the complete experiment following the exact step sequence provided"""
         try:
-            # Mac-specific: Ensure window is fully ready before first instruction
-            if config.IS_MAC:
-                print("🍎 Preparing Mac window for first instruction...")
-                # Clear screen and ensure window is ready
-                self.win.flip()
-                core.wait(0.2)  # Give Mac window system extra time
-                print("🍎 Mac window ready - showing welcome screen")
-            
             # Step 1: Welcome screen
             self.show_instruction('welcome')
             
