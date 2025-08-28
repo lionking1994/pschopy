@@ -735,8 +735,8 @@ Press 1, 2, 3, or 4 to select the order:"""
             video_skipped = False
             frame_count = 0
             
-            # Add safety limit to prevent infinite loops
-            max_frames = 18000  # About 10 minutes at 30fps - way more than any video should be
+            # Add safety limit to prevent infinite loops - will be adjusted based on video duration
+            max_frames = 18000  # Default fallback
             
             video_naturally_ended = False
             consecutive_same_status = 0
@@ -801,6 +801,13 @@ Press 1, 2, 3, or 4 to select the order:"""
                 print(f"⚠️ Could not get video properties: {e}")
                 print(f"📏 Keeping fallback frame rate: {video_fps:.1f} fps")
             
+            # Adjust safety limit based on video duration
+            if video_duration:
+                # Allow 2x the expected duration at 60fps display rate as safety margin
+                expected_display_frames = video_duration * 60.0 * 2.0
+                max_frames = max(int(expected_display_frames), 18000)
+                print(f"🔒 Adjusted safety limit to {max_frames} frames (2x duration at 60fps)")
+            
             # CRITICAL: Explicitly start video playback
             video.play()
             print("▶️ Video.play() called - starting playback")
@@ -817,54 +824,27 @@ Press 1, 2, 3, or 4 to select the order:"""
                 
                 current_status = video.status
                 
-                # Track status changes
+                # Track status changes (only log significant ones)
                 if current_status == last_status:
                     consecutive_same_status += 1
                 else:
-                    print(f"📝 Status changed from {last_status} to {current_status} at frame {frame_count}")
+                    # Only log status changes that might indicate completion or issues
+                    if current_status == visual.FINISHED or consecutive_same_status > 60:
+                        print(f"📝 Video status: {last_status} → {current_status} (frame {frame_count})")
                     consecutive_same_status = 0
                     last_status = current_status
                 
-                # Debug every 60 frames (about 1 second at 60fps)
-                if frame_count % 60 == 0:
-                    # Calculate ACTUAL elapsed time since playback started
+                # Progress updates every 5 seconds (300 frames at 60fps) instead of every second
+                if frame_count % 300 == 0:
                     current_real_time = core.getTime()
                     elapsed_time = current_real_time - playback_start_time
                     
-                    # Try multiple methods to get video's internal time
-                    actual_video_time = None
-                    percentage_complete = None
-                    
-                    try:
-                        # Method 1: _player.time
-                        if hasattr(video, '_player') and video._player and hasattr(video._player, 'time'):
-                            actual_video_time = video._player.time
-                        # Method 2: getCurrentFrameTime (VLC)
-                        elif hasattr(video, 'getCurrentFrameTime'):
-                            actual_video_time = video.getCurrentFrameTime()
-                        # Method 3: percentage completion
-                        if hasattr(video, 'getPercentageComplete'):
-                            percentage_complete = video.getPercentageComplete()
-                    except:
-                        pass
-                    
-                    # Calculate different time estimates
-                    frame_time_30fps = frame_count / 30.0  # Based on video metadata fps
-                    frame_time_60fps = frame_count / 60.0  # Based on monitor refresh
-                    
-                    print(f"🎞️ Frame {frame_count}: Video status = {current_status}")
-                    print(f"   ⏰ REAL elapsed time: {elapsed_time:.1f}s")
-                    if actual_video_time is not None:
-                        print(f"   🎯 Video internal time: {actual_video_time:.1f}s")
-                    if percentage_complete is not None:
-                        print(f"   📊 Completion: {percentage_complete:.1f}%")
-                    print(f"   📐 Frame estimates: 30fps={frame_time_30fps:.1f}s, 60fps={frame_time_60fps:.1f}s")
-                    
                     if video_duration:
-                        # Use REAL elapsed time as the most accurate measure
                         progress_pct = (elapsed_time / video_duration) * 100
-                        remaining_time = video_duration - elapsed_time
-                        print(f"   📈 Progress: {progress_pct:.1f}% of {video_duration:.1f}s (remaining: {remaining_time:.1f}s)")
+                        remaining_time = max(0, video_duration - elapsed_time)
+                        print(f"🎞️ Video: {progress_pct:.0f}% complete ({elapsed_time:.0f}s/{video_duration:.0f}s, ~{remaining_time:.0f}s remaining)")
+                    else:
+                        print(f"🎞️ Video: {elapsed_time:.0f}s elapsed, frame {frame_count}")
                 
                 # Check for escape key during playback
                 keys = event.getKeys()
@@ -876,7 +856,7 @@ Press 1, 2, 3, or 4 to select the order:"""
                 # Method 1: Check if status changed to FINISHED
                 if current_status == visual.FINISHED:
                     video_naturally_ended = True
-                    print(f"✅ Video status changed to FINISHED at frame {frame_count}")
+                    print(f"✅ Video finished (status = FINISHED)")
                     break
                 
                                 # Method 2: Use video's actual time property if available (PRIMARY METHOD)
@@ -886,14 +866,14 @@ Press 1, 2, 3, or 4 to select the order:"""
                         actual_video_time = video._player.time
                         if video_duration and actual_video_time >= video_duration:
                             video_naturally_ended = True
-                            print(f"✅ Video actual time reached duration ({actual_video_time:.1f}s >= {video_duration:.1f}s)")
+                            print(f"✅ Video finished (internal time reached duration)")
                             break
                     # Try VLC player time method
                     elif hasattr(video, 'getCurrentFrameTime'):
                         actual_video_time = video.getCurrentFrameTime()
                         if video_duration and actual_video_time >= video_duration:
                             video_naturally_ended = True
-                            print(f"✅ Video frame time reached duration ({actual_video_time:.1f}s >= {video_duration:.1f}s)")
+                            print(f"✅ Video finished (frame time reached duration)")
                             break
                     # DISABLED: Percentage completion method (unreliable)
                     # elif hasattr(video, 'getPercentageComplete'):
@@ -911,7 +891,7 @@ Press 1, 2, 3, or 4 to select the order:"""
                     elapsed_time = current_real_time - playback_start_time
                     if elapsed_time >= video_duration:
                         video_naturally_ended = True
-                        print(f"✅ Real elapsed time reached duration ({elapsed_time:.1f}s >= {video_duration:.1f}s)")
+                        print(f"✅ Video finished (elapsed time reached duration)")
                         break
                 
                                 # Method 4: Safety fallback - only if REAL elapsed time is way beyond expected
@@ -920,114 +900,60 @@ Press 1, 2, 3, or 4 to select the order:"""
                     elapsed_time = current_real_time - playback_start_time
                     # Only trigger if we're 30+ seconds past expected duration (something is really wrong)
                     if elapsed_time > (video_duration + 30) and consecutive_same_status > 300:
-                        print(f"🔄 SAFETY: Video playing way beyond expected duration")
-                        print(f"   Expected end: {video_duration:.1f}s")
-                        print(f"   REAL elapsed time: {elapsed_time:.1f}s")
-                        print(f"   Status unchanged for: {consecutive_same_status} frames")
+                        print(f"⚠️ SAFETY: Video exceeded expected duration - forcing completion")
                         video_naturally_ended = True
-                        print(f"✅ SAFETY: Assuming video finished - playing way beyond expected duration")
                         break
                 else:
                     # Fallback if no duration available - use longer time limits
                     if consecutive_same_status > 1800 and frame_count > 7200:  # 1 minute unchanged after 4 minutes
-                        print(f"🔄 Video status unchanged for {consecutive_same_status} frames after {frame_count} total frames")
+                        print(f"⚠️ SAFETY: Video appears stuck - forcing completion")
                         video_naturally_ended = True
-                        print(f"✅ Assuming video finished due to long static status")
                         break
                 
                 # Safety: Absolute maximum to prevent infinite loops
                 if frame_count >= max_frames:
-                    print(f"🔄 Safety limit reached at {frame_count} frames")
+                    print(f"⚠️ SAFETY: Frame limit reached - forcing completion")
                     video_naturally_ended = True
                     break
             
-            print(f"📝 Video playback ended - Status: {video.status}, Skipped: {video_skipped}, Frames: {frame_count}")
-            print(f"   - Naturally ended: {video_naturally_ended}")
-            print(f"🔍 Video status constants - FINISHED: {visual.FINISHED}")
+            # Video playback completed
             
-            # CRITICAL: Only show completion text if video has ACTUALLY finished
-            # Be very strict about this to prevent text appearing during playback
             should_show_completion = (video_naturally_ended or video_skipped) and frame_count > 60
             
             if should_show_completion:
-                print("✅ Video has ACTUALLY finished - NOW showing completion message...")
-                print(f"   - Video naturally ended: {video_naturally_ended}")
-                print(f"   - Video was skipped: {video_skipped}")
-                print(f"   - Total frames played: {frame_count}")
+                print(f"✅ Video completed ({'skipped' if video_skipped else 'finished'})")
                 
-                # CRITICAL: Stop the video completely to freeze on final frame
-                print("🛑 Stopping video to freeze final frame...")
+                # Stop the video and show completion screen
                 try:
                     if hasattr(video, 'stop'):
                         video.stop()
-                        print("✅ Video.stop() called")
                     if hasattr(video, 'pause'):
                         video.pause()
-                        print("✅ Video.pause() called")
                 except Exception as e:
                     print(f"⚠️ Could not stop video: {e}")
                 
-                # Wait longer for video to completely stop
-                print("⏳ Waiting for video to fully stop...")
-                core.wait(0.5)
+                core.wait(0.5)  # Brief pause for video to stop
                 
-                # Verify video has stopped by checking status
-                final_status = video.status
-                print(f"🔍 Final video status after stopping: {final_status}")
-                
-                # Now draw the FINAL STATIC frame with completion text
+                # Show completion message
                 self.instruction_text.text = "Video completed.\n\nPress ESC key to continue..."
                 self.instruction_text.pos = (0, -200)  # Below video
                 self.instruction_text.color = [1, 1, 1]  # White text
-                print(f"🔍 Text properties - Color: {self.instruction_text.color}, Pos: {self.instruction_text.pos}")
                 
-                print("🎨 Drawing FINAL STATIC frame with completion text...")
-                print("   ⚠️  IMPORTANT: Video should be completely stopped now")
-                
-                # Draw the stopped video frame
+                # Draw final frame with completion text
                 try:
                     video.draw()
-                    print("✅ Final STATIC video frame drawn")
-                except Exception as e:
-                    print(f"⚠️ Could not draw final frame: {e}")
-                
-                # Draw completion text over the STATIC frame
-                try:
                     self.instruction_text.draw()
-                    print("✅ Completion text drawn over STATIC frame")
+                    self.win.flip()
+                    print("📺 Video completion screen displayed - waiting for ESC key...")
                 except Exception as e:
-                    print(f"❌ Could not draw text: {e}")
-                
-                # Display the final result
-                self.win.flip()
-                print("💡 FINAL RESULT: STATIC video frame + completion text should now be visible")
-                print("👀 Check the window - you should see:")
-                print("   1. A COMPLETELY STATIC (not moving) video frame")
-                print("   2. White text saying 'Video completed. Press ESC key to continue...'")
-                print("   3. NO MOVEMENT in the video")
+                    print(f"⚠️ Could not draw completion screen: {e}")
             else:
-                print("❌ Video did not properly finish - NOT showing completion text")
-                print("   This prevents text from appearing while video is still playing")
-                print(f"   - Video naturally ended: {video_naturally_ended}")
-                print(f"   - Video was skipped: {video_skipped}")
-                print(f"   - Frame count: {frame_count}")
-                return  # Exit without showing completion text
+                print("❌ Video did not complete properly - skipping completion screen")
+                return
             
-            # Stop the video after displaying the message
-            if hasattr(video, 'stop'):
-                try:
-                    video.stop()
-                    print("🛑 Video stopped")
-                except Exception as e:
-                    print(f"⚠️ Could not stop video: {e}")
-            
-            # Wait for escape key specifically
-            print("⏳ Waiting for ESC key press...")
-            while True:
-                keys = event.waitKeys()
-                if keys and 'escape' in keys:
-                    print("✅ ESC pressed - continuing experiment")
-                    break
+            # Wait for escape key to continue
+            event.waitKeys(keyList=['escape'])
+            print("✅ Continuing experiment")
             
             # Reset text position to original left-aligned position
             self.instruction_text.pos = (-400, 0)

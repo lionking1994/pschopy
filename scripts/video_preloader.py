@@ -27,15 +27,7 @@ class VideoPreloader:
     def preload_video(self, video_key, video_path):
         """Preload a single video"""
         try:
-            print(f"🎬 Checking video: {video_key}")
-            print(f"   Path: {video_path}")
-            print(f"   Absolute path: {video_path.resolve()}")
-            print(f"   Exists: {video_path.exists()}")
-            
             if video_path.exists():
-                file_size = video_path.stat().st_size / (1024*1024)  # Size in MB
-                print(f"   Size: {file_size:.1f} MB")
-                print(f"   Preloading {video_key}...")
                 # Try different video components based on availability
                 try:
                     video = visual.MovieStim3(
@@ -61,34 +53,25 @@ class VideoPreloader:
                         )
                     except (AttributeError, Exception) as e:
                         # Final fallback - skip video preloading but don't fail
-                        print(f"Info: Skipping preload for {video_key} - will load on-demand")
-                        print(f"Reason: {str(e)[:80]}...")
+                        print(f"⚠️ Could not preload {video_key} - will load on-demand")
                         video = None
                 self.preloaded_videos[video_key] = video
-                print(f"Successfully preloaded {video_key}")
+                print(f"✓ {video_key}")
             else:
-                print(f"   ❌ Video file not found: {video_path}")
-                print(f"   Parent directory exists: {video_path.parent.exists()}")
-                if video_path.parent.exists():
-                    # List what files ARE in the directory
-                    try:
-                        files_in_dir = list(video_path.parent.glob("*"))
-                        print(f"   Files in {video_path.parent.name}: {[f.name for f in files_in_dir]}")
-                    except Exception as e:
-                        print(f"   Could not list directory: {e}")
+                print(f"❌ Video not found: {video_key}")
                 self.preloaded_videos[video_key] = None
         except Exception as e:
-            print(f"Error preloading {video_key}: {e}")
+            print(f"❌ Error preloading {video_key}: {e}")
             self.preloaded_videos[video_key] = None
     
     def preload_all_videos(self):
         """Preload all experiment videos"""
-        print("Starting video preloading...")
+        print("🎬 Preloading videos...")
         
         for video_key, video_path in config.VIDEO_FILES.items():
             self.preload_video(video_key, video_path)
         
-        print("Video preloading completed")
+        print("✅ Video preloading completed")
     
     def preload_videos_background(self, video_keys):
         """Preload videos in background thread"""

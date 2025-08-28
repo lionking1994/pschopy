@@ -140,20 +140,10 @@ def main():
                 experiment = MoodSARTExperimentSimple()
                 print("✅ Experiment initialized successfully")
                 
-                # Verify experiment instance has correct config
-                print("🔍 EXPERIMENT INSTANCE CONFIG CHECK:")
-                print(f"   Experiment sees DEMO_MODE: {config.DEMO_MODE}")
-                print(f"   Experiment sees SART trials: {config.SART_PARAMS['trials_per_block']}")
-                
                 experiment.run_experiment()
         else:
             experiment = MoodSARTExperimentSimple()
             print("✅ Experiment initialized successfully")
-            
-            # Verify experiment instance has correct config
-            print("🔍 EXPERIMENT INSTANCE CONFIG CHECK:")
-            print(f"   Experiment sees DEMO_MODE: {config.DEMO_MODE}")
-            print(f"   Experiment sees SART trials: {config.SART_PARAMS['trials_per_block']}")
             
             experiment.run_experiment()
         
