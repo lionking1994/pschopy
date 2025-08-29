@@ -451,19 +451,33 @@ class MoodSARTExperimentSimple:
         }
         
     def get_counterbalancing_order(self):
-        """Get counterbalancing order selection from user (1-4)"""
-        self.instruction_text.text = """Please select the counterbalancing order for this participant:
+        """Get counterbalancing order selection from user (1-4) with randomized mapping"""
+        # Generate random mapping between user selection (1-4) and actual orders (1-4)
+        actual_orders = [1, 2, 3, 4]
+        random.shuffle(actual_orders)
+        
+        # Create the mapping
+        selection_to_order = {
+            1: actual_orders[0],
+            2: actual_orders[1], 
+            3: actual_orders[2],
+            4: actual_orders[3]
+        }
+        
+        # Display condition descriptions for reference
+        condition_descriptions = {
+            1: "V(+) → V(+) → M(-) → M(-)",
+            2: "M(-) → M(-) → V(+) → V(+)",
+            3: "V(-) → V(-) → M(+) → M(+)",
+            4: "M(+) → M(+) → V(-) → V(-)"
+        }
+        
+        self.instruction_text.text = """🎲 RANDOMIZED COUNTERBALANCING SELECTION
 
-1 - Order 1: V(+) → V(+) → M(-) → M(-)
-2 - Order 2: M(-) → M(-) → V(+) → V(+) 
-3 - Order 3: V(-) → V(-) → M(+) → M(+)
-4 - Order 4: M(+) → M(+) → V(-) → V(-)
+The system has randomly shuffled the order assignments.
+Select a number (1-4) and you will be assigned a random counterbalancing order:
 
-Where:
-V = Velten statements, M = Movie clips
-(+) = Positive mood, (-) = Negative mood
-
-Press 1, 2, 3, or 4 to select the order:"""
+Press 1, 2, 3, or 4 to select (each maps to a random order)"""
         
         self.instruction_text.draw()
         self.win.flip()
@@ -474,9 +488,34 @@ Press 1, 2, 3, or 4 to select the order:"""
             if keys:
                 key = keys[0]
                 if key in ['1', '2', '3', '4']:
-                    condition = int(key)
-                    print(f"Selected counterbalancing order: {condition}")
-                    return condition
+                    selection = int(key)
+                    actual_condition = selection_to_order[selection]
+                    print(f"🎲 User selected: {selection} → Randomly mapped to counterbalancing order: {actual_condition}")
+                    print(f"   Order {actual_condition}: {condition_descriptions[actual_condition]}")
+                    
+                    # Show the assigned counterbalancing order to the user
+                    self.instruction_text.text = f"""🎯 COUNTERBALANCING ORDER ASSIGNED
+
+You selected: {selection}
+
+You have been assigned to:
+COUNTERBALANCING ORDER {actual_condition}
+
+{condition_descriptions[actual_condition]}
+
+Where:
+V = Velten statements + Music
+M = Movie clips
+(+) = Positive mood induction
+(-) = Negative mood induction
+
+Press any key to continue..."""
+                    
+                    self.instruction_text.draw()
+                    self.win.flip()
+                    event.waitKeys()  # Wait for confirmation
+                    
+                    return actual_condition
                 elif key == 'escape':
                     core.quit()
         

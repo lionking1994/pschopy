@@ -36,8 +36,40 @@ if not BASE_DIR.exists():
         print(f"   ❌ CWD fallback failed")
 
 STIMULI_DIR = BASE_DIR / "stimuli"
-DATA_DIR = BASE_DIR / "data"
 SCRIPTS_DIR = BASE_DIR / "scripts"
+
+# OneDrive detection and data directory setup
+def detect_onedrive_path():
+    """Detect OneDrive directory for data storage"""
+    import os
+    username = os.getenv('USERNAME', os.getenv('USER', ''))
+    
+    # Common OneDrive paths on Windows
+    potential_onedrive_paths = [
+        Path.home() / 'OneDrive',
+        Path(f'C:/Users/{username}/OneDrive') if username else None,
+    ]
+    
+    # Filter out None values and check which paths exist
+    for path in potential_onedrive_paths:
+        if path and path.exists() and path.is_dir():
+            return path
+    
+    return None
+
+# Try to use OneDrive, fall back to local directory
+onedrive_path = detect_onedrive_path()
+if onedrive_path:
+    DATA_DIR = onedrive_path / "PsychoPy_Data"
+    print(f"📁 OneDrive detected: Using {DATA_DIR} for data storage")
+    # Create the directory if it doesn't exist
+    DATA_DIR.mkdir(exist_ok=True)
+else:
+    DATA_DIR = BASE_DIR / "data"
+    print(f"📁 OneDrive not found: Using local directory {DATA_DIR}")
+
+print(f"   DATA_DIR: {DATA_DIR}")
+print(f"   DATA_DIR exists: {DATA_DIR.exists()}")
 
 print(f"   STIMULI_DIR: {STIMULI_DIR}")
 print(f"   STIMULI_DIR exists: {STIMULI_DIR.exists()}")
