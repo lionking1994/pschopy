@@ -451,18 +451,9 @@ class MoodSARTExperimentSimple:
         }
         
     def get_counterbalancing_order(self):
-        """Get counterbalancing order selection from user (1-4) with randomized mapping"""
-        # Generate random mapping between user selection (1-4) and actual orders (1-4)
-        actual_orders = [1, 2, 3, 4]
-        random.shuffle(actual_orders)
-        
-        # Create the mapping
-        selection_to_order = {
-            1: actual_orders[0],
-            2: actual_orders[1], 
-            3: actual_orders[2],
-            4: actual_orders[3]
-        }
+        """Automatically assign random counterbalancing order (25% chance each)"""
+        # Randomly select from conditions 1-4 (25% chance each)
+        condition = random.randint(1, 4)
         
         # Display condition descriptions for reference
         condition_descriptions = {
@@ -472,36 +463,16 @@ class MoodSARTExperimentSimple:
             4: "M(+) → M(+) → V(-) → V(-)"
         }
         
-        self.instruction_text.text = """🎲 RANDOMIZED COUNTERBALANCING SELECTION
-
-The system has randomly shuffled the order assignments.
-Select a number (1-4) and you will be assigned a random counterbalancing order:
-
-Press 1, 2, 3, or 4 to select (each maps to a random order)"""
+        print(f"🎲 Automatically assigned counterbalancing order: {condition}")
+        print(f"   Order {condition}: {condition_descriptions[condition]}")
         
-        self.instruction_text.draw()
-        self.win.flip()
-        
-        # Wait for valid input (1-4)
-        while True:
-            keys = event.waitKeys()
-            if keys:
-                key = keys[0]
-                if key in ['1', '2', '3', '4']:
-                    selection = int(key)
-                    actual_condition = selection_to_order[selection]
-                    print(f"🎲 User selected: {selection} → Randomly mapped to counterbalancing order: {actual_condition}")
-                    print(f"   Order {actual_condition}: {condition_descriptions[actual_condition]}")
-                    
-                    # Show the assigned counterbalancing order to the user
-                    self.instruction_text.text = f"""🎯 COUNTERBALANCING ORDER ASSIGNED
+        # Show the assigned counterbalancing order to the participant
+        self.instruction_text.text = f"""🎯 COUNTERBALANCING ORDER ASSIGNED
 
-You selected: {selection}
+You have been randomly assigned to:
+COUNTERBALANCING ORDER {condition}
 
-You have been assigned to:
-COUNTERBALANCING ORDER {actual_condition}
-
-{condition_descriptions[actual_condition]}
+{condition_descriptions[condition]}
 
 Where:
 V = Velten statements + Music
@@ -509,15 +480,13 @@ M = Movie clips
 (+) = Positive mood induction
 (-) = Negative mood induction
 
-Press any key to continue..."""
-                    
-                    self.instruction_text.draw()
-                    self.win.flip()
-                    event.waitKeys()  # Wait for confirmation
-                    
-                    return actual_condition
-                elif key == 'escape':
-                    core.quit()
+Press any key to continue with the experiment..."""
+        
+        self.instruction_text.draw()
+        self.win.flip()
+        event.waitKeys()  # Wait for confirmation
+        
+        return condition
         
     def get_text_input(self, prompt):
         """Get text input using keyboard - Normal typing for email addresses"""
@@ -549,7 +518,7 @@ Press any key to continue..."""
                     input_text = input_text[:-1]
                 elif key == 'space':
                     input_text += ' '
-                elif key == '2' and ('shift' in modifiers or 'lshift' in modifiers or 'rshift' in modifiers):
+                elif key == '2' and (modifiers.get('shift', False) or modifiers.get('lshift', False) or modifiers.get('rshift', False)):
                     # Handle Shift+2 = @
                     input_text += '@'
                 elif key == 'period':
@@ -558,8 +527,11 @@ Press any key to continue..."""
                     input_text += '-'
                 elif key == 'at' or key == '@':
                     input_text += '@'
-                elif len(key) == 1 and key.isalnum():
-                    # Add letters and numbers
+                elif key == '2' and not (modifiers.get('shift', False) or modifiers.get('lshift', False) or modifiers.get('rshift', False)):
+                    # Handle plain "2" key (only if no shift modifiers)
+                    input_text += '2'
+                elif len(key) == 1 and key.isalnum() and key != '2':
+                    # Add letters and other numbers (but not '2' since it's handled above)
                     input_text += key
             
             # Small delay to prevent excessive CPU usage
