@@ -451,11 +451,11 @@ class MoodSARTExperimentSimple:
         }
         
     def get_counterbalancing_order(self):
-        """Automatically assign random counterbalancing order (25% chance each)"""
+        """Automatically assign random counterbalancing order (25% chance each) - silent assignment"""
         # Randomly select from conditions 1-4 (25% chance each)
         condition = random.randint(1, 4)
         
-        # Display condition descriptions for reference
+        # Display condition descriptions for reference (console only)
         condition_descriptions = {
             1: "V(+) → V(+) → M(-) → M(-)",
             2: "M(-) → M(-) → V(+) → V(+)",
@@ -466,26 +466,7 @@ class MoodSARTExperimentSimple:
         print(f"🎲 Automatically assigned counterbalancing order: {condition}")
         print(f"   Order {condition}: {condition_descriptions[condition]}")
         
-        # Show the assigned counterbalancing order to the participant
-        self.instruction_text.text = f"""🎯 COUNTERBALANCING ORDER ASSIGNED
-
-You have been randomly assigned to:
-COUNTERBALANCING ORDER {condition}
-
-{condition_descriptions[condition]}
-
-Where:
-V = Velten statements + Music
-M = Movie clips
-(+) = Positive mood induction
-(-) = Negative mood induction
-
-Press any key to continue with the experiment..."""
-        
-        self.instruction_text.draw()
-        self.win.flip()
-        event.waitKeys()  # Wait for confirmation
-        
+        # No screen shown to participant - assignment happens silently
         return condition
         
     def get_text_input(self, prompt):
