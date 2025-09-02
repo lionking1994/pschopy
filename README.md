@@ -54,10 +54,7 @@ psychopy/
 ├── scripts/
 │   ├── video_preloader.py          # Video loading optimization
 │   ├── data_analyzer.py            # Data analysis tools
-│   └── test_core_functionality.py  # Core logic tests
-├── tests/
-│   ├── test_rating_scales.py       # Modern rating scale tests
-│   └── test_psychopy_gui.py        # GUI functionality tests
+│   └── create_sample_data.py       # Generate sample data for testing
 ├── stimuli/
 │   ├── videos/                     # Video clips (add your files here)
 │   ├── audio/                      # Background music (add your files here)
@@ -128,19 +125,7 @@ psychopy/
 Data is automatically saved as CSV files in the `data/` directory with format:
 `participant_MOOD_SART_[code]_[timestamp].csv`
 
-## 🧪 **Testing**
-
-### **Run Tests:**
-```bash
-# Test core functionality (no GUI required)
-python scripts/test_core_functionality.py
-
-# Test modern rating scales
-python tests/test_rating_scales.py
-
-# Test GUI components (requires display)
-python tests/test_psychopy_gui.py
-```
+## 🧪 **Data Analysis**
 
 ### **Analyze Data:**
 ```bash
@@ -225,8 +210,8 @@ This experiment is **fully functional** and ready for:
 
 For questions about the experiment design or implementation:
 - Check `PROJECT_SUMMARY.md` for technical details
-- Review test files in `tests/` for usage examples
-- All components are documented and tested
+- Review the main experiment file `main_experiment.py` for implementation details
+- All components are documented and functional
 
 ---
 

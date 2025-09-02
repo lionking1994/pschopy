@@ -180,7 +180,7 @@ class MoodSARTExperimentSimple:
             lineColor=config.CONDITION_CUES['non_inhibition']['color']
         )
         
-        # MODERN: Mood rating slider (replaces RatingScale) - Neutral colors as per specification
+        # MODERN: Mood rating slider (replaces RatingScale) - Neutral colors, no midpoint
         self.mood_slider = visual.Slider(
             win=self.win,
             ticks=config.MOOD_SCALE['tick_positions'],
@@ -194,6 +194,25 @@ class MoodSARTExperimentSimple:
             lineColor=[0.5, 0.5, 0.5],    # Neutral gray line
             labelColor='white'
             # Note: showValue parameter not supported in this PsychoPy version
+        )
+        
+        # Continue button for mood rating
+        self.continue_button = visual.Rect(
+            win=self.win,
+            width=200,
+            height=60,
+            pos=(0, -300),
+            fillColor=[0.0, 0.5, 1.0],  # Brighter blue button
+            lineColor=[1.0, 1.0, 1.0]   # White border for better visibility
+        )
+        
+        self.continue_button_text = visual.TextStim(
+            win=self.win,
+            text="Continue",
+            pos=(0, -300),
+            color='white',
+            height=28,  # Larger text
+            bold=True   # Bold text for better visibility
         )
         
         # MODERN: Mind-wandering probe sliders - 7-point discrete scales (no line, smaller height for smaller marker)
@@ -586,31 +605,53 @@ class MoodSARTExperimentSimple:
             event.waitKeys()
     
     def collect_mood_rating(self, phase):
-        """MODERN: Collect mood rating using Slider component with mouse click to advance"""
+        """MODERN: Collect mood rating using Slider component with button and keyboard advance"""
         print(f"📊 COLLECTING MOOD RATING: {phase}")
-        self.instruction_text.text = config.INSTRUCTIONS['mood_rating']['text'] + "\n\nClick anywhere to continue after making your selection."
+        self.instruction_text.text = config.INSTRUCTIONS['mood_rating']['text'] + "\n\nMake your selection, then click the Continue button or press SPACEBAR/ENTER."
         self.mood_slider.reset()
         
         rating_selected = False
         mouse = event.Mouse(win=self.win)
          
-        # Show slider and wait for rating + mouse click
+        # Show slider, button and wait for rating + button click or keyboard
         while True:
             self.instruction_text.draw()
             self.mood_slider.draw()
+            
+            # Only show button and enable advancement if rating is selected
+            if self.mood_slider.getRating() is not None:
+                if not rating_selected:
+                    rating_selected = True
+                    print(f"📝 Rating selected: {self.mood_slider.getRating()}")
+                
+                # Draw continue button
+                self.continue_button.draw()
+                self.continue_button_text.draw()
+            
             self.win.flip()
             
-            # Check if rating has been made
-            if self.mood_slider.getRating() is not None and not rating_selected:
-                rating_selected = True
-                print(f"📝 Rating selected: {self.mood_slider.getRating()}")
-            
-            # Check for mouse click after rating is selected
-            if rating_selected and mouse.getPressed()[0]:  # Left mouse button
-                break
+            # Check for button click after rating is selected
+            if rating_selected:
+                # Check for mouse click on button
+                mouse_pos = mouse.getPos()
+                button_clicked = (mouse.getPressed()[0] and 
+                                -100 < mouse_pos[0] < 100 and 
+                                -330 < mouse_pos[1] < -270)
+                
+                # Check for keyboard input (spacebar or enter)
+                keys = event.getKeys()
+                keyboard_advance = any(key in ['space', 'return'] for key in keys)
+                
+                if button_clicked or keyboard_advance:
+                    if button_clicked:
+                        print("📝 Continue button clicked")
+                    if keyboard_advance:
+                        print("📝 Keyboard advance used")
+                    break
             
             # Check for escape
-            if 'escape' in event.getKeys():
+            keys = event.getKeys()
+            if 'escape' in keys:
                 core.quit()
         
         rating = self.mood_slider.getRating()

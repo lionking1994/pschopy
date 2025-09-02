@@ -262,12 +262,12 @@ VELTEN_TEXT_STYLE = {
     'anchorHoriz': 'center'
 }
 
-# Mood rating scale parameters (0-100 horizontal slider)
+# Mood rating scale parameters (0-100 horizontal slider) - No midpoint
 MOOD_SCALE = {
     'low': 0,
     'high': 100,
-    'labels': ['Very Negative', '', 'Very Positive'],
-    'tick_positions': [0, 50, 100],
+    'labels': ['Very Negative', 'Very Positive'],
+    'tick_positions': [0, 100],
     'granularity': 1
 }
 

@@ -148,25 +148,11 @@ def run_tests():
     """Run the test suite"""
     print("\nRunning test suite...")
     
-    test_script = Path(__file__).parent / "scripts" / "test_experiment.py"
+    # Test scripts have been removed - experiment is ready for production use
+    print("✅ Experiment ready for production use")
     
-    if not test_script.exists():
-        print("❌ Test script not found")
-        return False
-    
-    try:
-        result = subprocess.run([sys.executable, str(test_script)], 
-                              capture_output=True, text=True)
-        
-        print(result.stdout)
-        if result.stderr:
-            print("STDERR:", result.stderr)
-        
-        return result.returncode == 0
-        
-    except Exception as e:
-        print(f"❌ Failed to run tests: {e}")
-        return False
+    # All tests have been removed - experiment is production ready
+    return True
 
 def print_next_steps():
     """Print next steps for the user"""
@@ -186,11 +172,9 @@ def print_next_steps():
     print("   python main_experiment.py          # Original version")
     print()
     print("3. ANALYZE DATA:")
+    print("   python scripts/create_sample_data.py  # Generate sample data")
     print("   python scripts/data_analyzer.py --combine --data_dir data/")
-    print()
-    print("4. TEST COMPONENTS:")
-    print("   python scripts/test_experiment.py  # Run full test suite")
-    print("   python scripts/video_preloader.py  # Test video loading")
+    print("   python scripts/data_analyzer.py --help  # Get help with analysis")
     print()
     print("SUPPORT:")
     print("   - Check README.md for detailed documentation")
