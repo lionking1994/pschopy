@@ -618,19 +618,29 @@ class MoodSARTExperimentSimple:
             self.instruction_text.draw()
             self.mood_slider.draw()
             
-            # Only show button and enable advancement if rating is selected
+            # Always show button, but change appearance based on selection status
             if self.mood_slider.getRating() is not None:
                 if not rating_selected:
                     rating_selected = True
                     print(f"📝 Rating selected: {self.mood_slider.getRating()}")
                 
-                # Draw continue button
-                self.continue_button.draw()
-                self.continue_button_text.draw()
+                # Draw active (blue) button
+                self.continue_button.fillColor = [0.0, 0.5, 1.0]  # Bright blue
+                self.continue_button.lineColor = [1.0, 1.0, 1.0]  # White border
+                self.continue_button_text.color = 'white'
+            else:
+                # Draw inactive (greyed out) button
+                self.continue_button.fillColor = [0.3, 0.3, 0.3]  # Dark grey
+                self.continue_button.lineColor = [0.5, 0.5, 0.5]  # Light grey border
+                self.continue_button_text.color = [0.6, 0.6, 0.6]  # Grey text
+            
+            # Always draw the button (active or inactive)
+            self.continue_button.draw()
+            self.continue_button_text.draw()
             
             self.win.flip()
             
-            # Check for button click after rating is selected
+            # Only allow advancement if rating is selected
             if rating_selected:
                 # Check for mouse click on button
                 mouse_pos = mouse.getPos()
