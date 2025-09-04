@@ -65,27 +65,29 @@ print("🔧 CONFIGURING DEMO MODE - FORCED OVERRIDE")
 print(f"   Script: {__file__}")
 print(f"   Config module: {config.__file__}")
 print(f"   Before: DEMO_MODE = {getattr(config, 'DEMO_MODE', 'NOT_SET')}")
-print(f"   Before: SART trials = {config.SART_PARAMS.get('trials_per_block', 'NOT_SET')}")
+print(f"   Before: SART trials = {config.SART_PARAMS.get('total_trials', 'NOT_SET')}")
 
 # FORCE demo mode settings with absolute certainty
 config.DEMO_MODE = True
-config.SART_PARAMS['trials_per_block'] = 10
+config.SART_PARAMS['total_trials'] = 40  # 8 steps x 5 trials each
+config.SART_PARAMS['trials_per_step_min'] = 5
+config.SART_PARAMS['trials_per_step_max'] = 5
 
 # Double-check the assignment worked
 print(f"   After: DEMO_MODE = {config.DEMO_MODE}")
-print(f"   After: SART trials = {config.SART_PARAMS['trials_per_block']}")
+print(f"   After: SART trials = {config.SART_PARAMS['total_trials']}")
 
 # Verify settings with assertions
 try:
     assert config.DEMO_MODE == True, f"DEMO_MODE is {config.DEMO_MODE}, should be True"
-    assert config.SART_PARAMS['trials_per_block'] == 10, f"SART trials is {config.SART_PARAMS['trials_per_block']}, should be 10"
+    assert config.SART_PARAMS['total_trials'] == 40, f"SART trials is {config.SART_PARAMS['total_trials']}, should be 40"
     print("✅ Configuration verification PASSED")
 except AssertionError as e:
     print(f"❌ Configuration verification FAILED: {e}")
     sys.exit(1)
 
 print("🎯 DEMO MODE ENABLED (FORCED)")
-print(f"   📊 SART trials per block: {config.SART_PARAMS['trials_per_block']} (reduced from 120)")
+print(f"   📊 SART trials total: {config.SART_PARAMS['total_trials']} in {config.SART_PARAMS['steps_per_block']} steps (reduced from 120)")
 print(f"   📝 Velten statements: 3 per phase (reduced from 12)")
 print(f"   ⏱️  Total estimated time: ~15-20 minutes")
 print("=" * 60)
@@ -115,7 +117,7 @@ try:
     import main_experiment
     main_config = main_experiment.config
     print(f"   Main experiment config DEMO_MODE: {main_config.DEMO_MODE}")
-    print(f"   Main experiment config SART trials: {main_config.SART_PARAMS['trials_per_block']}")
+    print(f"   Main experiment config SART trials: {main_config.SART_PARAMS['total_trials']}")
     
 except Exception as e:
     print(f"❌ Import error: {e}")
@@ -131,7 +133,7 @@ def main():
         # Final configuration verification before creating experiment
         print("🔍 FINAL CONFIGURATION CHECK:")
         print(f"   config.DEMO_MODE: {config.DEMO_MODE}")
-        print(f"   config.SART_PARAMS['trials_per_block']: {config.SART_PARAMS['trials_per_block']}")
+        print(f"   config.SART_PARAMS['total_trials']: {config.SART_PARAMS['total_trials']}")
         
         # Create and run experiment with Mac-specific error handling
         if sys.platform == 'darwin':

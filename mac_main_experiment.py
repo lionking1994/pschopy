@@ -40,7 +40,7 @@ from config import experiment_config as config
 # Ensure demo mode is disabled for main experiment
 config.DEMO_MODE = False
 print("🎯 FULL EXPERIMENT MODE")
-print(f"   📊 SART trials per block: {config.SART_PARAMS['trials_per_block']}")
+print(f"   📊 SART trials total: {config.SART_PARAMS['total_trials']} (in {config.SART_PARAMS['steps_per_block']} steps)")
 print(f"   📝 Velten statements: 12 per phase (full)")
 print(f"   ⏱️  Total estimated time: ~45-60 minutes")
 print()
