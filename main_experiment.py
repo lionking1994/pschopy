@@ -41,10 +41,10 @@ class MoodSARTExperimentSimple:
         # Check if demo mode is enabled
         if config.DEMO_MODE:
             print("🎯 DEMO MODE ACTIVE:")
-            print(f"   📊 SART blocks: {config.SART_PARAMS['trials_per_block']} trials each (shortened)")
+            print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials total in 8 steps (shortened)")
             print(f"   📝 Velten statements: 3 per phase (shortened from 12)")
             print(f"   ⏱️  Velten duration: {config.TIMING['velten_statement_duration']}s per statement (same as main)")
-            print(f"   🧠 MW probes: Every {config.SART_PARAMS['probe_interval_min']}-{config.SART_PARAMS['probe_interval_max']} trials (same as main)")
+            print(f"   🧠 MW probes: After each of 8 steps ({config.SART_PARAMS['trials_per_step_min']}-{config.SART_PARAMS['trials_per_step_max']} trials per step)")
             print(f"   🎬 Videos and other phases: Same as main experiment")
             print()
         
@@ -1416,7 +1416,7 @@ class MoodSARTExperimentSimple:
         
         # Generate trial sequence with exactly 15% No-Go trials (digit 3)
         trials = []
-        total_trials = config.SART_PARAMS['trials_per_block']
+        total_trials = config.SART_PARAMS['total_trials']
         
         # Calculate exact number of No-Go trials (15% of total)
         nogo_trials = int(total_trials * 0.15)  # 18 trials out of 120
@@ -1447,71 +1447,79 @@ class MoodSARTExperimentSimple:
         
         print(f"📊 SART Block {block_number} ({condition}): Generated {nogo_trials} No-Go trials ({nogo_trials/total_trials*100:.1f}%) out of {total_trials} total trials")
         
-        # FIXED: Initialize probe timing - probes occur DURING the block
-        # Schedule probes at random intervals (every 13-17 trials as per config)
-        probe_trials = []
-        current_trial = random.randint(config.SART_PARAMS['probe_interval_min'], config.SART_PARAMS['probe_interval_max'])
-        while current_trial < config.SART_PARAMS['trials_per_block']:
-            probe_trials.append(current_trial)
-            current_trial += random.randint(config.SART_PARAMS['probe_interval_min'], config.SART_PARAMS['probe_interval_max'])
+        # Generate step sizes that total exactly 120 trials
+        steps = config.SART_PARAMS['steps_per_block']  # 8 steps
+        min_per_step = config.SART_PARAMS['trials_per_step_min']  # 13
+        max_per_step = config.SART_PARAMS['trials_per_step_max']  # 17
         
-        print(f"Scheduled probes for trials: {probe_trials}")
+        # Generate step sizes
+        step_sizes = []
+        remaining_trials = total_trials
+        
+        for i in range(steps - 1):  # First 7 steps
+            # Calculate constraints for this step
+            remaining_steps = steps - i
+            max_possible = min(max_per_step, remaining_trials - min_per_step * (remaining_steps - 1))
+            min_possible = max(min_per_step, remaining_trials - max_per_step * (remaining_steps - 1))
+            
+            # Choose random size within constraints
+            step_size = random.randint(min_possible, max_possible)
+            step_sizes.append(step_size)
+            remaining_trials -= step_size
+        
+        # Last step gets remaining trials
+        step_sizes.append(remaining_trials)
+        
+        print(f"📊 Step sizes: {step_sizes} (total: {sum(step_sizes)})")
         
         # Initialize performance tracking
-        correct_responses = 0
-        total_responses = 0
-        commission_errors = 0  # Responding to targets when shouldn't
-        omission_errors = 0    # Not responding to non-targets when should
-        target_trials = 0
-        non_target_trials = 0
-        total_rt = 0
-        rt_count = 0
+        total_correct = 0
+        total_rts = []
         
-        print(f"\n🎯 Starting SART Block {block_number} ({condition})")
+        print(f"\n🎯 Starting SART Block {block_number} ({condition}) - 8 steps with probes")
         print("=" * 60)
         
-        # Run trials
-        for trial in trials:
-            # FIXED: Check if it's time for a mind-wandering probe BEFORE the trial
-            if trial['trial_number'] in probe_trials:
-                self.run_mind_wandering_probe_likert(condition, block_number, trial['trial_number'])
-            
-            # Run SART trial
-            response, rt, accuracy = self.run_sart_trial(trial, condition, block_number, cue_circle)
-            
-            # Update performance metrics
-            if trial['is_target']:
-                target_trials += 1
-                if response is not None:
-                    commission_errors += 1
-                else:
-                    correct_responses += 1
-            else:
-                non_target_trials += 1
-                if response is None:
-                    omission_errors += 1
-                elif response in ['left', 'right']:
-                    if accuracy == 1:
-                        correct_responses += 1
-                    if rt is not None:
-                        total_rt += rt
-                        rt_count += 1
-            
-            total_responses += 1
+        # Run 8 steps with probes
+        trial_index = 0
         
-        # Print block summary
+        for step_num in range(1, steps + 1):
+            step_size = step_sizes[step_num - 1]
+            print(f"\n📍 Step {step_num}/{steps}: {step_size} trials")
+            
+            # Run trials for this step
+            step_correct = 0
+            for i in range(step_size):
+                trial = trials[trial_index]
+                response, rt, accuracy = self.run_sart_trial(trial, condition, block_number, cue_circle)
+                
+                if accuracy == 1:
+                    step_correct += 1
+                    total_correct += 1
+                if rt is not None:
+                    total_rts.append(rt)
+                
+                trial_index += 1
+            
+            # Mind-wandering probe after each step
+            print(f"📝 Mind-wandering probe after step {step_num}")
+            self.run_mind_wandering_probe_slider(condition, block_number, step_num)
+            
+            print(f"✅ Step {step_num} completed: {step_correct}/{step_size} correct")
+        
+        # Final summary
         print("=" * 60)
         print(f"📊 SART Block {block_number} Summary:")
-        print(f"   Overall Accuracy: {correct_responses}/{total_responses} ({correct_responses/total_responses*100:.1f}%)")
-        commission_pct = (commission_errors/target_trials*100) if target_trials > 0 else 0
-        omission_pct = (omission_errors/non_target_trials*100) if non_target_trials > 0 else 0
-        print(f"   Commission Errors: {commission_errors}/{target_trials} targets ({commission_pct:.1f}%)")
-        print(f"   Omission Errors: {omission_errors}/{non_target_trials} non-targets ({omission_pct:.1f}%)")
-        if rt_count > 0:
-            avg_rt = total_rt / rt_count
-            print(f"   Average RT: {avg_rt*1000:.0f}ms (n={rt_count})")
+        print(f"   Total Steps: {steps}")
+        print(f"   Total Trials: {trial_index}")
+        print(f"   Total Probes: {steps}")
+        print(f"   Overall Accuracy: {total_correct}/{total_trials} ({100*total_correct/total_trials:.1f}%)")
+        
+        if total_rts:
+            avg_rt = sum(total_rts) / len(total_rts)
+            print(f"   Average RT: {avg_rt*1000:.0f}ms (n={len(total_rts)})")
+        
         print("=" * 60)
-        print(f"🏁 SART Block {block_number} ({condition}) COMPLETED - Returning to main experiment flow")
+        print(f"🏁 SART Block {block_number} ({condition}) COMPLETED")
         
         # CRITICAL: Return control to main experiment
         return

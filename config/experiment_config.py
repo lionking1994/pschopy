@@ -184,11 +184,12 @@ VELTEN_SET_MAPPING = {
 SART_PARAMS = {
     'digits': list(range(10)),  # 0-9
     'target_digit': 3,  # No-go stimulus for inhibition condition
-    'trials_per_block': 120,
+    'total_trials': 120,  # Total trials across all steps
+    'steps_per_block': 8,  # 8 steps per SART block
+    'trials_per_step_min': 13,  # Minimum trials per step
+    'trials_per_step_max': 17,  # Maximum trials per step
     'stimulus_duration': 0.5,  # 500ms
     'isi_duration': 0.9,  # 900ms inter-stimulus interval
-    'probe_interval_min': 13,
-    'probe_interval_max': 17,
     'response_keys': ['left', 'right']
 }
 
