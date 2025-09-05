@@ -215,6 +215,25 @@ class MoodSARTExperimentSimple:
             bold=True   # Bold text for better visibility
         )
         
+        # Continue button for mind-wandering probe sliders (same as mood rating)
+        self.mw_continue_button = visual.Rect(
+            win=self.win,
+            width=200,
+            height=60,
+            pos=(0, -200),  # Position below sliders
+            fillColor=[0.0, 0.5, 1.0],  # Brighter blue button
+            lineColor=[1.0, 1.0, 1.0]   # White border for better visibility
+        )
+        
+        self.mw_continue_button_text = visual.TextStim(
+            win=self.win,
+            text="Continue",
+            pos=(0, -200),  # Position below sliders
+            color='white',
+            height=28,  # Larger text
+            bold=True   # Bold text for better visibility
+        )
+        
         # MODERN: Mind-wandering probe sliders - 7-point discrete scales (no line, smaller height for smaller marker)
         self.mw_tut_slider = visual.Slider(
             win=self.win,
@@ -1340,15 +1359,18 @@ class MoodSARTExperimentSimple:
         print(f"   FMT (thoughts moving freely): {fmt_rating}/7")
     
     def run_mind_wandering_probe_slider(self, condition, block_number, trial_number):
-        """Present mind-wandering probes using slider with custom tick marks"""
+        """Present mind-wandering probes using slider with custom tick marks and Continue button"""
         print(f"Presenting mind-wandering probe at trial {trial_number}")
+        
+        mouse = event.Mouse(win=self.win)
         
         # TUT probe
         self.instruction_text.text = config.MW_PROBES['tut']
         self.mw_tut_slider.reset()
+        tut_rating_selected = False
         
-        # Show TUT slider and wait for rating
-        while self.mw_tut_slider.getRating() is None:
+        # Show TUT slider with button and wait for rating + button click or keyboard
+        while True:
             self.instruction_text.draw()
             self.mw_tut_slider.draw()
             # Draw horizontal line
@@ -1414,22 +1436,33 @@ class MoodSARTExperimentSimple:
             cue_circle = self.non_inhibition_cue
             self.show_instruction('sart_non_inhibition', condition_cue=cue_circle)
         
-        # Generate trial sequence with exactly 15% No-Go trials (digit 3)
+        # Generate trial sequence with 15% target digit (3) for RI condition, or 0% for NRI condition
         trials = []
         total_trials = config.SART_PARAMS['total_trials']
         
-        # Calculate exact number of No-Go trials (15% of total)
-        nogo_trials = int(total_trials * 0.15)  # 18 trials out of 120
-        go_trials = total_trials - nogo_trials  # 102 trials
-        
-        # Create digit list with correct proportions
-        digit_list = []
-        # Add No-Go trials (digit 3)
-        digit_list.extend([3] * nogo_trials)
-        # Add Go trials (other digits 0-2, 4-9) - distribute evenly
-        other_digits = [d for d in config.SART_PARAMS['digits'] if d != 3]  # [0,1,2,4,5,6,7,8,9]
-        for i in range(go_trials):
-            digit_list.append(other_digits[i % len(other_digits)])
+        if condition == 'RI':  # Response Inhibition - include target digit 3 at 15%
+            # Calculate exact number of target trials (15% of total for this condition)
+            target_trials = int(total_trials * 0.15)  # 18 trials out of 120
+            non_target_trials = total_trials - target_trials  # 102 trials
+            
+            # Create digit list with correct proportions
+            digit_list = []
+            # Add target trials (digit 3)
+            digit_list.extend([3] * target_trials)
+            # Add non-target trials (other digits 0-2, 4-9) - distribute evenly
+            other_digits = [d for d in config.SART_PARAMS['digits'] if d != 3]  # [0,1,2,4,5,6,7,8,9]
+            for i in range(non_target_trials):
+                digit_list.append(other_digits[i % len(other_digits)])
+            
+            print(f"📊 SART Block {block_number} ({condition}): Generated {target_trials} target trials (digit 3) ({target_trials/total_trials*100:.1f}%) out of {total_trials} total trials")
+        else:  # NRI - Non-Response Inhibition - no target digit 3
+            # All trials are non-target (digits 0-2, 4-9) - distribute evenly
+            other_digits = [d for d in config.SART_PARAMS['digits'] if d != 3]  # [0,1,2,4,5,6,7,8,9]
+            digit_list = []
+            for i in range(total_trials):
+                digit_list.append(other_digits[i % len(other_digits)])
+            
+            print(f"📊 SART Block {block_number} ({condition}): Generated 0 target trials (digit 3) - all digits are non-targets for NRI condition")
         
         # Shuffle to randomize order
         random.shuffle(digit_list)
@@ -1444,8 +1477,6 @@ class MoodSARTExperimentSimple:
                 'position': position,
                 'is_target': digit == config.SART_PARAMS['target_digit'] and condition == 'RI'
             })
-        
-        print(f"📊 SART Block {block_number} ({condition}): Generated {nogo_trials} No-Go trials ({nogo_trials/total_trials*100:.1f}%) out of {total_trials} total trials")
         
         # Generate step sizes that total exactly 120 trials
         steps = config.SART_PARAMS['steps_per_block']  # 8 steps
