@@ -642,7 +642,7 @@ class MoodSARTExperimentSimple:
                 if not rating_selected:
                     rating_selected = True
                     print(f"📝 Rating selected: {self.mood_slider.getRating()}")
-                
+            
                 # Draw active (blue) button
                 self.continue_button.fillColor = [0.0, 0.5, 1.0]  # Bright blue
                 self.continue_button.lineColor = [1.0, 1.0, 1.0]  # White border
@@ -676,7 +676,7 @@ class MoodSARTExperimentSimple:
                         print("📝 Continue button clicked")
                     if keyboard_advance:
                         print("📝 Keyboard advance used")
-                    break
+                break
             
             # Check for escape
             keys = event.getKeys()
@@ -1367,7 +1367,6 @@ class MoodSARTExperimentSimple:
         # TUT probe
         self.instruction_text.text = config.MW_PROBES['tut']
         self.mw_tut_slider.reset()
-        tut_rating_selected = False
         
         # Show TUT slider with button and wait for rating + button click or keyboard
         while True:
@@ -1381,11 +1380,40 @@ class MoodSARTExperimentSimple:
             # Draw text labels at start and end
             self.mw_start_label.draw()
             self.mw_end_label.draw()
+            
+            # Check if rating has been made
+            current_rating = self.mw_tut_slider.getRating()
+            rating_made = current_rating is not None
+            
+            # Draw Continue button with appropriate styling
+            if rating_made:
+                # Active button - blue with white border
+                self.mw_continue_button.fillColor = [0.0, 0.5, 1.0]
+                self.mw_continue_button.lineColor = [1.0, 1.0, 1.0]
+                self.mw_continue_button_text.color = [1.0, 1.0, 1.0]
+            else:
+                # Inactive button - grey
+                self.mw_continue_button.fillColor = [0.5, 0.5, 0.5]
+                self.mw_continue_button.lineColor = [0.7, 0.7, 0.7]
+                self.mw_continue_button_text.color = [0.8, 0.8, 0.8]
+            
+            self.mw_continue_button.draw()
+            self.mw_continue_button_text.draw()
             self.win.flip()
             
             # Check for escape
             if 'escape' in event.getKeys():
                 core.quit()
+            
+            # Check for advancement (only if rating made)
+            if rating_made:
+                # Check for mouse click on button
+                if mouse.isPressedIn(self.mw_continue_button):
+                    break
+                # Check for keyboard press
+                keys = event.getKeys(['space', 'return'])
+                if keys:
+                    break
         
         tut_rating = self.mw_tut_slider.getRating()
         
@@ -1393,8 +1421,8 @@ class MoodSARTExperimentSimple:
         self.instruction_text.text = config.MW_PROBES['fmt']
         self.mw_fmt_slider.reset()
         
-        # Show FMT slider and wait for rating
-        while self.mw_fmt_slider.getRating() is None:
+        # Show FMT slider with button and wait for rating + button click or keyboard
+        while True:
             self.instruction_text.draw()
             self.mw_fmt_slider.draw()
             # Draw horizontal line
@@ -1405,11 +1433,40 @@ class MoodSARTExperimentSimple:
             # Draw text labels at start and end
             self.mw_start_label.draw()
             self.mw_end_label.draw()
+            
+            # Check if rating has been made
+            current_rating = self.mw_fmt_slider.getRating()
+            rating_made = current_rating is not None
+            
+            # Draw Continue button with appropriate styling
+            if rating_made:
+                # Active button - blue with white border
+                self.mw_continue_button.fillColor = [0.0, 0.5, 1.0]
+                self.mw_continue_button.lineColor = [1.0, 1.0, 1.0]
+                self.mw_continue_button_text.color = [1.0, 1.0, 1.0]
+            else:
+                # Inactive button - grey
+                self.mw_continue_button.fillColor = [0.5, 0.5, 0.5]
+                self.mw_continue_button.lineColor = [0.7, 0.7, 0.7]
+                self.mw_continue_button_text.color = [0.8, 0.8, 0.8]
+            
+            self.mw_continue_button.draw()
+            self.mw_continue_button_text.draw()
             self.win.flip()
             
             # Check for escape
             if 'escape' in event.getKeys():
                 core.quit()
+            
+            # Check for advancement (only if rating made)
+            if rating_made:
+                # Check for mouse click on button
+                if mouse.isPressedIn(self.mw_continue_button):
+                    break
+                # Check for keyboard press
+                keys = event.getKeys(['space', 'return'])
+                if keys:
+                    break
         
         fmt_rating = self.mw_fmt_slider.getRating()
         
