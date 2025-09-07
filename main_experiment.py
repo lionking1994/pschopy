@@ -593,6 +593,16 @@ class MoodSARTExperimentSimple:
         if not self.participant_data or not self.data_filename:
             return  # Skip saving if participant info is not yet collected
             
+        # Use the same headers as defined in init_csv_file to ensure consistent column order
+        headers = [
+            'participant_code', 'email', 'condition', 'session_start',
+            'phase', 'block_type', 'block_number', 'trial_number',
+            'stimulus', 'stimulus_position', 'response', 'correct_response',
+            'accuracy', 'reaction_time', 'timestamp',
+            'mood_rating', 'mw_tut_rating', 'mw_fmt_rating', 'velten_rating',
+            'video_file', 'audio_file', 'velten_statement'
+        ]
+            
         # Add participant info to trial data
         full_data = {
             'participant_code': self.participant_data['participant_code'],
@@ -603,9 +613,9 @@ class MoodSARTExperimentSimple:
             **trial_data
         }
         
-        # Write to CSV
+        # Write to CSV using consistent headers
         with open(self.data_filename, 'a', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=full_data.keys())
+            writer = csv.DictWriter(f, fieldnames=headers)
             writer.writerow(full_data)
     
     def show_instruction(self, instruction_key, wait_for_key=True, condition_cue=None):
@@ -659,29 +669,22 @@ class MoodSARTExperimentSimple:
             
             self.win.flip()
             
-            # Only allow advancement if rating is selected
-            if rating_selected:
-                # Check for mouse click on button
-                mouse_pos = mouse.getPos()
-                button_clicked = (mouse.getPressed()[0] and 
-                                -100 < mouse_pos[0] < 100 and 
-                                -330 < mouse_pos[1] < -270)
-                
-                # Check for keyboard input (spacebar or enter)
-                keys = event.getKeys()
-                keyboard_advance = any(key in ['space', 'return'] for key in keys)
-                
-                if button_clicked or keyboard_advance:
-                    if button_clicked:
-                        print("📝 Continue button clicked")
-                    if keyboard_advance:
-                        print("📝 Keyboard advance used")
-                break
-            
             # Check for escape
             keys = event.getKeys()
             if 'escape' in keys:
                 core.quit()
+            
+            # Only allow advancement if rating is selected
+            if rating_selected:
+                # Check for mouse click on button (using same method as MW probes)
+                if mouse.isPressedIn(self.continue_button):
+                    print("📝 Continue button clicked")
+                    break
+                
+                # Check for keyboard input (spacebar or enter)
+                if any(key in ['space', 'return'] for key in keys):
+                    print("📝 Keyboard advance used")
+                    break
         
         rating = self.mood_slider.getRating()
         
@@ -1653,18 +1656,18 @@ class MoodSARTExperimentSimple:
         keys_pressed = []
         
         while self.trial_clock.getTime() - start_time < config.SART_PARAMS['stimulus_duration']:
-            # Check for key presses but don't break the loop
-            keys = self.kb.getKeys(keyList=['left', 'right', 'escape'], waitRelease=False)
-        if keys:
-                # Record the first key press (if multiple keys pressed)
-            if not keys_pressed:
-                keys_pressed = keys
-                # Handle escape immediately
-            if keys[0].name == 'escape':
-                self.cleanup_and_quit()
-            
-            # Small wait to prevent excessive CPU usage
-            core.wait(0.001)
+             # Check for key presses but don't break the loop
+             keys = self.kb.getKeys(keyList=['left', 'right', 'escape'], waitRelease=False)
+             if keys:
+                 # Record the first key press (if multiple keys pressed)
+                 if not keys_pressed:
+                     keys_pressed = keys
+                 # Handle escape immediately
+                 if keys[0].name == 'escape':
+                     self.cleanup_and_quit()
+             
+             # Small wait to prevent excessive CPU usage
+             core.wait(0.001)
         
         # Process the first key press if any occurred
         if keys_pressed:
