@@ -1643,9 +1643,10 @@ class MoodSARTExperimentSimple:
         cue_circle.draw()
         self.win.flip()
         
-        # Start trial clock
+        # Start trial clock and record stimulus onset time
         self.trial_clock.reset()
         self.kb.clearEvents()
+        stimulus_onset_time = self.trial_clock.getTime()  # Record when stimulus appeared
         
         # FIXED: Display digit for full duration regardless of key press
         response = None
@@ -1657,6 +1658,7 @@ class MoodSARTExperimentSimple:
         start_time = self.trial_clock.getTime()
         keys_pressed = []
         stimulus_shown = True
+        first_key_time = None  # Track when the first key was pressed
         
         while self.trial_clock.getTime() - start_time < total_trial_duration:
             current_time = self.trial_clock.getTime() - start_time
@@ -1674,6 +1676,7 @@ class MoodSARTExperimentSimple:
                 # Record the first key press (if multiple keys pressed)
                 if not keys_pressed:
                     keys_pressed = keys
+                    first_key_time = self.trial_clock.getTime()  # Record when key was pressed
                 # Handle escape immediately
                 if keys[0].name == 'escape':
                     self.cleanup_and_quit()
@@ -1684,7 +1687,8 @@ class MoodSARTExperimentSimple:
         # Process the first key press if any occurred
         if keys_pressed:
             response = keys_pressed[0].name
-            rt = keys_pressed[0].rt
+            # FIXED: Calculate RT from stimulus onset to key press time
+            rt = first_key_time - stimulus_onset_time
         
         # Determine accuracy
         if correct_response is None:  # Target trial (should not respond)
