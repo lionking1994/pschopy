@@ -1652,15 +1652,15 @@ class MoodSARTExperimentSimple:
         response = None
         rt = None
         
-        # FIXED: Collect keys during the full trial duration (stimulus + ISI)
-        # This ensures we capture even long reaction times that occur after stimulus offset
-        total_trial_duration = config.SART_PARAMS['stimulus_duration'] + config.SART_PARAMS['isi_duration']
+        # FIXED: Collect keys during extended response window for mind-wandering research
+        # This ensures we capture even very slow reaction times that indicate mind-wandering
+        max_response_time = config.SART_PARAMS['max_response_time']
         start_time = self.trial_clock.getTime()
         keys_pressed = []
         stimulus_shown = True
         first_key_time = None  # Track when the first key was pressed
         
-        while self.trial_clock.getTime() - start_time < total_trial_duration:
+        while self.trial_clock.getTime() - start_time < max_response_time:
             current_time = self.trial_clock.getTime() - start_time
             
             # Hide stimulus after stimulus_duration, show fixation + cue for remainder
@@ -1711,6 +1711,14 @@ class MoodSARTExperimentSimple:
         
         rt_display = f"{rt*1000:.0f}ms" if rt else "no response"
         print(f"SART Trial {trial['trial_number']:2d}: Digit={trial['digit']} {trial['position']:>5} | {trial_type:>12} | {result:>15} | RT: {rt_display:>10}")
+        
+        # Ensure proper inter-trial interval after extended response window
+        # If response came early, wait for remaining ISI time
+        elapsed_time = self.trial_clock.getTime() - start_time
+        min_trial_time = config.SART_PARAMS['stimulus_duration'] + config.SART_PARAMS['isi_duration']
+        if elapsed_time < min_trial_time:
+            remaining_time = min_trial_time - elapsed_time
+            core.wait(remaining_time)
         
         # Save trial data
         self.save_trial_data({
