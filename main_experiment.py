@@ -1651,42 +1651,46 @@ class MoodSARTExperimentSimple:
         response = None
         rt = None
         
-        # Collect keys during the full stimulus duration
+        # FIXED: Collect keys during the full trial duration (stimulus + ISI)
+        # This ensures we capture even long reaction times that occur after stimulus offset
+        total_trial_duration = config.SART_PARAMS['stimulus_duration'] + config.SART_PARAMS['isi_duration']
         start_time = self.trial_clock.getTime()
         keys_pressed = []
+        stimulus_shown = True
         
-        while self.trial_clock.getTime() - start_time < config.SART_PARAMS['stimulus_duration']:
-             # Check for key presses but don't break the loop
-             keys = self.kb.getKeys(keyList=['left', 'right', 'escape'], waitRelease=False)
-             if keys:
-                 # Record the first key press (if multiple keys pressed)
-                 if not keys_pressed:
-                     keys_pressed = keys
-                 # Handle escape immediately
-                 if keys[0].name == 'escape':
-                     self.cleanup_and_quit()
-             
-             # Small wait to prevent excessive CPU usage
-             core.wait(0.001)
+        while self.trial_clock.getTime() - start_time < total_trial_duration:
+            current_time = self.trial_clock.getTime() - start_time
+            
+            # Hide stimulus after stimulus_duration, show fixation + cue for remainder
+            if stimulus_shown and current_time >= config.SART_PARAMS['stimulus_duration']:
+                self.fixation.draw()
+                cue_circle.draw()
+                self.win.flip()
+                stimulus_shown = False
+            
+            # Check for key presses throughout the entire trial duration
+            keys = self.kb.getKeys(keyList=['left', 'right', 'escape'], waitRelease=False)
+            if keys:
+                # Record the first key press (if multiple keys pressed)
+                if not keys_pressed:
+                    keys_pressed = keys
+                # Handle escape immediately
+                if keys[0].name == 'escape':
+                    self.cleanup_and_quit()
+            
+            # Small wait to prevent excessive CPU usage
+            core.wait(0.001)
         
         # Process the first key press if any occurred
         if keys_pressed:
             response = keys_pressed[0].name
             rt = keys_pressed[0].rt
         
-        # FIXED: Keep fixation cross and condition indicator visible during ISI
-        self.fixation.draw()
-        cue_circle.draw()
-        self.win.flip()
-        
         # Determine accuracy
         if correct_response is None:  # Target trial (should not respond)
             accuracy = 1 if response is None else 0
         else:  # Non-target trial (should respond correctly)
             accuracy = 1 if response == correct_response else 0
-        
-        # Wait for ISI
-        core.wait(config.SART_PARAMS['isi_duration'])
         
         # Print trial metrics to console
         if correct_response is None:  # Target trial (should not respond)
