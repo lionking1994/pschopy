@@ -189,8 +189,8 @@ SART_PARAMS = {
     'trials_per_step_min': 13,  # Minimum trials per step
     'trials_per_step_max': 17,  # Maximum trials per step
     'stimulus_duration': 0.5,  # 500ms
-    'isi_duration': 0.9,  # 900ms inter-stimulus interval
-    'max_response_time': 3.0,  # 3000ms - Extended window for mind-wandering responses
+    'isi_duration': 2.0,  # 2000ms inter-stimulus interval
+    'max_response_time': 2.5,  # 2500ms - Response window covers full trial duration
     'response_keys': ['left', 'right']
 }
 
