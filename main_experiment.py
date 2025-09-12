@@ -1593,7 +1593,7 @@ class MoodSARTExperimentSimple:
             
             # Mind-wandering probe after each step
             print(f"📝 Mind-wandering probe after step {step_num}")
-            self.run_mind_wandering_probe_slider(condition, block_number, step_num)
+            self.run_mind_wandering_probe_keyboard(condition, block_number, step_num)
             
             print(f"✅ Step {step_num} completed: {step_correct}/{step_size} correct")
         
