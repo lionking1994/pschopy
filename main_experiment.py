@@ -1847,7 +1847,7 @@ Current rating: {} - {}"""
             
             # Temporarily move text higher to avoid overlap with slider
             original_pos = self.instruction_text.pos
-            self.instruction_text.pos = (0, 200)  # Move to top center of screen
+            self.instruction_text.pos = (0, 150)  # Move to top center of screen
             self.instruction_text.alignText = 'center'
             self.instruction_text.anchorHoriz = 'center'
             
@@ -1900,7 +1900,7 @@ Current rating: {} - {}"""
             
             # Temporarily move text higher to avoid overlap with slider
             original_pos = self.instruction_text.pos
-            self.instruction_text.pos = (0, 200)  # Move to top center of screen
+            self.instruction_text.pos = (0, 150)  # Move to top center of screen
             self.instruction_text.alignText = 'center'
             self.instruction_text.anchorHoriz = 'center'
             
