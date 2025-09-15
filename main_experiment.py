@@ -706,44 +706,38 @@ class MoodSARTExperimentSimple:
         return rating
     
     def collect_mood_rating_arrow_keys(self, phase):
-        """Collect mood rating using A/D keys for slider control and Enter to confirm"""
-        print(f"📊 COLLECTING MOOD RATING (A/D Keys): {phase}")
+        """Collect mood rating using interactive slider and Enter to confirm"""
+        print(f"📊 COLLECTING MOOD RATING (Interactive Slider): {phase}")
         
         # Start at middle of scale (50)
         current_value = 50
         self.mood_slider.reset()
         self.mood_slider.rating = current_value
         
-        # Updated instruction text for A/D key control
-        instruction_text = """Please rate your current mood using the A/D keys to adjust the slider.
+        # Updated instruction text for interactive slider
+        instruction_text = """Please rate your current mood by moving the slider.
 
 Press ENTER when you're satisfied with your rating.
-
-A = decrease rating, D = increase rating
 
 Current rating: {}/100"""
         
         while True:
+            # Check if slider has been moved and update current_value
+            if self.mood_slider.getRating() is not None:
+                current_value = int(self.mood_slider.getRating())
+            
             # Update instruction with current value
             self.instruction_text.text = instruction_text.format(current_value)
             self.instruction_text.draw()
             self.mood_slider.draw()
             self.win.flip()
             
-            # Get keyboard input
-            keys = event.waitKeys()
+            # Get keyboard input (non-blocking)
+            keys = event.getKeys()
             
             for key in keys:
                 if key == 'escape':
                     core.quit()
-                elif key == 'a':
-                    # Decrease rating (minimum 0)
-                    current_value = max(0, current_value - 1)
-                    self.mood_slider.rating = current_value
-                elif key == 'd':
-                    # Increase rating (maximum 100)
-                    current_value = min(100, current_value + 1)
-                    self.mood_slider.rating = current_value
                 elif key == 'return':
                     # Confirm selection
                     print(f"😊 Mood Rating ({phase}): {current_value}/100")
@@ -1306,20 +1300,18 @@ Current rating: {}/100"""
                     return int(key)
     
     def get_velten_rating_slider(self):
-        """UPDATED: Get Velten rating using slider with A/D keys (7-point scale as specified in PDF)"""
-        print(f"📝 COLLECTING VELTEN RATING (A/D Keys)")
+        """UPDATED: Get Velten rating using interactive slider (7-point scale as specified in PDF)"""
+        print(f"📝 COLLECTING VELTEN RATING (Interactive Slider)")
         
         # Start at middle of scale (4)
         current_value = 4
         self.velten_slider.reset()
         self.velten_slider.rating = current_value
         
-        # Updated instruction text for A/D key control
+        # Updated instruction text for interactive slider
         instruction_text = """To what extent were you able to bring your mood in line with this statement?
 
-Use A/D keys to adjust the slider, then press ENTER to confirm.
-
-A = decrease rating, D = increase rating
+Move the slider to adjust your rating, then press ENTER to confirm.
 
 1 = Not at all ... 7 = Completely
 
@@ -1329,6 +1321,10 @@ Current rating: {} - {}"""
         scale_labels = config.VELTEN_RATING_SCALE['scale_labels']
         
         while True:
+            # Check if slider has been moved and update current_value
+            if self.velten_slider.getRating() is not None:
+                current_value = int(self.velten_slider.getRating())
+            
             # Update instruction with current value and label
             current_label = scale_labels[current_value - 1]  # Convert to 0-based index
             self.instruction_text.text = instruction_text.format(current_value, current_label)
@@ -1344,20 +1340,12 @@ Current rating: {} - {}"""
             self.velten_end_label.draw()
             self.win.flip()
             
-            # Get keyboard input
-            keys = event.waitKeys()
+            # Get keyboard input (non-blocking)
+            keys = event.getKeys()
             
             for key in keys:
                 if key == 'escape':
                     core.quit()
-                elif key == 'a':
-                    # Decrease rating (minimum 1)
-                    current_value = max(1, current_value - 1)
-                    self.velten_slider.rating = current_value
-                elif key == 'd':
-                    # Increase rating (maximum 7)
-                    current_value = min(7, current_value + 1)
-                    self.velten_slider.rating = current_value
                 elif key == 'return':
                     # Confirm selection
                     print(f"📝 Velten Statement Rating: {current_value}/7 (mood alignment)")
@@ -1834,13 +1822,17 @@ Current rating: {} - {}"""
         
         instruction_text = """{}
 
-A/D keys = adjust slider | ENTER = confirm
+Move slider to adjust rating | ENTER = confirm
 
 Current rating: {} - {}"""
         
         scale_labels = ['Not at all', 'Slightly', 'Somewhat', 'Moderately', 'Quite a bit', 'Very much', 'Completely']
         
         while True:
+            # Check if slider has been moved and update tut_value
+            if self.mw_tut_slider.getRating() is not None:
+                tut_value = int(self.mw_tut_slider.getRating())
+            
             # Update instruction with current value and label
             current_label = scale_labels[tut_value - 1]  # Convert to 0-based index
             self.instruction_text.text = instruction_text.format(config.MW_PROBES['tut'], tut_value, current_label)
@@ -1868,20 +1860,12 @@ Current rating: {} - {}"""
             self.instruction_text.alignText = 'left'
             self.instruction_text.anchorHoriz = 'left'
             
-            # Get keyboard input
-            keys = event.waitKeys()
+            # Get keyboard input (non-blocking)
+            keys = event.getKeys()
             
             for key in keys:
                 if key == 'escape':
                     core.quit()
-                elif key == 'a':
-                    # Decrease rating (minimum 1)
-                    tut_value = max(1, tut_value - 1)
-                    self.mw_tut_slider.rating = tut_value
-                elif key == 'd':
-                    # Increase rating (maximum 7)
-                    tut_value = min(7, tut_value + 1)
-                    self.mw_tut_slider.rating = tut_value
                 elif key == 'return':
                     # Confirm selection
                     break
@@ -1894,6 +1878,10 @@ Current rating: {} - {}"""
         self.mw_fmt_slider.rating = fmt_value
         
         while True:
+            # Check if slider has been moved and update fmt_value
+            if self.mw_fmt_slider.getRating() is not None:
+                fmt_value = int(self.mw_fmt_slider.getRating())
+            
             # Update instruction with current value and label
             current_label = scale_labels[fmt_value - 1]  # Convert to 0-based index
             self.instruction_text.text = instruction_text.format(config.MW_PROBES['fmt'], fmt_value, current_label)
@@ -1921,20 +1909,12 @@ Current rating: {} - {}"""
             self.instruction_text.alignText = 'left'
             self.instruction_text.anchorHoriz = 'left'
             
-            # Get keyboard input
-            keys = event.waitKeys()
+            # Get keyboard input (non-blocking)
+            keys = event.getKeys()
             
             for key in keys:
                 if key == 'escape':
                     core.quit()
-                elif key == 'a':
-                    # Decrease rating (minimum 1)
-                    fmt_value = max(1, fmt_value - 1)
-                    self.mw_fmt_slider.rating = fmt_value
-                elif key == 'd':
-                    # Increase rating (maximum 7)
-                    fmt_value = min(7, fmt_value + 1)
-                    self.mw_fmt_slider.rating = fmt_value
                 elif key == 'return':
                     # Confirm selection
                     break
