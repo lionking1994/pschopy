@@ -705,6 +705,61 @@ class MoodSARTExperimentSimple:
         
         return rating
     
+    def collect_mood_rating_arrow_keys(self, phase):
+        """Collect mood rating using arrow keys for slider control and Enter to confirm"""
+        print(f"📊 COLLECTING MOOD RATING (Arrow Keys): {phase}")
+        
+        # Start at middle of scale (50)
+        current_value = 50
+        self.mood_slider.reset()
+        self.mood_slider.rating = current_value
+        
+        # Updated instruction text for arrow key control
+        instruction_text = """Please rate your current mood using the LEFT/RIGHT arrow keys to adjust the slider.
+
+Press ENTER when you're satisfied with your rating.
+
+Current rating: {}/100"""
+        
+        while True:
+            # Update instruction with current value
+            self.instruction_text.text = instruction_text.format(current_value)
+            self.instruction_text.draw()
+            self.mood_slider.draw()
+            self.win.flip()
+            
+            # Get keyboard input
+            keys = event.waitKeys()
+            
+            for key in keys:
+                if key == 'escape':
+                    core.quit()
+                elif key == 'left':
+                    # Decrease rating (minimum 0)
+                    current_value = max(0, current_value - 1)
+                    self.mood_slider.rating = current_value
+                elif key == 'right':
+                    # Increase rating (maximum 100)
+                    current_value = min(100, current_value + 1)
+                    self.mood_slider.rating = current_value
+                elif key == 'return':
+                    # Confirm selection
+                    print(f"😊 Mood Rating ({phase}): {current_value}/100")
+                    print(f"✅ Mood rating collection completed")
+                    
+                    # Save mood rating data
+                    self.save_trial_data({
+                        'phase': f'mood_rating_{phase}',
+                        'mood_rating': current_value,
+                        'block_type': None, 'block_number': None, 'trial_number': None,
+                        'stimulus': None, 'stimulus_position': None, 'response': None,
+                        'correct_response': None, 'accuracy': None, 'reaction_time': None,
+                        'mw_tut_rating': None, 'mw_fmt_rating': None, 'velten_rating': None,
+                        'video_file': None, 'audio_file': None, 'velten_statement': None
+                    })
+                    
+                    return current_value
+    
     def collect_mood_rating_keyboard(self, phase):
         """Fallback: Collect mood rating using keyboard input (1-9)"""
         prompt = f"{config.INSTRUCTIONS['mood_rating']['text']}\n\nPress keys 1-9 (1=Very Negative, 5=Neutral, 9=Very Positive):"
@@ -1923,14 +1978,14 @@ class MoodSARTExperimentSimple:
             
             # Step 1: Baseline mood scale
             print(f"\n📍 STEP 1 - Baseline Mood Scale")
-            self.collect_mood_rating('baseline')
+            self.collect_mood_rating_arrow_keys('baseline')
             
             # Step 2: Mood Induction 1
             print(f"\n📍 STEP 2 - Mood Induction 1")
             induction_1 = order['mood_inductions'][0]
             self.run_mood_induction(induction_1[0], induction_1[1], 1)
             print(f"\n📍 STEP 3 - Post-Induction Mood Scale")
-            self.collect_mood_rating('post_induction_1')
+            self.collect_mood_rating_arrow_keys('post_induction_1')
             
             # Step 4: SART 1
             print(f"\n📍 STEP 4 - SART Block 1 ({order['sart_conditions'][0]})")
@@ -1942,7 +1997,7 @@ class MoodSARTExperimentSimple:
             induction_2 = order['mood_inductions'][1]
             self.run_mood_induction(induction_2[0], induction_2[1], 2)
             print(f"\n📍 STEP 6 - Post-Induction Mood Scale")
-            self.collect_mood_rating('post_induction_2')
+            self.collect_mood_rating_arrow_keys('post_induction_2')
             
             # Step 7: SART 2
             print(f"\n📍 STEP 7 - SART Block 2 ({order['sart_conditions'][1]})")
@@ -1953,14 +2008,14 @@ class MoodSARTExperimentSimple:
             print(f"\n📍 STEP 8 - Neutral Washout")
             self.run_neutral_washout()
             print(f"\n📍 STEP 9 - Post-Washout Mood Scale")
-            self.collect_mood_rating('post_washout')
+            self.collect_mood_rating_arrow_keys('post_washout')
             
             # Step 10: Mood Induction 3
             print(f"\n📍 STEP 10 - Mood Induction 3")
             induction_3 = order['mood_inductions'][2]
             self.run_mood_induction(induction_3[0], induction_3[1], 3)
             print(f"\n📍 STEP 11 - Post-Induction Mood Scale")
-            self.collect_mood_rating('post_induction_3')
+            self.collect_mood_rating_arrow_keys('post_induction_3')
             
             # Step 12: SART 3
             print(f"\n📍 STEP 12 - SART Block 3 ({order['sart_conditions'][2]})")
@@ -1972,7 +2027,7 @@ class MoodSARTExperimentSimple:
             induction_4 = order['mood_inductions'][3]
             self.run_mood_induction(induction_4[0], induction_4[1], 4)
             print(f"\n📍 STEP 14 - Post-Induction Mood Scale")
-            self.collect_mood_rating('post_induction_4')
+            self.collect_mood_rating_arrow_keys('post_induction_4')
             
             # Step 15: SART 4
             print(f"\n📍 STEP 15 - SART Block 4 ({order['sart_conditions'][3]})")
@@ -1984,7 +2039,7 @@ class MoodSARTExperimentSimple:
                 print(f"\n📍 STEP 16 - Mood Repair (Required for Order {condition})")
                 self.run_mood_repair()
                 print(f"\n📍 STEP 17 - Final Mood Scale")
-                self.collect_mood_rating('post_repair')
+                self.collect_mood_rating_arrow_keys('post_repair')
             else:
                 print(f"\n📍 No Mood Repair needed for Order {condition} (ends with positive induction)")
             

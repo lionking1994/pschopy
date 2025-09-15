@@ -70,7 +70,7 @@ psychopy/
 ### **Participant Input Methods:**
 - **Email Entry**: Type email address and press ENTER
 - **Condition Selection**: Press keys 1-4 for counterbalancing conditions
-- **Mood Ratings**: Press keys 1-9 (1=Very Negative, 9=Very Positive)
+- **Mood Ratings**: Use LEFT/RIGHT arrow keys to adjust slider (0-100), press ENTER to confirm
 - **Velten Ratings**: Press keys 1-7 (1=Not at all, 7=Completely)
 - **Mind-Wandering Probes**: Press keys 1-7 (1=Not at all, 7=Very much)
 - **SART Responses**: Use LEFT/RIGHT arrow keys
