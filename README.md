@@ -70,9 +70,9 @@ psychopy/
 ### **Participant Input Methods:**
 - **Email Entry**: Type email address and press ENTER
 - **Condition Selection**: Press keys 1-4 for counterbalancing conditions
-- **Mood Ratings**: Use LEFT/RIGHT arrow keys to adjust slider (0-100), press ENTER to confirm
-- **Velten Ratings**: Press keys 1-7 (1=Not at all, 7=Completely)
-- **Mind-Wandering Probes**: Press keys 1-7 (1=Not at all, 7=Very much)
+- **Mood Ratings**: Use A/D keys to adjust slider (0-100), press ENTER to confirm
+- **Velten Ratings**: Use A/D keys to adjust slider (1-7), press ENTER to confirm
+- **Mind-Wandering Probes**: Use A/D keys to adjust slider (1-7), press ENTER to confirm
 - **SART Responses**: Use LEFT/RIGHT arrow keys
 - **Exit Anytime**: Press ESCAPE key
 
@@ -93,7 +93,7 @@ psychopy/
 - **Audio Playback**: Music plays properly during Velten statements
 - **Video Loading**: Preloading system eliminates delays
 - **Modern Components**: Uses Slider instead of legacy RatingScale
-- **GUI Compatibility**: Keyboard input avoids dialog issues
+- **Consistent Input**: All ratings use A/D keys + ENTER for consistent keyboard-only experience
 
 ### **Experimental Components:**
 - **4 Counterbalancing Conditions** - Fully implemented
