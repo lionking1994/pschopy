@@ -1834,11 +1834,7 @@ Current rating: {} - {}"""
         
         instruction_text = """{}
 
-Use A/D keys to adjust the slider, then press ENTER to confirm.
-
-A = decrease rating, D = increase rating
-
-1 = Not at all ... 7 = Very much
+A/D keys = adjust slider | ENTER = confirm
 
 Current rating: {} - {}"""
         
@@ -1848,6 +1844,13 @@ Current rating: {} - {}"""
             # Update instruction with current value and label
             current_label = scale_labels[tut_value - 1]  # Convert to 0-based index
             self.instruction_text.text = instruction_text.format(config.MW_PROBES['tut'], tut_value, current_label)
+            
+            # Temporarily move text higher to avoid overlap with slider
+            original_pos = self.instruction_text.pos
+            self.instruction_text.pos = (0, 200)  # Move to top center of screen
+            self.instruction_text.alignText = 'center'
+            self.instruction_text.anchorHoriz = 'center'
+            
             self.instruction_text.draw()
             self.mw_tut_slider.draw()
             # Draw horizontal line
@@ -1859,6 +1862,11 @@ Current rating: {} - {}"""
             self.mw_start_label.draw()
             self.mw_end_label.draw()
             self.win.flip()
+            
+            # Restore original text position and alignment for other parts of experiment
+            self.instruction_text.pos = original_pos
+            self.instruction_text.alignText = 'left'
+            self.instruction_text.anchorHoriz = 'left'
             
             # Get keyboard input
             keys = event.waitKeys()
@@ -1889,6 +1897,13 @@ Current rating: {} - {}"""
             # Update instruction with current value and label
             current_label = scale_labels[fmt_value - 1]  # Convert to 0-based index
             self.instruction_text.text = instruction_text.format(config.MW_PROBES['fmt'], fmt_value, current_label)
+            
+            # Temporarily move text higher to avoid overlap with slider
+            original_pos = self.instruction_text.pos
+            self.instruction_text.pos = (0, 200)  # Move to top center of screen
+            self.instruction_text.alignText = 'center'
+            self.instruction_text.anchorHoriz = 'center'
+            
             self.instruction_text.draw()
             self.mw_fmt_slider.draw()
             # Draw horizontal line
@@ -1900,6 +1915,11 @@ Current rating: {} - {}"""
             self.mw_start_label.draw()
             self.mw_end_label.draw()
             self.win.flip()
+            
+            # Restore original text position and alignment for other parts of experiment
+            self.instruction_text.pos = original_pos
+            self.instruction_text.alignText = 'left'
+            self.instruction_text.anchorHoriz = 'left'
             
             # Get keyboard input
             keys = event.waitKeys()
