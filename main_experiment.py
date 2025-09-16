@@ -715,8 +715,9 @@ class MoodSARTExperimentSimple:
         self.mood_slider.rating = current_value
         
         # Updated instruction text for interactive slider
-        instruction_text = """Please rate your current mood by moving the slider.
+        instruction_text = """Please rate your current mood by moving the slider or using A/D keys.
 
+A = decrease rating, D = increase rating
 Press ENTER when you're satisfied with your rating.
 
 Current rating: {}/100"""
@@ -725,6 +726,11 @@ Current rating: {}/100"""
         mouse = event.Mouse(win=self.win)
         tolerance_px = 10  # extra vertical band around slider for easier targeting
         
+        # Keyboard for continuous A/D hold support
+        kb = keyboard.Keyboard()
+        key_repeat_interval = 0.08  # seconds between repeats when holding key
+        _last_repeat_time = core.getTime()
+         
         while True:
             # Handle mouse wheel scrolling when cursor is over the slider
             wheel_y = mouse.getWheelRel()[1]
@@ -746,6 +752,24 @@ Current rating: {}/100"""
                         current_value = new_value
                         self.mood_slider.rating = current_value
             
+            # Handle continuous A/D key holds
+            now = core.getTime()
+            if now - _last_repeat_time >= key_repeat_interval:
+                held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
+                held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+                if held_a and not held_d:
+                    new_value = max(0, current_value - 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.mood_slider.rating = current_value
+                        _last_repeat_time = now
+                elif held_d and not held_a:
+                    new_value = min(100, current_value + 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.mood_slider.rating = current_value
+                        _last_repeat_time = now
+            
             # Also update based on direct slider movement (drag/click)
             slider_val = self.mood_slider.getRating()
             if slider_val is not None:
@@ -763,6 +787,18 @@ Current rating: {}/100"""
             for key in keys:
                 if key == 'escape':
                     core.quit()
+                elif key == 'a':
+                    # Decrease rating (minimum 0)
+                    new_value = max(0, current_value - 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.mood_slider.rating = current_value
+                elif key == 'd':
+                    # Increase rating (maximum 100)
+                    new_value = min(100, current_value + 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.mood_slider.rating = current_value
                 elif key == 'return':
                     # Confirm selection
                     print(f"😊 Mood Rating ({phase}): {current_value}/100")
@@ -1336,8 +1372,9 @@ Current rating: {}/100"""
         # Updated instruction text for interactive slider
         instruction_text = """To what extent were you able to bring your mood in line with this statement?
 
-Move the slider to adjust your rating, then press ENTER to confirm.
+Move the slider or use A/D keys to adjust your rating, then press ENTER to confirm.
 
+A = decrease rating, D = increase rating
 1 = Not at all ... 7 = Completely
 
 Current rating: {} - {}"""
@@ -1347,6 +1384,11 @@ Current rating: {} - {}"""
         # Mouse for wheel scrolling support over the slider
         mouse = event.Mouse(win=self.win)
         tolerance_px = 10  # extra vertical band around slider for easier targeting
+        
+        # Keyboard for continuous A/D hold support
+        kb = keyboard.Keyboard()
+        key_repeat_interval = 0.18  # seconds between repeats when holding key
+        _last_repeat_time = core.getTime()
         
         while True:
             # Handle mouse wheel scrolling when cursor is over the slider
@@ -1368,6 +1410,24 @@ Current rating: {} - {}"""
                     if new_value != current_value:
                         current_value = new_value
                         self.velten_slider.rating = current_value
+            
+            # Handle continuous A/D key holds
+            now = core.getTime()
+            if now - _last_repeat_time >= key_repeat_interval:
+                held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
+                held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+                if held_a and not held_d:
+                    new_value = max(1, current_value - 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.velten_slider.rating = current_value
+                        _last_repeat_time = now
+                elif held_d and not held_a:
+                    new_value = min(7, current_value + 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.velten_slider.rating = current_value
+                        _last_repeat_time = now
             
             # Also update based on direct slider movement (drag/click)
             slider_val = self.velten_slider.getRating()
@@ -1395,6 +1455,18 @@ Current rating: {} - {}"""
             for key in keys:
                 if key == 'escape':
                     core.quit()
+                elif key == 'a':
+                    # Decrease rating (minimum 1)
+                    new_value = max(1, current_value - 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.velten_slider.rating = current_value
+                elif key == 'd':
+                    # Increase rating (maximum 7)
+                    new_value = min(7, current_value + 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.velten_slider.rating = current_value
                 elif key == 'return':
                     # Confirm selection
                     print(f"📝 Velten Statement Rating: {current_value}/7 (mood alignment)")
