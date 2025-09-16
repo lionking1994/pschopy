@@ -721,10 +721,35 @@ Press ENTER when you're satisfied with your rating.
 
 Current rating: {}/100"""
         
+        # Mouse for wheel scrolling support over the slider
+        mouse = event.Mouse(win=self.win)
+        tolerance_px = 10  # extra vertical band around slider for easier targeting
+        
         while True:
-            # Check if slider has been moved and update current_value
-            if self.mood_slider.getRating() is not None:
-                current_value = int(self.mood_slider.getRating())
+            # Handle mouse wheel scrolling when cursor is over the slider
+            wheel_y = mouse.getWheelRel()[1]
+            if wheel_y != 0:
+                # Cursor position
+                mouse_x, mouse_y = mouse.getPos()
+                # Slider geometry (in pix)
+                slider_center_x, slider_center_y = self.mood_slider.pos
+                slider_width, slider_height = self.mood_slider.size
+                left_x = slider_center_x - (slider_width / 2.0)
+                right_x = slider_center_x + (slider_width / 2.0)
+                top_y = slider_center_y + (slider_height / 2.0) + tolerance_px
+                bottom_y = slider_center_y - (slider_height / 2.0) - tolerance_px
+                # Only apply wheel change if cursor is within slider band
+                if (bottom_y <= mouse_y <= top_y) and (left_x <= mouse_x <= right_x):
+                    delta = 1 if wheel_y > 0 else -1
+                    new_value = max(0, min(100, current_value + delta))
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.mood_slider.rating = current_value
+            
+            # Also update based on direct slider movement (drag/click)
+            slider_val = self.mood_slider.getRating()
+            if slider_val is not None:
+                current_value = int(slider_val)
             
             # Update instruction with current value
             self.instruction_text.text = instruction_text.format(current_value)
@@ -1319,11 +1344,35 @@ Current rating: {} - {}"""
         
         # Get scale labels for current value
         scale_labels = config.VELTEN_RATING_SCALE['scale_labels']
+        # Mouse for wheel scrolling support over the slider
+        mouse = event.Mouse(win=self.win)
+        tolerance_px = 10  # extra vertical band around slider for easier targeting
         
         while True:
-            # Check if slider has been moved and update current_value
-            if self.velten_slider.getRating() is not None:
-                current_value = int(self.velten_slider.getRating())
+            # Handle mouse wheel scrolling when cursor is over the slider
+            wheel_y = mouse.getWheelRel()[1]
+            if wheel_y != 0:
+                # Cursor position
+                mouse_x, mouse_y = mouse.getPos()
+                # Slider geometry (in pix)
+                slider_center_x, slider_center_y = self.velten_slider.pos
+                slider_width, slider_height = self.velten_slider.size
+                left_x = slider_center_x - (slider_width / 2.0)
+                right_x = slider_center_x + (slider_width / 2.0)
+                top_y = slider_center_y + (slider_height / 2.0) + tolerance_px
+                bottom_y = slider_center_y - (slider_height / 2.0) - tolerance_px
+                # Only apply wheel change if cursor is within slider band
+                if (bottom_y <= mouse_y <= top_y) and (left_x <= mouse_x <= right_x):
+                    delta = 1 if wheel_y > 0 else -1
+                    new_value = max(1, min(7, current_value + delta))
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.velten_slider.rating = current_value
+            
+            # Also update based on direct slider movement (drag/click)
+            slider_val = self.velten_slider.getRating()
+            if slider_val is not None:
+                current_value = int(slider_val)
             
             # Update instruction with current value and label
             current_label = scale_labels[current_value - 1]  # Convert to 0-based index
