@@ -1387,7 +1387,7 @@ Current rating: {} - {}"""
         
         # Keyboard for continuous A/D hold support
         kb = keyboard.Keyboard()
-        key_repeat_interval = 0.18  # seconds between repeats when holding key
+        key_repeat_interval = 0.16  # seconds between repeats when holding key
         _last_repeat_time = core.getTime()
         
         while True:
@@ -1411,8 +1411,9 @@ Current rating: {} - {}"""
                         current_value = new_value
                         self.velten_slider.rating = current_value
             
-            # Handle continuous A/D key holds
+            # Handle continuous A/D key holds (only after initial delay)
             now = core.getTime()
+            key_handled_by_hold = False
             if now - _last_repeat_time >= key_repeat_interval:
                 held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
                 held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
@@ -1422,12 +1423,14 @@ Current rating: {} - {}"""
                         current_value = new_value
                         self.velten_slider.rating = current_value
                         _last_repeat_time = now
+                        key_handled_by_hold = True
                 elif held_d and not held_a:
                     new_value = min(7, current_value + 1)
                     if new_value != current_value:
                         current_value = new_value
                         self.velten_slider.rating = current_value
                         _last_repeat_time = now
+                        key_handled_by_hold = True
             
             # Also update based on direct slider movement (drag/click)
             slider_val = self.velten_slider.getRating()
@@ -1449,28 +1452,31 @@ Current rating: {} - {}"""
             self.velten_end_label.draw()
             self.win.flip()
             
-            # Get keyboard input (non-blocking)
-            keys = event.getKeys()
-            
-            for key in keys:
-                if key == 'escape':
-                    core.quit()
-                elif key == 'a':
-                    # Decrease rating (minimum 1)
-                    new_value = max(1, current_value - 1)
-                    if new_value != current_value:
-                        current_value = new_value
-                        self.velten_slider.rating = current_value
-                elif key == 'd':
-                    # Increase rating (maximum 7)
-                    new_value = min(7, current_value + 1)
-                    if new_value != current_value:
-                        current_value = new_value
-                        self.velten_slider.rating = current_value
-                elif key == 'return':
-                    # Confirm selection
-                    print(f"📝 Velten Statement Rating: {current_value}/7 (mood alignment)")
-                    return current_value
+            # Get keyboard input (non-blocking) - only process if not handled by hold logic
+            if not key_handled_by_hold:
+                keys = event.getKeys()
+                
+                for key in keys:
+                    if key == 'escape':
+                        core.quit()
+                    elif key == 'a':
+                        # Decrease rating (minimum 1)
+                        new_value = max(1, current_value - 1)
+                        if new_value != current_value:
+                            current_value = new_value
+                            self.velten_slider.rating = current_value
+                            _last_repeat_time = now  # Reset timer for hold detection
+                    elif key == 'd':
+                        # Increase rating (maximum 7)
+                        new_value = min(7, current_value + 1)
+                        if new_value != current_value:
+                            current_value = new_value
+                            self.velten_slider.rating = current_value
+                            _last_repeat_time = now  # Reset timer for hold detection
+                    elif key == 'return':
+                        # Confirm selection
+                        print(f"📝 Velten Statement Rating: {current_value}/7 (mood alignment)")
+                        return current_value
     
     def get_velten_rating_likert(self):
         """Get Velten rating using numbered Likert scale (1-7)"""
