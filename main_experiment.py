@@ -1981,16 +1981,65 @@ Current rating: {} - {}"""
         
         instruction_text = """{}
 
-Move slider to adjust rating | ENTER = confirm
+Move slider or use A/D keys to adjust rating | ENTER = confirm
+
+A = decrease rating, D = increase rating
 
 Current rating: {} - {}"""
         
         scale_labels = ['Not at all', 'Slightly', 'Somewhat', 'Moderately', 'Quite a bit', 'Very much', 'Completely']
         
+        # Mouse for wheel scrolling and keyboard for continuous hold
+        mouse = event.Mouse(win=self.win)
+        kb = keyboard.Keyboard()
+        tolerance_px = 10
+        key_repeat_interval = 0.16
+        _last_repeat_time = core.getTime()
+        
         while True:
-            # Check if slider has been moved and update tut_value
-            if self.mw_tut_slider.getRating() is not None:
-                tut_value = int(self.mw_tut_slider.getRating())
+            # Handle mouse wheel scrolling when cursor is over the slider
+            wheel_y = mouse.getWheelRel()[1]
+            if wheel_y != 0:
+                mouse_x, mouse_y = mouse.getPos()
+                slider_center_x, slider_center_y = self.mw_tut_slider.pos
+                slider_width, slider_height = self.mw_tut_slider.size
+                left_x = slider_center_x - (slider_width / 2.0)
+                right_x = slider_center_x + (slider_width / 2.0)
+                top_y = slider_center_y + (slider_height / 2.0) + tolerance_px
+                bottom_y = slider_center_y - (slider_height / 2.0) - tolerance_px
+                if (bottom_y <= mouse_y <= top_y) and (left_x <= mouse_x <= right_x):
+                    delta = 1 if wheel_y > 0 else -1
+                    new_value = max(1, min(7, tut_value + delta))
+                    if new_value != tut_value:
+                        tut_value = new_value
+                        self.mw_tut_slider.rating = tut_value
+            
+            # Handle continuous A/D key holds
+            now = core.getTime()
+            key_handled_by_hold = False
+            if now - _last_repeat_time >= key_repeat_interval:
+                held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
+                held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+                
+                if held_a and not held_d:
+                    new_value = max(1, tut_value - 1)
+                    if new_value != tut_value:
+                        tut_value = new_value
+                        self.mw_tut_slider.rating = tut_value
+                        _last_repeat_time = now
+                        key_handled_by_hold = True
+                elif held_d and not held_a:
+                    new_value = min(7, tut_value + 1)
+                    if new_value != tut_value:
+                        tut_value = new_value
+                        self.mw_tut_slider.rating = tut_value
+                        _last_repeat_time = now
+                        key_handled_by_hold = True
+            
+            # Also update based on direct slider movement
+            slider_val = self.mw_tut_slider.getRating()
+            if slider_val is not None:
+                tut_value = int(slider_val)
             
             # Update instruction with current value and label
             current_label = scale_labels[tut_value - 1]  # Convert to 0-based index
@@ -2019,15 +2068,30 @@ Current rating: {} - {}"""
             self.instruction_text.alignText = 'left'
             self.instruction_text.anchorHoriz = 'left'
             
-            # Get keyboard input (non-blocking)
-            keys = event.getKeys()
-            
-            for key in keys:
-                if key == 'escape':
-                    core.quit()
-                elif key == 'return':
-                    # Confirm selection
-                    break
+            # Get keyboard input (non-blocking) - only process if not handled by hold logic
+            if not key_handled_by_hold:
+                keys = event.getKeys()
+                
+                for key in keys:
+                    if key == 'escape':
+                        core.quit()
+                    elif key == 'a':
+                        # Decrease rating (minimum 1)
+                        new_value = max(1, tut_value - 1)
+                        if new_value != tut_value:
+                            tut_value = new_value
+                            self.mw_tut_slider.rating = tut_value
+                            _last_repeat_time = now
+                    elif key == 'd':
+                        # Increase rating (maximum 7)
+                        new_value = min(7, tut_value + 1)
+                        if new_value != tut_value:
+                            tut_value = new_value
+                            self.mw_tut_slider.rating = tut_value
+                            _last_repeat_time = now
+                    elif key == 'return':
+                        # Confirm selection
+                        break
         
         tut_rating = tut_value
         
@@ -2036,10 +2100,55 @@ Current rating: {} - {}"""
         self.mw_fmt_slider.reset()
         self.mw_fmt_slider.rating = fmt_value
         
+        # Reset mouse and keyboard for FMT probe
+        mouse = event.Mouse(win=self.win)
+        kb = keyboard.Keyboard()
+        _last_repeat_time = core.getTime()
+        
         while True:
-            # Check if slider has been moved and update fmt_value
-            if self.mw_fmt_slider.getRating() is not None:
-                fmt_value = int(self.mw_fmt_slider.getRating())
+            # Handle mouse wheel scrolling when cursor is over the slider
+            wheel_y = mouse.getWheelRel()[1]
+            if wheel_y != 0:
+                mouse_x, mouse_y = mouse.getPos()
+                slider_center_x, slider_center_y = self.mw_fmt_slider.pos
+                slider_width, slider_height = self.mw_fmt_slider.size
+                left_x = slider_center_x - (slider_width / 2.0)
+                right_x = slider_center_x + (slider_width / 2.0)
+                top_y = slider_center_y + (slider_height / 2.0) + tolerance_px
+                bottom_y = slider_center_y - (slider_height / 2.0) - tolerance_px
+                if (bottom_y <= mouse_y <= top_y) and (left_x <= mouse_x <= right_x):
+                    delta = 1 if wheel_y > 0 else -1
+                    new_value = max(1, min(7, fmt_value + delta))
+                    if new_value != fmt_value:
+                        fmt_value = new_value
+                        self.mw_fmt_slider.rating = fmt_value
+            
+            # Handle continuous A/D key holds
+            now = core.getTime()
+            key_handled_by_hold = False
+            if now - _last_repeat_time >= key_repeat_interval:
+                held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
+                held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+                
+                if held_a and not held_d:
+                    new_value = max(1, fmt_value - 1)
+                    if new_value != fmt_value:
+                        fmt_value = new_value
+                        self.mw_fmt_slider.rating = fmt_value
+                        _last_repeat_time = now
+                        key_handled_by_hold = True
+                elif held_d and not held_a:
+                    new_value = min(7, fmt_value + 1)
+                    if new_value != fmt_value:
+                        fmt_value = new_value
+                        self.mw_fmt_slider.rating = fmt_value
+                        _last_repeat_time = now
+                        key_handled_by_hold = True
+            
+            # Also update based on direct slider movement
+            slider_val = self.mw_fmt_slider.getRating()
+            if slider_val is not None:
+                fmt_value = int(slider_val)
             
             # Update instruction with current value and label
             current_label = scale_labels[fmt_value - 1]  # Convert to 0-based index
@@ -2068,15 +2177,30 @@ Current rating: {} - {}"""
             self.instruction_text.alignText = 'left'
             self.instruction_text.anchorHoriz = 'left'
             
-            # Get keyboard input (non-blocking)
-            keys = event.getKeys()
-            
-            for key in keys:
-                if key == 'escape':
-                    core.quit()
-                elif key == 'return':
-                    # Confirm selection
-                    break
+            # Get keyboard input (non-blocking) - only process if not handled by hold logic
+            if not key_handled_by_hold:
+                keys = event.getKeys()
+                
+                for key in keys:
+                    if key == 'escape':
+                        core.quit()
+                    elif key == 'a':
+                        # Decrease rating (minimum 1)
+                        new_value = max(1, fmt_value - 1)
+                        if new_value != fmt_value:
+                            fmt_value = new_value
+                            self.mw_fmt_slider.rating = fmt_value
+                            _last_repeat_time = now
+                    elif key == 'd':
+                        # Increase rating (maximum 7)
+                        new_value = min(7, fmt_value + 1)
+                        if new_value != fmt_value:
+                            fmt_value = new_value
+                            self.mw_fmt_slider.rating = fmt_value
+                            _last_repeat_time = now
+                    elif key == 'return':
+                        # Confirm selection
+                        break
         
         fmt_rating = fmt_value
         
