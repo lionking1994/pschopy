@@ -1417,19 +1417,34 @@ Current rating: {} - {}"""
             if now - _last_repeat_time >= key_repeat_interval:
                 held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
                 held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+                
+                # DEBUG: Show hold detection
+                if held_a or held_d:
+                    print(f"🔍 DEBUG - Hold detected: A={bool(held_a)}, D={bool(held_d)}, interval={now - _last_repeat_time:.3f}s")
+                
                 if held_a and not held_d:
+                    print(f"🔍 DEBUG - A key held, current_value: {current_value}")
                     new_value = max(1, current_value - 1)
                     if new_value != current_value:
                         current_value = new_value
                         self.velten_slider.rating = current_value
                         _last_repeat_time = now
                         key_handled_by_hold = True
+                        print(f"🔍 DEBUG - A hold: value changed to {current_value}")
+                    else:
+                        print(f"🔍 DEBUG - A hold: already at minimum (1)")
+                        key_handled_by_hold = True
                 elif held_d and not held_a:
+                    print(f"🔍 DEBUG - D key held, current_value: {current_value}")
                     new_value = min(7, current_value + 1)
                     if new_value != current_value:
                         current_value = new_value
                         self.velten_slider.rating = current_value
                         _last_repeat_time = now
+                        key_handled_by_hold = True
+                        print(f"🔍 DEBUG - D hold: value changed to {current_value}")
+                    else:
+                        print(f"🔍 DEBUG - D hold: already at maximum (7)")
                         key_handled_by_hold = True
             
             # Also update based on direct slider movement (drag/click)
@@ -1456,27 +1471,44 @@ Current rating: {} - {}"""
             if not key_handled_by_hold:
                 keys = event.getKeys()
                 
+                # DEBUG: Show all keyboard input
+                if keys:
+                    print(f"🔍 DEBUG - Keys pressed: {keys}")
+                
                 for key in keys:
+                    print(f"🔍 DEBUG - Processing key: '{key}'")
                     if key == 'escape':
+                        print("🔍 DEBUG - ESCAPE key detected, quitting...")
                         core.quit()
                     elif key == 'a':
+                        print(f"🔍 DEBUG - A key pressed, current_value: {current_value}")
                         # Decrease rating (minimum 1)
                         new_value = max(1, current_value - 1)
                         if new_value != current_value:
                             current_value = new_value
                             self.velten_slider.rating = current_value
                             _last_repeat_time = now  # Reset timer for hold detection
+                            print(f"🔍 DEBUG - A key: value changed to {current_value}")
+                        else:
+                            print(f"🔍 DEBUG - A key: already at minimum (1)")
                     elif key == 'd':
+                        print(f"🔍 DEBUG - D key pressed, current_value: {current_value}")
                         # Increase rating (maximum 7)
                         new_value = min(7, current_value + 1)
                         if new_value != current_value:
                             current_value = new_value
                             self.velten_slider.rating = current_value
                             _last_repeat_time = now  # Reset timer for hold detection
+                            print(f"🔍 DEBUG - D key: value changed to {current_value}")
+                        else:
+                            print(f"🔍 DEBUG - D key: already at maximum (7)")
                     elif key == 'return':
+                        print(f"🔍 DEBUG - ENTER key pressed, confirming rating: {current_value}")
                         # Confirm selection
                         print(f"📝 Velten Statement Rating: {current_value}/7 (mood alignment)")
                         return current_value
+                    else:
+                        print(f"🔍 DEBUG - Unhandled key: '{key}'")
     
     def get_velten_rating_likert(self):
         """Get Velten rating using numbered Likert scale (1-7)"""
