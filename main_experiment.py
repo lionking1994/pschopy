@@ -714,22 +714,22 @@ class MoodSARTExperimentSimple:
         self.mood_slider.reset()
         self.mood_slider.rating = current_value
         
-        # Updated instruction text for interactive slider
+        # Updated instruction text for interactive slider (removed x/100 display)
         instruction_text = """Please rate your current mood by moving the slider or using A/D keys.
 
 A = decrease rating, D = increase rating
-Press ENTER when you're satisfied with your rating.
-
-Current rating: {}/100"""
+Press ENTER when you're satisfied with your rating."""
         
         # Mouse for wheel scrolling support over the slider
         mouse = event.Mouse(win=self.win)
         tolerance_px = 10  # extra vertical band around slider for easier targeting
         
-        # Keyboard for continuous A/D hold support
+        # Keyboard for continuous A/D hold support and single press debounce
         kb = keyboard.Keyboard()
         key_repeat_interval = 0.08  # seconds between repeats when holding key
+        single_press_debounce = 0.15  # debounce time for single presses
         _last_repeat_time = core.getTime()
+        _last_single_press_time = 0
          
         while True:
             # Handle mouse wheel scrolling when cursor is over the slider
@@ -775,30 +775,37 @@ Current rating: {}/100"""
             if slider_val is not None:
                 current_value = int(slider_val)
             
-            # Update instruction with current value
-            self.instruction_text.text = instruction_text.format(current_value)
+            # Update instruction text (no current value display)
+            self.instruction_text.text = instruction_text
             self.instruction_text.draw()
             self.mood_slider.draw()
             self.win.flip()
             
-            # Get keyboard input (non-blocking)
+            # Get keyboard input (non-blocking) with debounce for single presses
             keys = event.getKeys()
+            current_time = core.getTime()
             
             for key in keys:
                 if key == 'escape':
                     core.quit()
                 elif key == 'a':
-                    # Decrease rating (minimum 0)
-                    new_value = max(0, current_value - 1)
-                    if new_value != current_value:
-                        current_value = new_value
-                        self.mood_slider.rating = current_value
+                    # Decrease rating (minimum 0) - only if enough time has passed since last single press
+                    if current_time - _last_single_press_time >= single_press_debounce:
+                        new_value = max(0, current_value - 1)
+                        if new_value != current_value:
+                            current_value = new_value
+                            self.mood_slider.rating = current_value
+                            _last_single_press_time = current_time
+                            _last_repeat_time = current_time  # Reset repeat timer
                 elif key == 'd':
-                    # Increase rating (maximum 100)
-                    new_value = min(100, current_value + 1)
-                    if new_value != current_value:
-                        current_value = new_value
-                        self.mood_slider.rating = current_value
+                    # Increase rating (maximum 100) - only if enough time has passed since last single press
+                    if current_time - _last_single_press_time >= single_press_debounce:
+                        new_value = min(100, current_value + 1)
+                        if new_value != current_value:
+                            current_value = new_value
+                            self.mood_slider.rating = current_value
+                            _last_single_press_time = current_time
+                            _last_repeat_time = current_time  # Reset repeat timer
                 elif key == 'return':
                     # Confirm selection
                     print(f"😊 Mood Rating ({phase}): {current_value}/100")
@@ -1369,15 +1376,13 @@ Current rating: {}/100"""
         self.velten_slider.reset()
         self.velten_slider.rating = current_value
         
-        # Updated instruction text for interactive slider
+        # Updated instruction text for interactive slider (removed current rating display)
         instruction_text = """To what extent were you able to bring your mood in line with this statement?
 
 Move the slider or use A/D keys to adjust your rating, then press ENTER to confirm.
 
 A = decrease rating, D = increase rating
-1 = Not at all ... 7 = Completely
-
-Current rating: {} - {}"""
+1 = Not at all ... 7 = Completely"""
         
         # Get scale labels for current value
         scale_labels = config.VELTEN_RATING_SCALE['scale_labels']
@@ -1385,10 +1390,12 @@ Current rating: {} - {}"""
         mouse = event.Mouse(win=self.win)
         tolerance_px = 10  # extra vertical band around slider for easier targeting
         
-        # Keyboard for continuous A/D hold support
+        # Keyboard for continuous A/D hold support and single press debounce
         kb = keyboard.Keyboard()
         key_repeat_interval = 0.16  # seconds between repeats when holding key
+        single_press_debounce = 0.15  # debounce time for single presses
         _last_repeat_time = core.getTime()
+        _last_single_press_time = 0
         
         while True:
             # Handle mouse wheel scrolling when cursor is over the slider
@@ -1452,9 +1459,8 @@ Current rating: {} - {}"""
             if slider_val is not None:
                 current_value = int(slider_val)
             
-            # Update instruction with current value and label
-            current_label = scale_labels[current_value - 1]  # Convert to 0-based index
-            self.instruction_text.text = instruction_text.format(current_value, current_label)
+            # Update instruction text (no current value display)
+            self.instruction_text.text = instruction_text
             self.instruction_text.draw()
             self.velten_slider.draw()
             # Draw horizontal line
@@ -1470,6 +1476,7 @@ Current rating: {} - {}"""
             # Get keyboard input (non-blocking) - only process if not handled by hold logic
             if not key_handled_by_hold:
                 keys = event.getKeys()
+                current_time = core.getTime()
                 
                 # DEBUG: Show all keyboard input
                 if keys:
@@ -1482,26 +1489,34 @@ Current rating: {} - {}"""
                         core.quit()
                     elif key == 'a':
                         print(f"🔍 DEBUG - A key pressed, current_value: {current_value}")
-                        # Decrease rating (minimum 1)
-                        new_value = max(1, current_value - 1)
-                        if new_value != current_value:
-                            current_value = new_value
-                            self.velten_slider.rating = current_value
-                            _last_repeat_time = now  # Reset timer for hold detection
-                            print(f"🔍 DEBUG - A key: value changed to {current_value}")
+                        # Decrease rating (minimum 1) - only if enough time has passed since last single press
+                        if current_time - _last_single_press_time >= single_press_debounce:
+                            new_value = max(1, current_value - 1)
+                            if new_value != current_value:
+                                current_value = new_value
+                                self.velten_slider.rating = current_value
+                                _last_single_press_time = current_time
+                                _last_repeat_time = current_time  # Reset timer for hold detection
+                                print(f"🔍 DEBUG - A key: value changed to {current_value}")
+                            else:
+                                print(f"🔍 DEBUG - A key: already at minimum (1)")
                         else:
-                            print(f"🔍 DEBUG - A key: already at minimum (1)")
+                            print(f"🔍 DEBUG - A key: debounced (too soon after last press)")
                     elif key == 'd':
                         print(f"🔍 DEBUG - D key pressed, current_value: {current_value}")
-                        # Increase rating (maximum 7)
-                        new_value = min(7, current_value + 1)
-                        if new_value != current_value:
-                            current_value = new_value
-                            self.velten_slider.rating = current_value
-                            _last_repeat_time = now  # Reset timer for hold detection
-                            print(f"🔍 DEBUG - D key: value changed to {current_value}")
+                        # Increase rating (maximum 7) - only if enough time has passed since last single press
+                        if current_time - _last_single_press_time >= single_press_debounce:
+                            new_value = min(7, current_value + 1)
+                            if new_value != current_value:
+                                current_value = new_value
+                                self.velten_slider.rating = current_value
+                                _last_single_press_time = current_time
+                                _last_repeat_time = current_time  # Reset timer for hold detection
+                                print(f"🔍 DEBUG - D key: value changed to {current_value}")
+                            else:
+                                print(f"🔍 DEBUG - D key: already at maximum (7)")
                         else:
-                            print(f"🔍 DEBUG - D key: already at maximum (7)")
+                            print(f"🔍 DEBUG - D key: debounced (too soon after last press)")
                     elif key == 'return':
                         print(f"🔍 DEBUG - ENTER key pressed, confirming rating: {current_value}")
                         # Confirm selection
