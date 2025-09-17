@@ -2068,30 +2068,56 @@ Current rating: {} - {}"""
             self.instruction_text.alignText = 'left'
             self.instruction_text.anchorHoriz = 'left'
             
-            # Get keyboard input (non-blocking) - only process if not handled by hold logic
-            if not key_handled_by_hold:
-                keys = event.getKeys()
+            # Always check for ENTER key regardless of hold logic (ENTER should never be blocked)
+            all_keys = event.getKeys()
+            if all_keys:
+                print(f"🔍 DEBUG TUT - All keys pressed: {all_keys}")
+                # Check for ENTER key first (always processed)
+                if 'return' in all_keys:
+                    print(f"🔍 DEBUG TUT - ENTER key detected directly, confirming rating: {tut_value}")
+                    print("🔍 DEBUG TUT - Breaking from TUT loop...")
+                    break
+            
+            # Get keyboard input (non-blocking) - only process A/D if not handled by hold logic
+            print(f"🔍 DEBUG TUT - key_handled_by_hold: {key_handled_by_hold}")
+            if not key_handled_by_hold and all_keys:
+                # DEBUG: Show keyboard input for TUT probe
+                print(f"🔍 DEBUG TUT - Processing non-hold keys: {all_keys}")
                 
-                for key in keys:
+                for key in all_keys:
+                    print(f"🔍 DEBUG TUT - Processing key: '{key}'")
                     if key == 'escape':
+                        print("🔍 DEBUG TUT - ESCAPE key detected, quitting...")
                         core.quit()
                     elif key == 'a':
+                        print(f"🔍 DEBUG TUT - A key pressed, current tut_value: {tut_value}")
                         # Decrease rating (minimum 1)
                         new_value = max(1, tut_value - 1)
                         if new_value != tut_value:
                             tut_value = new_value
                             self.mw_tut_slider.rating = tut_value
                             _last_repeat_time = now
+                            print(f"🔍 DEBUG TUT - A key: value changed to {tut_value}")
+                        else:
+                            print(f"🔍 DEBUG TUT - A key: already at minimum (1)")
                     elif key == 'd':
+                        print(f"🔍 DEBUG TUT - D key pressed, current tut_value: {tut_value}")
                         # Increase rating (maximum 7)
                         new_value = min(7, tut_value + 1)
                         if new_value != tut_value:
                             tut_value = new_value
                             self.mw_tut_slider.rating = tut_value
                             _last_repeat_time = now
+                            print(f"🔍 DEBUG TUT - D key: value changed to {tut_value}")
+                        else:
+                            print(f"🔍 DEBUG TUT - D key: already at maximum (7)")
                     elif key == 'return':
+                        print(f"🔍 DEBUG TUT - ENTER key pressed, confirming rating: {tut_value}")
+                        print("🔍 DEBUG TUT - Breaking from TUT loop...")
                         # Confirm selection
                         break
+                    else:
+                        print(f"🔍 DEBUG TUT - Unhandled key: '{key}'")
         
         tut_rating = tut_value
         
@@ -2177,30 +2203,55 @@ Current rating: {} - {}"""
             self.instruction_text.alignText = 'left'
             self.instruction_text.anchorHoriz = 'left'
             
-            # Get keyboard input (non-blocking) - only process if not handled by hold logic
-            if not key_handled_by_hold:
-                keys = event.getKeys()
+            # Always check for ENTER key regardless of hold logic (ENTER should never be blocked)
+            all_keys = event.getKeys()
+            if all_keys:
+                print(f"🔍 DEBUG FMT - All keys pressed: {all_keys}")
+                # Check for ENTER key first (always processed)
+                if 'return' in all_keys:
+                    print(f"🔍 DEBUG FMT - ENTER key detected directly, confirming rating: {fmt_value}")
+                    print("🔍 DEBUG FMT - Breaking from FMT loop...")
+                    break
+            
+            # Get keyboard input (non-blocking) - only process A/D if not handled by hold logic
+            if not key_handled_by_hold and all_keys:
+                # DEBUG: Show keyboard input for FMT probe
+                print(f"🔍 DEBUG FMT - Processing non-hold keys: {all_keys}")
                 
-                for key in keys:
+                for key in all_keys:
+                    print(f"🔍 DEBUG FMT - Processing key: '{key}'")
                     if key == 'escape':
+                        print("🔍 DEBUG FMT - ESCAPE key detected, quitting...")
                         core.quit()
                     elif key == 'a':
+                        print(f"🔍 DEBUG FMT - A key pressed, current fmt_value: {fmt_value}")
                         # Decrease rating (minimum 1)
                         new_value = max(1, fmt_value - 1)
                         if new_value != fmt_value:
                             fmt_value = new_value
                             self.mw_fmt_slider.rating = fmt_value
                             _last_repeat_time = now
+                            print(f"🔍 DEBUG FMT - A key: value changed to {fmt_value}")
+                        else:
+                            print(f"🔍 DEBUG FMT - A key: already at minimum (1)")
                     elif key == 'd':
+                        print(f"🔍 DEBUG FMT - D key pressed, current fmt_value: {fmt_value}")
                         # Increase rating (maximum 7)
                         new_value = min(7, fmt_value + 1)
                         if new_value != fmt_value:
                             fmt_value = new_value
                             self.mw_fmt_slider.rating = fmt_value
                             _last_repeat_time = now
+                            print(f"🔍 DEBUG FMT - D key: value changed to {fmt_value}")
+                        else:
+                            print(f"🔍 DEBUG FMT - D key: already at maximum (7)")
                     elif key == 'return':
+                        print(f"🔍 DEBUG FMT - ENTER key pressed, confirming rating: {fmt_value}")
+                        print("🔍 DEBUG FMT - Breaking from FMT loop...")
                         # Confirm selection
                         break
+                    else:
+                        print(f"🔍 DEBUG FMT - Unhandled key: '{key}'")
         
         fmt_rating = fmt_value
         
