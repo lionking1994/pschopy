@@ -2021,7 +2021,7 @@ Move slider or use A/D keys to adjust rating | ENTER = confirm
 
 A = decrease rating, D = increase rating
 
-Current rating: {} - {}"""
+Current rating: {}"""
         
         scale_labels = ['Not at all', 'Slightly', 'Somewhat', 'Moderately', 'Quite a bit', 'Very much', 'Completely']
         
@@ -2077,9 +2077,9 @@ Current rating: {} - {}"""
             if slider_val is not None:
                 tut_value = int(slider_val)
             
-            # Update instruction with current value and label
+            # Update instruction with current label only (no number)
             current_label = scale_labels[tut_value - 1]  # Convert to 0-based index
-            self.instruction_text.text = instruction_text.format(config.MW_PROBES['tut'], tut_value, current_label)
+            self.instruction_text.text = instruction_text.format(config.MW_PROBES['tut'], current_label)
             
             # Temporarily move text higher to avoid overlap with slider
             original_pos = self.instruction_text.pos
@@ -2212,9 +2212,9 @@ Current rating: {} - {}"""
             if slider_val is not None:
                 fmt_value = int(slider_val)
             
-            # Update instruction with current value and label
+            # Update instruction with current label only (no number)
             current_label = scale_labels[fmt_value - 1]  # Convert to 0-based index
-            self.instruction_text.text = instruction_text.format(config.MW_PROBES['fmt'], fmt_value, current_label)
+            self.instruction_text.text = instruction_text.format(config.MW_PROBES['fmt'], current_label)
             
             # Temporarily move text higher to avoid overlap with slider
             original_pos = self.instruction_text.pos
