@@ -727,9 +727,10 @@ Press ENTER when you're satisfied with your rating."""
         # Keyboard for continuous A/D hold support and single press debounce
         kb = keyboard.Keyboard()
         key_repeat_interval = 0.08  # seconds between repeats when holding key
-        single_press_debounce = 0.15  # debounce time for single presses
+        hold_start_delay = 0.3  # delay before hold behavior starts (300ms)
         _last_repeat_time = core.getTime()
-        _last_single_press_time = 0
+        _key_press_start_time = {'a': None, 'd': None}  # Track when keys were first pressed
+        _key_processed_as_single = {'a': False, 'd': False}  # Track if key was processed as single press
          
         while True:
             # Handle mouse wheel scrolling when cursor is over the slider
@@ -752,23 +753,69 @@ Press ENTER when you're satisfied with your rating."""
                         current_value = new_value
                         self.mood_slider.rating = current_value
             
-            # Handle continuous A/D key holds
+            # Handle keyboard input with proper single press vs hold distinction
             now = core.getTime()
-            if now - _last_repeat_time >= key_repeat_interval:
-                held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
-                held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
-                if held_a and not held_d:
+            
+            # Check for currently held keys
+            held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
+            held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+            
+            # Track key press start times
+            if held_a and _key_press_start_time['a'] is None:
+                _key_press_start_time['a'] = now
+                _key_processed_as_single['a'] = False
+            elif not held_a:
+                _key_press_start_time['a'] = None
+                _key_processed_as_single['a'] = False
+                
+            if held_d and _key_press_start_time['d'] is None:
+                _key_press_start_time['d'] = now
+                _key_processed_as_single['d'] = False
+            elif not held_d:
+                _key_press_start_time['d'] = None
+                _key_processed_as_single['d'] = False
+            
+            # Handle 'A' key (decrease)
+            if held_a and _key_press_start_time['a'] is not None:
+                key_hold_duration = now - _key_press_start_time['a']
+                
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['a']:
+                    # Process as single press (only once)
+                    new_value = max(0, current_value - 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.mood_slider.rating = current_value
+                        _key_processed_as_single['a'] = True
+                        print(f"🔍 DEBUG - A single press: value changed to {current_value}")
+                elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
+                    # Process as continuous hold
                     new_value = max(0, current_value - 1)
                     if new_value != current_value:
                         current_value = new_value
                         self.mood_slider.rating = current_value
                         _last_repeat_time = now
-                elif held_d and not held_a:
+                        print(f"🔍 DEBUG - A hold: value changed to {current_value}")
+            
+            # Handle 'D' key (increase)
+            if held_d and _key_press_start_time['d'] is not None:
+                key_hold_duration = now - _key_press_start_time['d']
+                
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['d']:
+                    # Process as single press (only once)
+                    new_value = min(100, current_value + 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.mood_slider.rating = current_value
+                        _key_processed_as_single['d'] = True
+                        print(f"🔍 DEBUG - D single press: value changed to {current_value}")
+                elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
+                    # Process as continuous hold
                     new_value = min(100, current_value + 1)
                     if new_value != current_value:
                         current_value = new_value
                         self.mood_slider.rating = current_value
                         _last_repeat_time = now
+                        print(f"🔍 DEBUG - D hold: value changed to {current_value}")
             
             # Also update based on direct slider movement (drag/click)
             slider_val = self.mood_slider.getRating()
@@ -781,31 +828,11 @@ Press ENTER when you're satisfied with your rating."""
             self.mood_slider.draw()
             self.win.flip()
             
-            # Get keyboard input (non-blocking) with debounce for single presses
+            # Handle ENTER and ESCAPE keys
             keys = event.getKeys()
-            current_time = core.getTime()
-            
             for key in keys:
                 if key == 'escape':
                     core.quit()
-                elif key == 'a':
-                    # Decrease rating (minimum 0) - only if enough time has passed since last single press
-                    if current_time - _last_single_press_time >= single_press_debounce:
-                        new_value = max(0, current_value - 1)
-                        if new_value != current_value:
-                            current_value = new_value
-                            self.mood_slider.rating = current_value
-                            _last_single_press_time = current_time
-                            _last_repeat_time = current_time  # Reset repeat timer
-                elif key == 'd':
-                    # Increase rating (maximum 100) - only if enough time has passed since last single press
-                    if current_time - _last_single_press_time >= single_press_debounce:
-                        new_value = min(100, current_value + 1)
-                        if new_value != current_value:
-                            current_value = new_value
-                            self.mood_slider.rating = current_value
-                            _last_single_press_time = current_time
-                            _last_repeat_time = current_time  # Reset repeat timer
                 elif key == 'return':
                     # Confirm selection
                     print(f"😊 Mood Rating ({phase}): {current_value}/100")
@@ -1393,9 +1420,10 @@ A = decrease rating, D = increase rating
         # Keyboard for continuous A/D hold support and single press debounce
         kb = keyboard.Keyboard()
         key_repeat_interval = 0.16  # seconds between repeats when holding key
-        single_press_debounce = 0.15  # debounce time for single presses
+        hold_start_delay = 0.3  # delay before hold behavior starts (300ms)
         _last_repeat_time = core.getTime()
-        _last_single_press_time = 0
+        _key_press_start_time = {'a': None, 'd': None}  # Track when keys were first pressed
+        _key_processed_as_single = {'a': False, 'd': False}  # Track if key was processed as single press
         
         while True:
             # Handle mouse wheel scrolling when cursor is over the slider
@@ -1418,19 +1446,43 @@ A = decrease rating, D = increase rating
                         current_value = new_value
                         self.velten_slider.rating = current_value
             
-            # Handle continuous A/D key holds (only after initial delay)
+            # Handle keyboard input with proper single press vs hold distinction
             now = core.getTime()
+            
+            # Check for currently held keys
+            held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
+            held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+            
+            # Track key press start times
+            if held_a and _key_press_start_time['a'] is None:
+                _key_press_start_time['a'] = now
+                _key_processed_as_single['a'] = False
+            elif not held_a:
+                _key_press_start_time['a'] = None
+                _key_processed_as_single['a'] = False
+                
+            if held_d and _key_press_start_time['d'] is None:
+                _key_press_start_time['d'] = now
+                _key_processed_as_single['d'] = False
+            elif not held_d:
+                _key_press_start_time['d'] = None
+                _key_processed_as_single['d'] = False
+            
+            # Handle 'A' key (decrease)
             key_handled_by_hold = False
-            if now - _last_repeat_time >= key_repeat_interval:
-                held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
-                held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+            if held_a and _key_press_start_time['a'] is not None:
+                key_hold_duration = now - _key_press_start_time['a']
                 
-                # DEBUG: Show hold detection
-                if held_a or held_d:
-                    print(f"🔍 DEBUG - Hold detected: A={bool(held_a)}, D={bool(held_d)}, interval={now - _last_repeat_time:.3f}s")
-                
-                if held_a and not held_d:
-                    print(f"🔍 DEBUG - A key held, current_value: {current_value}")
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['a']:
+                    # Process as single press (only once)
+                    new_value = max(1, current_value - 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.velten_slider.rating = current_value
+                        _key_processed_as_single['a'] = True
+                        print(f"🔍 DEBUG - A single press: value changed to {current_value}")
+                elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
+                    # Process as continuous hold
                     new_value = max(1, current_value - 1)
                     if new_value != current_value:
                         current_value = new_value
@@ -1438,11 +1490,21 @@ A = decrease rating, D = increase rating
                         _last_repeat_time = now
                         key_handled_by_hold = True
                         print(f"🔍 DEBUG - A hold: value changed to {current_value}")
-                    else:
-                        print(f"🔍 DEBUG - A hold: already at minimum (1)")
-                        key_handled_by_hold = True
-                elif held_d and not held_a:
-                    print(f"🔍 DEBUG - D key held, current_value: {current_value}")
+            
+            # Handle 'D' key (increase)
+            if held_d and _key_press_start_time['d'] is not None:
+                key_hold_duration = now - _key_press_start_time['d']
+                
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['d']:
+                    # Process as single press (only once)
+                    new_value = min(7, current_value + 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.velten_slider.rating = current_value
+                        _key_processed_as_single['d'] = True
+                        print(f"🔍 DEBUG - D single press: value changed to {current_value}")
+                elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
+                    # Process as continuous hold
                     new_value = min(7, current_value + 1)
                     if new_value != current_value:
                         current_value = new_value
@@ -1450,9 +1512,6 @@ A = decrease rating, D = increase rating
                         _last_repeat_time = now
                         key_handled_by_hold = True
                         print(f"🔍 DEBUG - D hold: value changed to {current_value}")
-                    else:
-                        print(f"🔍 DEBUG - D hold: already at maximum (7)")
-                        key_handled_by_hold = True
             
             # Also update based on direct slider movement (drag/click)
             slider_val = self.velten_slider.getRating()
@@ -1473,57 +1532,19 @@ A = decrease rating, D = increase rating
             self.velten_end_label.draw()
             self.win.flip()
             
-            # Get keyboard input (non-blocking) - only process if not handled by hold logic
+            # Handle ENTER and ESCAPE keys (only process if not handled by hold logic)
             if not key_handled_by_hold:
                 keys = event.getKeys()
-                current_time = core.getTime()
-                
-                # DEBUG: Show all keyboard input
-                if keys:
-                    print(f"🔍 DEBUG - Keys pressed: {keys}")
                 
                 for key in keys:
-                    print(f"🔍 DEBUG - Processing key: '{key}'")
                     if key == 'escape':
                         print("🔍 DEBUG - ESCAPE key detected, quitting...")
                         core.quit()
-                    elif key == 'a':
-                        print(f"🔍 DEBUG - A key pressed, current_value: {current_value}")
-                        # Decrease rating (minimum 1) - only if enough time has passed since last single press
-                        if current_time - _last_single_press_time >= single_press_debounce:
-                            new_value = max(1, current_value - 1)
-                            if new_value != current_value:
-                                current_value = new_value
-                                self.velten_slider.rating = current_value
-                                _last_single_press_time = current_time
-                                _last_repeat_time = current_time  # Reset timer for hold detection
-                                print(f"🔍 DEBUG - A key: value changed to {current_value}")
-                            else:
-                                print(f"🔍 DEBUG - A key: already at minimum (1)")
-                        else:
-                            print(f"🔍 DEBUG - A key: debounced (too soon after last press)")
-                    elif key == 'd':
-                        print(f"🔍 DEBUG - D key pressed, current_value: {current_value}")
-                        # Increase rating (maximum 7) - only if enough time has passed since last single press
-                        if current_time - _last_single_press_time >= single_press_debounce:
-                            new_value = min(7, current_value + 1)
-                            if new_value != current_value:
-                                current_value = new_value
-                                self.velten_slider.rating = current_value
-                                _last_single_press_time = current_time
-                                _last_repeat_time = current_time  # Reset timer for hold detection
-                                print(f"🔍 DEBUG - D key: value changed to {current_value}")
-                            else:
-                                print(f"🔍 DEBUG - D key: already at maximum (7)")
-                        else:
-                            print(f"🔍 DEBUG - D key: debounced (too soon after last press)")
                     elif key == 'return':
                         print(f"🔍 DEBUG - ENTER key pressed, confirming rating: {current_value}")
                         # Confirm selection
                         print(f"📝 Velten Statement Rating: {current_value}/7 (mood alignment)")
                         return current_value
-                    else:
-                        print(f"🔍 DEBUG - Unhandled key: '{key}'")
     
     def get_velten_rating_likert(self):
         """Get Velten rating using numbered Likert scale (1-7)"""
