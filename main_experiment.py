@@ -706,124 +706,37 @@ class MoodSARTExperimentSimple:
         return rating
     
     def collect_mood_rating_arrow_keys(self, phase):
-        """Collect mood rating using interactive slider and Enter to confirm"""
-        print(f"📊 COLLECTING MOOD RATING (Interactive Slider): {phase}")
+        """Collect mood rating using mouse-click control"""
+        print(f"📊 COLLECTING MOOD RATING (Mouse Click): {phase}")
         
-        # Start at middle of scale (50)
-        current_value = 50
+        # Start with no rating - user must click to set initial position
+        current_value = None
         self.mood_slider.reset()
-        self.mood_slider.rating = current_value
+        # Don't set initial rating - slider starts empty
         
-        # Updated instruction text for interactive slider (removed x/100 display)
-        instruction_text = """Please rate your current mood by moving the slider or using A/D keys.
+        # Updated instruction text for mouse-click control
+        instruction_text = """Please rate your current mood by clicking anywhere on the slider.
 
-A = decrease rating, D = increase rating
-Press ENTER when you're satisfied with your rating."""
+Click on the slider to set your rating, then press ENTER to confirm."""
         
-        # Mouse for wheel scrolling support over the slider
+        # Mouse for click detection
         mouse = event.Mouse(win=self.win)
-        tolerance_px = 10  # extra vertical band around slider for easier targeting
-        
-        # Keyboard for continuous A/D hold support and single press debounce
-        kb = keyboard.Keyboard()
-        key_repeat_interval = 0.08  # seconds between repeats when holding key
-        hold_start_delay = 0.3  # delay before hold behavior starts (300ms)
-        _last_repeat_time = core.getTime()
-        _key_press_start_time = {'a': None, 'd': None}  # Track when keys were first pressed
-        _key_processed_as_single = {'a': False, 'd': False}  # Track if key was processed as single press
          
         while True:
-            # Handle mouse wheel scrolling when cursor is over the slider
-            wheel_y = mouse.getWheelRel()[1]
-            if wheel_y != 0:
-                # Cursor position
-                mouse_x, mouse_y = mouse.getPos()
-                # Slider geometry (in pix)
-                slider_center_x, slider_center_y = self.mood_slider.pos
-                slider_width, slider_height = self.mood_slider.size
-                left_x = slider_center_x - (slider_width / 2.0)
-                right_x = slider_center_x + (slider_width / 2.0)
-                top_y = slider_center_y + (slider_height / 2.0) + tolerance_px
-                bottom_y = slider_center_y - (slider_height / 2.0) - tolerance_px
-                # Only apply wheel change if cursor is within slider band
-                if (bottom_y <= mouse_y <= top_y) and (left_x <= mouse_x <= right_x):
-                    delta = 1 if wheel_y > 0 else -1
-                    new_value = max(0, min(100, current_value + delta))
-                    if new_value != current_value:
-                        current_value = new_value
-                        self.mood_slider.rating = current_value
-            
-            # Handle keyboard input with proper single press vs hold distinction
-            now = core.getTime()
-            
-            # Check for currently held keys
-            held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
-            held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
-            
-            # Track key press start times
-            if held_a and _key_press_start_time['a'] is None:
-                _key_press_start_time['a'] = now
-                _key_processed_as_single['a'] = False
-            elif not held_a:
-                _key_press_start_time['a'] = None
-                _key_processed_as_single['a'] = False
-                
-            if held_d and _key_press_start_time['d'] is None:
-                _key_press_start_time['d'] = now
-                _key_processed_as_single['d'] = False
-            elif not held_d:
-                _key_press_start_time['d'] = None
-                _key_processed_as_single['d'] = False
-            
-            # Handle 'A' key (decrease)
-            if held_a and _key_press_start_time['a'] is not None:
-                key_hold_duration = now - _key_press_start_time['a']
-                
-                if key_hold_duration < hold_start_delay and not _key_processed_as_single['a']:
-                    # Process as single press (only once)
-                    new_value = max(0, current_value - 1)
-                    if new_value != current_value:
-                        current_value = new_value
-                        self.mood_slider.rating = current_value
-                        _key_processed_as_single['a'] = True
-                        print(f"🔍 DEBUG - A single press: value changed to {current_value}")
-                elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
-                    # Process as continuous hold
-                    new_value = max(0, current_value - 1)
-                    if new_value != current_value:
-                        current_value = new_value
-                        self.mood_slider.rating = current_value
-                        _last_repeat_time = now
-                        print(f"🔍 DEBUG - A hold: value changed to {current_value}")
-            
-            # Handle 'D' key (increase)
-            if held_d and _key_press_start_time['d'] is not None:
-                key_hold_duration = now - _key_press_start_time['d']
-                
-                if key_hold_duration < hold_start_delay and not _key_processed_as_single['d']:
-                    # Process as single press (only once)
-                    new_value = min(100, current_value + 1)
-                    if new_value != current_value:
-                        current_value = new_value
-                        self.mood_slider.rating = current_value
-                        _key_processed_as_single['d'] = True
-                        print(f"🔍 DEBUG - D single press: value changed to {current_value}")
-                elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
-                    # Process as continuous hold
-                    new_value = min(100, current_value + 1)
-                    if new_value != current_value:
-                        current_value = new_value
-                        self.mood_slider.rating = current_value
-                        _last_repeat_time = now
-                        print(f"🔍 DEBUG - D hold: value changed to {current_value}")
-            
-            # Also update based on direct slider movement (drag/click)
+            # Update current_value based on any slider interaction (click or drag)
             slider_val = self.mood_slider.getRating()
             if slider_val is not None:
                 current_value = int(slider_val)
+                if current_value != slider_val:  # First time setting a value
+                    print(f"📊 Mood rating set to: {current_value}/100")
             
-            # Update instruction text (no current value display)
-            self.instruction_text.text = instruction_text
+            # Update instruction text
+            if current_value is not None:
+                display_text = f"{instruction_text}\n\nCurrent rating: {current_value}/100"
+            else:
+                display_text = instruction_text
+                
+            self.instruction_text.text = display_text
             self.instruction_text.draw()
             self.mood_slider.draw()
             self.win.flip()
@@ -834,22 +747,25 @@ Press ENTER when you're satisfied with your rating."""
                 if key == 'escape':
                     core.quit()
                 elif key == 'return':
-                    # Confirm selection
-                    print(f"😊 Mood Rating ({phase}): {current_value}/100")
-                    print(f"✅ Mood rating collection completed")
-                    
-                    # Save mood rating data
-                    self.save_trial_data({
-                        'phase': f'mood_rating_{phase}',
-                        'mood_rating': current_value,
-                        'block_type': None, 'block_number': None, 'trial_number': None,
-                        'stimulus': None, 'stimulus_position': None, 'response': None,
-                        'correct_response': None, 'accuracy': None, 'reaction_time': None,
-                        'mw_tut_rating': None, 'mw_fmt_rating': None, 'velten_rating': None,
-                        'video_file': None, 'audio_file': None, 'velten_statement': None
-                    })
-                    
-                    return current_value
+                    # Only allow confirmation if a rating has been made
+                    if current_value is not None:
+                        print(f"😊 Mood Rating ({phase}): {current_value}/100")
+                        print(f"✅ Mood rating collection completed")
+                        
+                        # Save mood rating data
+                        self.save_trial_data({
+                            'phase': f'mood_rating_{phase}',
+                            'mood_rating': current_value,
+                            'block_type': None, 'block_number': None, 'trial_number': None,
+                            'stimulus': None, 'stimulus_position': None, 'response': None,
+                            'correct_response': None, 'accuracy': None, 'reaction_time': None,
+                            'mw_tut_rating': None, 'mw_fmt_rating': None, 'velten_rating': None,
+                            'video_file': None, 'audio_file': None, 'velten_statement': None
+                        })
+                        
+                        return current_value
+                    else:
+                        print("⚠️  Please click on the slider to set a rating before pressing ENTER")
     
     def collect_mood_rating_keyboard(self, phase):
         """Fallback: Collect mood rating using keyboard input (1-9)"""
@@ -2049,6 +1965,7 @@ Current rating: {}"""
             
             # Handle keyboard input first (single presses only, no continuous hold)
             keys = event.getKeys()
+            break_main_loop = False
             if keys:
                 print(f"🔍 DEBUG TUT - Keys pressed: {keys}")
                 
@@ -2081,7 +1998,12 @@ Current rating: {}"""
                         print(f"🔍 DEBUG TUT - ENTER key pressed, confirming rating: {tut_value}")
                         print("🔍 DEBUG TUT - Breaking from TUT loop...")
                         # Confirm selection
+                        break_main_loop = True
                         break
+            
+            # Break out of main loop if ENTER was pressed
+            if break_main_loop:
+                break
             
             # Also update based on direct slider movement (after keyboard input)
             slider_val = self.mw_tut_slider.getRating()
@@ -2147,6 +2069,7 @@ Current rating: {}"""
             
             # Handle keyboard input first (single presses only, no continuous hold)
             keys = event.getKeys()
+            break_main_loop = False
             if keys:
                 print(f"🔍 DEBUG FMT - Keys pressed: {keys}")
                 
@@ -2179,9 +2102,14 @@ Current rating: {}"""
                         print(f"🔍 DEBUG FMT - ENTER key pressed, confirming rating: {fmt_value}")
                         print("🔍 DEBUG FMT - Breaking from FMT loop...")
                         # Confirm selection
+                        break_main_loop = True
                         break
                     else:
                         print(f"🔍 DEBUG FMT - Unhandled key: '{key}'")
+            
+            # Break out of main loop if ENTER was pressed
+            if break_main_loop:
+                break
             
             # Also update based on direct slider movement (after keyboard input)
             slider_val = self.mw_fmt_slider.getRating()
