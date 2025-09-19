@@ -730,13 +730,8 @@ Click on the slider to set your rating, then press ENTER to confirm."""
                 if current_value != slider_val:  # First time setting a value
                     print(f"📊 Mood rating set to: {current_value}/100")
             
-            # Update instruction text
-            if current_value is not None:
-                display_text = f"{instruction_text}\n\nCurrent rating: {current_value}/100"
-            else:
-                display_text = instruction_text
-                
-            self.instruction_text.text = display_text
+            # Update instruction text (no current rating display)
+            self.instruction_text.text = instruction_text
             self.instruction_text.draw()
             self.mood_slider.draw()
             self.win.flip()
@@ -1941,9 +1936,15 @@ Current rating: {}"""
         
         scale_labels = ['Not at all', 'Slightly', 'Somewhat', 'Moderately', 'Quite a bit', 'Very much', 'Completely']
         
-        # Mouse for wheel scrolling (no continuous keyboard hold)
+        # Mouse for wheel scrolling and keyboard for continuous hold
         mouse = event.Mouse(win=self.win)
+        kb = keyboard.Keyboard()
         tolerance_px = 10
+        key_repeat_interval = 0.16  # seconds between repeats when holding key
+        hold_start_delay = 0.3  # delay before hold behavior starts (300ms)
+        _last_repeat_time = core.getTime()
+        _key_press_start_time = {'a': None, 'd': None}  # Track when keys were first pressed
+        _key_processed_as_single = {'a': False, 'd': False}  # Track if key was processed as single press
         
         while True:
             # Handle mouse wheel scrolling when cursor is over the slider
@@ -1963,41 +1964,82 @@ Current rating: {}"""
                         tut_value = new_value
                         self.mw_tut_slider.rating = tut_value
             
-            # Handle keyboard input first (single presses only, no continuous hold)
+            # Handle keyboard input with proper single press vs hold distinction
+            now = core.getTime()
+            
+            # Check for currently held keys
+            held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
+            held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+            
+            # Track key press start times
+            if held_a and _key_press_start_time['a'] is None:
+                _key_press_start_time['a'] = now
+                _key_processed_as_single['a'] = False
+            elif not held_a:
+                _key_press_start_time['a'] = None
+                _key_processed_as_single['a'] = False
+                
+            if held_d and _key_press_start_time['d'] is None:
+                _key_press_start_time['d'] = now
+                _key_processed_as_single['d'] = False
+            elif not held_d:
+                _key_press_start_time['d'] = None
+                _key_processed_as_single['d'] = False
+            
+            # Handle 'A' key (decrease)
+            if held_a and _key_press_start_time['a'] is not None:
+                key_hold_duration = now - _key_press_start_time['a']
+                
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['a']:
+                    # Process as single press (only once)
+                    new_value = max(1, tut_value - 1)
+                    if new_value != tut_value:
+                        tut_value = new_value
+                        self.mw_tut_slider.rating = tut_value
+                        _key_processed_as_single['a'] = True
+                        print(f"🔍 DEBUG TUT - A single press: value changed to {tut_value}")
+                elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
+                    # Process as continuous hold
+                    new_value = max(1, tut_value - 1)
+                    if new_value != tut_value:
+                        tut_value = new_value
+                        self.mw_tut_slider.rating = tut_value
+                        _last_repeat_time = now
+                        print(f"🔍 DEBUG TUT - A hold: value changed to {tut_value}")
+            
+            # Handle 'D' key (increase)
+            if held_d and _key_press_start_time['d'] is not None:
+                key_hold_duration = now - _key_press_start_time['d']
+                
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['d']:
+                    # Process as single press (only once)
+                    new_value = min(7, tut_value + 1)
+                    if new_value != tut_value:
+                        tut_value = new_value
+                        self.mw_tut_slider.rating = tut_value
+                        _key_processed_as_single['d'] = True
+                        print(f"🔍 DEBUG TUT - D single press: value changed to {tut_value}")
+                elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
+                    # Process as continuous hold
+                    new_value = min(7, tut_value + 1)
+                    if new_value != tut_value:
+                        tut_value = new_value
+                        self.mw_tut_slider.rating = tut_value
+                        _last_repeat_time = now
+                        print(f"🔍 DEBUG TUT - D hold: value changed to {tut_value}")
+            
+            # Handle ENTER and ESCAPE keys
             keys = event.getKeys()
             break_main_loop = False
             if keys:
                 print(f"🔍 DEBUG TUT - Keys pressed: {keys}")
-                
                 for key in keys:
-                    print(f"🔍 DEBUG TUT - Processing key: '{key}'")
                     if key == 'escape':
                         print("🔍 DEBUG TUT - ESCAPE key detected, quitting...")
                         core.quit()
-                    elif key == 'a':
-                        print(f"🔍 DEBUG TUT - A key pressed, current tut_value: {tut_value}")
-                        # Decrease rating (minimum 1)
-                        new_value = max(1, tut_value - 1)
-                        if new_value != tut_value:
-                            tut_value = new_value
-                            self.mw_tut_slider.rating = tut_value
-                            print(f"🔍 DEBUG TUT - A key: value changed to {tut_value}")
-                        else:
-                            print(f"🔍 DEBUG TUT - A key: already at minimum (1)")
-                    elif key == 'd':
-                        print(f"🔍 DEBUG TUT - D key pressed, current tut_value: {tut_value}")
-                        # Increase rating (maximum 7)
-                        new_value = min(7, tut_value + 1)
-                        if new_value != tut_value:
-                            tut_value = new_value
-                            self.mw_tut_slider.rating = tut_value
-                            print(f"🔍 DEBUG TUT - D key: value changed to {tut_value}")
-                        else:
-                            print(f"🔍 DEBUG TUT - D key: already at maximum (7)")
                     elif key == 'return':
                         print(f"🔍 DEBUG TUT - ENTER key pressed, confirming rating: {tut_value}")
                         print("🔍 DEBUG TUT - Breaking from TUT loop...")
-                        # Confirm selection
                         break_main_loop = True
                         break
             
@@ -2067,45 +2109,84 @@ Current rating: {}"""
                         fmt_value = new_value
                         self.mw_fmt_slider.rating = fmt_value
             
-            # Handle keyboard input first (single presses only, no continuous hold)
+            # Handle keyboard input with proper single press vs hold distinction
+            now = core.getTime()
+            
+            # Check for currently held keys
+            held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
+            held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+            
+            # Track key press start times
+            if held_a and _key_press_start_time['a'] is None:
+                _key_press_start_time['a'] = now
+                _key_processed_as_single['a'] = False
+            elif not held_a:
+                _key_press_start_time['a'] = None
+                _key_processed_as_single['a'] = False
+                
+            if held_d and _key_press_start_time['d'] is None:
+                _key_press_start_time['d'] = now
+                _key_processed_as_single['d'] = False
+            elif not held_d:
+                _key_press_start_time['d'] = None
+                _key_processed_as_single['d'] = False
+            
+            # Handle 'A' key (decrease)
+            if held_a and _key_press_start_time['a'] is not None:
+                key_hold_duration = now - _key_press_start_time['a']
+                
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['a']:
+                    # Process as single press (only once)
+                    new_value = max(1, fmt_value - 1)
+                    if new_value != fmt_value:
+                        fmt_value = new_value
+                        self.mw_fmt_slider.rating = fmt_value
+                        _key_processed_as_single['a'] = True
+                        print(f"🔍 DEBUG FMT - A single press: value changed to {fmt_value}")
+                elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
+                    # Process as continuous hold
+                    new_value = max(1, fmt_value - 1)
+                    if new_value != fmt_value:
+                        fmt_value = new_value
+                        self.mw_fmt_slider.rating = fmt_value
+                        _last_repeat_time = now
+                        print(f"🔍 DEBUG FMT - A hold: value changed to {fmt_value}")
+            
+            # Handle 'D' key (increase)
+            if held_d and _key_press_start_time['d'] is not None:
+                key_hold_duration = now - _key_press_start_time['d']
+                
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['d']:
+                    # Process as single press (only once)
+                    new_value = min(7, fmt_value + 1)
+                    if new_value != fmt_value:
+                        fmt_value = new_value
+                        self.mw_fmt_slider.rating = fmt_value
+                        _key_processed_as_single['d'] = True
+                        print(f"🔍 DEBUG FMT - D single press: value changed to {fmt_value}")
+                elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
+                    # Process as continuous hold
+                    new_value = min(7, fmt_value + 1)
+                    if new_value != fmt_value:
+                        fmt_value = new_value
+                        self.mw_fmt_slider.rating = fmt_value
+                        _last_repeat_time = now
+                        print(f"🔍 DEBUG FMT - D hold: value changed to {fmt_value}")
+            
+            # Handle ENTER and ESCAPE keys
             keys = event.getKeys()
             break_main_loop = False
             if keys:
                 print(f"🔍 DEBUG FMT - Keys pressed: {keys}")
-                
                 for key in keys:
-                    print(f"🔍 DEBUG FMT - Processing key: '{key}'")
                     if key == 'escape':
                         print("🔍 DEBUG FMT - ESCAPE key detected, quitting...")
                         core.quit()
-                    elif key == 'a':
-                        print(f"🔍 DEBUG FMT - A key pressed, current fmt_value: {fmt_value}")
-                        # Decrease rating (minimum 1)
-                        new_value = max(1, fmt_value - 1)
-                        if new_value != fmt_value:
-                            fmt_value = new_value
-                            self.mw_fmt_slider.rating = fmt_value
-                            print(f"🔍 DEBUG FMT - A key: value changed to {fmt_value}")
-                        else:
-                            print(f"🔍 DEBUG FMT - A key: already at minimum (1)")
-                    elif key == 'd':
-                        print(f"🔍 DEBUG FMT - D key pressed, current fmt_value: {fmt_value}")
-                        # Increase rating (maximum 7)
-                        new_value = min(7, fmt_value + 1)
-                        if new_value != fmt_value:
-                            fmt_value = new_value
-                            self.mw_fmt_slider.rating = fmt_value
-                            print(f"🔍 DEBUG FMT - D key: value changed to {fmt_value}")
-                        else:
-                            print(f"🔍 DEBUG FMT - D key: already at maximum (7)")
                     elif key == 'return':
                         print(f"🔍 DEBUG FMT - ENTER key pressed, confirming rating: {fmt_value}")
                         print("🔍 DEBUG FMT - Breaking from FMT loop...")
-                        # Confirm selection
                         break_main_loop = True
                         break
-                    else:
-                        print(f"🔍 DEBUG FMT - Unhandled key: '{key}'")
             
             # Break out of main loop if ENTER was pressed
             if break_main_loop:
