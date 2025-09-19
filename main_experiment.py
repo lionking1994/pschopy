@@ -1317,9 +1317,9 @@ Click on the slider to set your rating, then press ENTER to confirm."""
         # Updated instruction text for interactive slider (removed current rating display)
         instruction_text = """To what extent were you able to bring your mood in line with this statement?
 
-Move the slider or use A/D keys to adjust your rating, then press ENTER to confirm.
+Move the slider or use LEFT/RIGHT arrow keys to adjust your rating, then press ENTER to confirm.
 
-A = decrease rating, D = increase rating
+LEFT = decrease rating, RIGHT = increase rating
 1 = Not at all ... 7 = Completely"""
         
         # Get scale labels for current value
@@ -1328,13 +1328,13 @@ A = decrease rating, D = increase rating
         mouse = event.Mouse(win=self.win)
         tolerance_px = 10  # extra vertical band around slider for easier targeting
         
-        # Keyboard for continuous A/D hold support and single press debounce
+        # Keyboard for continuous arrow key hold support and single press debounce
         kb = keyboard.Keyboard()
         key_repeat_interval = 0.16  # seconds between repeats when holding key
         hold_start_delay = 0.3  # delay before hold behavior starts (300ms)
         _last_repeat_time = core.getTime()
-        _key_press_start_time = {'a': None, 'd': None}  # Track when keys were first pressed
-        _key_processed_as_single = {'a': False, 'd': False}  # Track if key was processed as single press
+        _key_press_start_time = {'left': None, 'right': None}  # Track when keys were first pressed
+        _key_processed_as_single = {'left': False, 'right': False}  # Track if key was processed as single press
         
         while True:
             # Handle mouse wheel scrolling when cursor is over the slider
@@ -1361,37 +1361,37 @@ A = decrease rating, D = increase rating
             now = core.getTime()
             
             # Check for currently held keys
-            held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
-            held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+            held_left = kb.getKeys(keyList=['left'], waitRelease=False, clear=False)
+            held_right = kb.getKeys(keyList=['right'], waitRelease=False, clear=False)
             
             # Track key press start times
-            if held_a and _key_press_start_time['a'] is None:
-                _key_press_start_time['a'] = now
-                _key_processed_as_single['a'] = False
-            elif not held_a:
-                _key_press_start_time['a'] = None
-                _key_processed_as_single['a'] = False
+            if held_left and _key_press_start_time['left'] is None:
+                _key_press_start_time['left'] = now
+                _key_processed_as_single['left'] = False
+            elif not held_left:
+                _key_press_start_time['left'] = None
+                _key_processed_as_single['left'] = False
                 
-            if held_d and _key_press_start_time['d'] is None:
-                _key_press_start_time['d'] = now
-                _key_processed_as_single['d'] = False
-            elif not held_d:
-                _key_press_start_time['d'] = None
-                _key_processed_as_single['d'] = False
+            if held_right and _key_press_start_time['right'] is None:
+                _key_press_start_time['right'] = now
+                _key_processed_as_single['right'] = False
+            elif not held_right:
+                _key_press_start_time['right'] = None
+                _key_processed_as_single['right'] = False
             
-            # Handle 'A' key (decrease)
+            # Handle LEFT key (decrease)
             key_handled_by_hold = False
-            if held_a and _key_press_start_time['a'] is not None:
-                key_hold_duration = now - _key_press_start_time['a']
+            if held_left and _key_press_start_time['left'] is not None:
+                key_hold_duration = now - _key_press_start_time['left']
                 
-                if key_hold_duration < hold_start_delay and not _key_processed_as_single['a']:
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['left']:
                     # Process as single press (only once)
                     new_value = max(1, current_value - 1)
                     if new_value != current_value:
                         current_value = new_value
                         self.velten_slider.rating = current_value
-                        _key_processed_as_single['a'] = True
-                        print(f"🔍 DEBUG - A single press: value changed to {current_value}")
+                        _key_processed_as_single['left'] = True
+                        print(f"🔍 DEBUG - LEFT single press: value changed to {current_value}")
                 elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
                     # Process as continuous hold
                     new_value = max(1, current_value - 1)
@@ -1400,20 +1400,20 @@ A = decrease rating, D = increase rating
                         self.velten_slider.rating = current_value
                         _last_repeat_time = now
                         key_handled_by_hold = True
-                        print(f"🔍 DEBUG - A hold: value changed to {current_value}")
+                        print(f"🔍 DEBUG - LEFT hold: value changed to {current_value}")
             
-            # Handle 'D' key (increase)
-            if held_d and _key_press_start_time['d'] is not None:
-                key_hold_duration = now - _key_press_start_time['d']
+            # Handle RIGHT key (increase)
+            if held_right and _key_press_start_time['right'] is not None:
+                key_hold_duration = now - _key_press_start_time['right']
                 
-                if key_hold_duration < hold_start_delay and not _key_processed_as_single['d']:
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['right']:
                     # Process as single press (only once)
                     new_value = min(7, current_value + 1)
                     if new_value != current_value:
                         current_value = new_value
                         self.velten_slider.rating = current_value
-                        _key_processed_as_single['d'] = True
-                        print(f"🔍 DEBUG - D single press: value changed to {current_value}")
+                        _key_processed_as_single['right'] = True
+                        print(f"🔍 DEBUG - RIGHT single press: value changed to {current_value}")
                 elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
                     # Process as continuous hold
                     new_value = min(7, current_value + 1)
@@ -1422,7 +1422,7 @@ A = decrease rating, D = increase rating
                         self.velten_slider.rating = current_value
                         _last_repeat_time = now
                         key_handled_by_hold = True
-                        print(f"🔍 DEBUG - D hold: value changed to {current_value}")
+                        print(f"🔍 DEBUG - RIGHT hold: value changed to {current_value}")
             
             # Also update based on direct slider movement (drag/click)
             slider_val = self.velten_slider.getRating()
@@ -1928,9 +1928,9 @@ A = decrease rating, D = increase rating
         
         instruction_text = """{}
 
-Move slider or use A/D keys to adjust rating | ENTER = confirm
+Move slider or use LEFT/RIGHT arrow keys to adjust rating | ENTER = confirm
 
-A = decrease rating, D = increase rating
+LEFT = decrease rating, RIGHT = increase rating
 
 Current rating: {}"""
         
@@ -1943,8 +1943,8 @@ Current rating: {}"""
         key_repeat_interval = 0.16  # seconds between repeats when holding key
         hold_start_delay = 0.3  # delay before hold behavior starts (300ms)
         _last_repeat_time = core.getTime()
-        _key_press_start_time = {'a': None, 'd': None}  # Track when keys were first pressed
-        _key_processed_as_single = {'a': False, 'd': False}  # Track if key was processed as single press
+        _key_press_start_time = {'left': None, 'right': None}  # Track when keys were first pressed
+        _key_processed_as_single = {'left': False, 'right': False}  # Track if key was processed as single press
         
         while True:
             # Handle mouse wheel scrolling when cursor is over the slider
@@ -1968,36 +1968,36 @@ Current rating: {}"""
             now = core.getTime()
             
             # Check for currently held keys
-            held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
-            held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+            held_left = kb.getKeys(keyList=['left'], waitRelease=False, clear=False)
+            held_right = kb.getKeys(keyList=['right'], waitRelease=False, clear=False)
             
             # Track key press start times
-            if held_a and _key_press_start_time['a'] is None:
-                _key_press_start_time['a'] = now
-                _key_processed_as_single['a'] = False
-            elif not held_a:
-                _key_press_start_time['a'] = None
-                _key_processed_as_single['a'] = False
+            if held_left and _key_press_start_time['left'] is None:
+                _key_press_start_time['left'] = now
+                _key_processed_as_single['left'] = False
+            elif not held_left:
+                _key_press_start_time['left'] = None
+                _key_processed_as_single['left'] = False
                 
-            if held_d and _key_press_start_time['d'] is None:
-                _key_press_start_time['d'] = now
-                _key_processed_as_single['d'] = False
-            elif not held_d:
-                _key_press_start_time['d'] = None
-                _key_processed_as_single['d'] = False
+            if held_right and _key_press_start_time['right'] is None:
+                _key_press_start_time['right'] = now
+                _key_processed_as_single['right'] = False
+            elif not held_right:
+                _key_press_start_time['right'] = None
+                _key_processed_as_single['right'] = False
             
-            # Handle 'A' key (decrease)
-            if held_a and _key_press_start_time['a'] is not None:
-                key_hold_duration = now - _key_press_start_time['a']
+            # Handle LEFT key (decrease)
+            if held_left and _key_press_start_time['left'] is not None:
+                key_hold_duration = now - _key_press_start_time['left']
                 
-                if key_hold_duration < hold_start_delay and not _key_processed_as_single['a']:
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['left']:
                     # Process as single press (only once)
                     new_value = max(1, tut_value - 1)
                     if new_value != tut_value:
                         tut_value = new_value
                         self.mw_tut_slider.rating = tut_value
-                        _key_processed_as_single['a'] = True
-                        print(f"🔍 DEBUG TUT - A single press: value changed to {tut_value}")
+                        _key_processed_as_single['left'] = True
+                        print(f"🔍 DEBUG TUT - LEFT single press: value changed to {tut_value}")
                 elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
                     # Process as continuous hold
                     new_value = max(1, tut_value - 1)
@@ -2005,20 +2005,20 @@ Current rating: {}"""
                         tut_value = new_value
                         self.mw_tut_slider.rating = tut_value
                         _last_repeat_time = now
-                        print(f"🔍 DEBUG TUT - A hold: value changed to {tut_value}")
+                        print(f"🔍 DEBUG TUT - LEFT hold: value changed to {tut_value}")
             
-            # Handle 'D' key (increase)
-            if held_d and _key_press_start_time['d'] is not None:
-                key_hold_duration = now - _key_press_start_time['d']
+            # Handle RIGHT key (increase)
+            if held_right and _key_press_start_time['right'] is not None:
+                key_hold_duration = now - _key_press_start_time['right']
                 
-                if key_hold_duration < hold_start_delay and not _key_processed_as_single['d']:
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['right']:
                     # Process as single press (only once)
                     new_value = min(7, tut_value + 1)
                     if new_value != tut_value:
                         tut_value = new_value
                         self.mw_tut_slider.rating = tut_value
-                        _key_processed_as_single['d'] = True
-                        print(f"🔍 DEBUG TUT - D single press: value changed to {tut_value}")
+                        _key_processed_as_single['right'] = True
+                        print(f"🔍 DEBUG TUT - RIGHT single press: value changed to {tut_value}")
                 elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
                     # Process as continuous hold
                     new_value = min(7, tut_value + 1)
@@ -2026,7 +2026,7 @@ Current rating: {}"""
                         tut_value = new_value
                         self.mw_tut_slider.rating = tut_value
                         _last_repeat_time = now
-                        print(f"🔍 DEBUG TUT - D hold: value changed to {tut_value}")
+                        print(f"🔍 DEBUG TUT - RIGHT hold: value changed to {tut_value}")
             
             # Handle ENTER and ESCAPE keys
             keys = event.getKeys()
@@ -2090,6 +2090,8 @@ Current rating: {}"""
         mouse = event.Mouse(win=self.win)
         kb = keyboard.Keyboard()
         _last_repeat_time = core.getTime()
+        _key_press_start_time = {'left': None, 'right': None}  # Track when keys were first pressed
+        _key_processed_as_single = {'left': False, 'right': False}  # Track if key was processed as single press
         
         while True:
             # Handle mouse wheel scrolling when cursor is over the slider
@@ -2113,36 +2115,36 @@ Current rating: {}"""
             now = core.getTime()
             
             # Check for currently held keys
-            held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
-            held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+            held_left = kb.getKeys(keyList=['left'], waitRelease=False, clear=False)
+            held_right = kb.getKeys(keyList=['right'], waitRelease=False, clear=False)
             
             # Track key press start times
-            if held_a and _key_press_start_time['a'] is None:
-                _key_press_start_time['a'] = now
-                _key_processed_as_single['a'] = False
-            elif not held_a:
-                _key_press_start_time['a'] = None
-                _key_processed_as_single['a'] = False
+            if held_left and _key_press_start_time['left'] is None:
+                _key_press_start_time['left'] = now
+                _key_processed_as_single['left'] = False
+            elif not held_left:
+                _key_press_start_time['left'] = None
+                _key_processed_as_single['left'] = False
                 
-            if held_d and _key_press_start_time['d'] is None:
-                _key_press_start_time['d'] = now
-                _key_processed_as_single['d'] = False
-            elif not held_d:
-                _key_press_start_time['d'] = None
-                _key_processed_as_single['d'] = False
+            if held_right and _key_press_start_time['right'] is None:
+                _key_press_start_time['right'] = now
+                _key_processed_as_single['right'] = False
+            elif not held_right:
+                _key_press_start_time['right'] = None
+                _key_processed_as_single['right'] = False
             
-            # Handle 'A' key (decrease)
-            if held_a and _key_press_start_time['a'] is not None:
-                key_hold_duration = now - _key_press_start_time['a']
+            # Handle LEFT key (decrease)
+            if held_left and _key_press_start_time['left'] is not None:
+                key_hold_duration = now - _key_press_start_time['left']
                 
-                if key_hold_duration < hold_start_delay and not _key_processed_as_single['a']:
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['left']:
                     # Process as single press (only once)
                     new_value = max(1, fmt_value - 1)
                     if new_value != fmt_value:
                         fmt_value = new_value
                         self.mw_fmt_slider.rating = fmt_value
-                        _key_processed_as_single['a'] = True
-                        print(f"🔍 DEBUG FMT - A single press: value changed to {fmt_value}")
+                        _key_processed_as_single['left'] = True
+                        print(f"🔍 DEBUG FMT - LEFT single press: value changed to {fmt_value}")
                 elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
                     # Process as continuous hold
                     new_value = max(1, fmt_value - 1)
@@ -2150,20 +2152,20 @@ Current rating: {}"""
                         fmt_value = new_value
                         self.mw_fmt_slider.rating = fmt_value
                         _last_repeat_time = now
-                        print(f"🔍 DEBUG FMT - A hold: value changed to {fmt_value}")
+                        print(f"🔍 DEBUG FMT - LEFT hold: value changed to {fmt_value}")
             
-            # Handle 'D' key (increase)
-            if held_d and _key_press_start_time['d'] is not None:
-                key_hold_duration = now - _key_press_start_time['d']
+            # Handle RIGHT key (increase)
+            if held_right and _key_press_start_time['right'] is not None:
+                key_hold_duration = now - _key_press_start_time['right']
                 
-                if key_hold_duration < hold_start_delay and not _key_processed_as_single['d']:
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['right']:
                     # Process as single press (only once)
                     new_value = min(7, fmt_value + 1)
                     if new_value != fmt_value:
                         fmt_value = new_value
                         self.mw_fmt_slider.rating = fmt_value
-                        _key_processed_as_single['d'] = True
-                        print(f"🔍 DEBUG FMT - D single press: value changed to {fmt_value}")
+                        _key_processed_as_single['right'] = True
+                        print(f"🔍 DEBUG FMT - RIGHT single press: value changed to {fmt_value}")
                 elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
                     # Process as continuous hold
                     new_value = min(7, fmt_value + 1)
@@ -2171,7 +2173,7 @@ Current rating: {}"""
                         fmt_value = new_value
                         self.mw_fmt_slider.rating = fmt_value
                         _last_repeat_time = now
-                        print(f"🔍 DEBUG FMT - D hold: value changed to {fmt_value}")
+                        print(f"🔍 DEBUG FMT - RIGHT hold: value changed to {fmt_value}")
             
             # Handle ENTER and ESCAPE keys
             keys = event.getKeys()
