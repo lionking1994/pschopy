@@ -717,7 +717,7 @@ class MoodSARTExperimentSimple:
         # Updated instruction text for mouse-click control
         instruction_text = """Please rate your current mood by clicking anywhere on the slider.
 
-Click on the slider to set your rating, then click Continue to proceed."""
+Click on the slider to set your rating, then click Continue or press ENTER to proceed."""
         
         # Mouse for click detection
         mouse = event.Mouse(win=self.win)
@@ -751,9 +751,31 @@ Click on the slider to set your rating, then click Continue to proceed."""
             self.continue_button_text.draw()
             self.win.flip()
             
-            # Check for escape
-            if 'escape' in event.getKeys():
-                core.quit()
+            # Check for keyboard input
+            keys = event.getKeys()
+            for key in keys:
+                if key == 'escape':
+                    core.quit()
+                elif key == 'return':
+                    # Only allow ENTER confirmation if a rating has been made
+                    if rating_made:
+                        print(f"😊 Mood Rating ({phase}): {current_value}/100 (via ENTER)")
+                        print(f"✅ Mood rating collection completed")
+                        
+                        # Save mood rating data
+                        self.save_trial_data({
+                            'phase': f'mood_rating_{phase}',
+                            'mood_rating': current_value,
+                            'block_type': None, 'block_number': None, 'trial_number': None,
+                            'stimulus': None, 'stimulus_position': None, 'response': None,
+                            'correct_response': None, 'accuracy': None, 'reaction_time': None,
+                            'mw_tut_rating': None, 'mw_fmt_rating': None, 'velten_rating': None,
+                            'video_file': None, 'audio_file': None, 'velten_statement': None
+                        })
+                        
+                        return current_value
+                    else:
+                        print("⚠️  Please click on the slider to set a rating before pressing ENTER")
             
             # Check for button click (only if rating made)
             if rating_made and mouse.getPressed()[0]:
@@ -767,7 +789,7 @@ Click on the slider to set your rating, then click Continue to proceed."""
                 bottom_y = button_center_y - (button_height / 2.0)
                 
                 if (left_x <= mouse_pos[0] <= right_x) and (bottom_y <= mouse_pos[1] <= top_y):
-                    print(f"😊 Mood Rating ({phase}): {current_value}/100")
+                    print(f"😊 Mood Rating ({phase}): {current_value}/100 (via button click)")
                     print(f"✅ Mood rating collection completed")
                     
                     # Save mood rating data
