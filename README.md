@@ -69,10 +69,9 @@ psychopy/
 
 ### **Participant Input Methods:**
 - **Email Entry**: Type email address and press ENTER
-- **Condition Selection**: Press keys 1-4 for counterbalancing conditions
-- **Mood Ratings**: Move slider with mouse/touch (0-100), press ENTER to confirm
-- **Velten Ratings**: Move slider with mouse/touch (1-7), press ENTER to confirm
-- **Mind-Wandering Probes**: Move slider with mouse/touch (1-7), press ENTER to confirm
+- **Mood Ratings**: Click anywhere on slider to set rating, then click Continue button or press ENTER
+- **Velten Ratings**: Use A/D keys to adjust slider (1-7), press ENTER to confirm
+- **Mind-Wandering Probes**: Use A/D keys to adjust slider (1-7), press ENTER to confirm
 - **SART Responses**: Use LEFT/RIGHT arrow keys
 - **Exit Anytime**: Press ESCAPE key
 
@@ -93,7 +92,7 @@ psychopy/
 - **Audio Playback**: Music plays properly during Velten statements
 - **Video Loading**: Preloading system eliminates delays
 - **Modern Components**: Uses Slider instead of legacy RatingScale
-- **Interactive Sliders**: All ratings use intuitive mouse/touch sliders with real-time feedback
+- **Mixed Input Methods**: Mood scale uses mouse control, other ratings use keyboard control for focused interaction
 
 ### **Experimental Components:**
 - **4 Counterbalancing Conditions** - Fully implemented
@@ -105,7 +104,7 @@ psychopy/
 ### **Technical Features:**
 - **Modern PsychoPy 2025.1.1** compatibility
 - **PyQt6 GUI backend** support
-- **Keyboard-based interface** (no problematic dialogs)
+- **Fullscreen presentation** with hidden cursor (except during mood ratings)
 - **Video preloading system** for smooth playback
 - **Robust error handling** and fallbacks
 - **Professional data export** with timestamps
@@ -138,14 +137,14 @@ python scripts/data_analyzer.py --help
 
 ## 🎯 **Counterbalancing**
 
-Four conditions are implemented as specified:
+Four conditions with consistent induction types (randomized assignment):
 
 | Condition | SART Order | Mood Inductions | Mood Repair |
 |-----------|------------|-----------------|-------------|
-| 1 | RI-NRI-RI-NRI | V+, V+, M-, M- | No |
-| 2 | RI-NRI-RI-NRI | M-, M-, V+, V+ | Yes |
-| 3 | NRI-RI-NRI-RI | V-, V-, M+, M+ | Yes |
-| 4 | NRI-RI-NRI-RI | M+, M+, V-, V- | No |
+| 1 | RI-NRI-RI-NRI | V+, V+, V-, V- | Yes |
+| 2 | RI-NRI-RI-NRI | V-, V-, V+, V+ | No |
+| 3 | NRI-RI-NRI-RI | M+, M+, M-, M- | Yes |
+| 4 | NRI-RI-NRI-RI | M-, M-, M+, M+ | No |
 
 **Legend:**
 - RI = Response Inhibition, NRI = Non-Response Inhibition

@@ -196,8 +196,8 @@ SART_PARAMS = {
 
 # Screen dimensions and colors
 SCREEN_PARAMS = {
-    'size': [1024, 768],        # Window size
-    'fullscr': False,           # FIXED: Use windowed mode instead of fullscreen
+    'size': [1024, 768],        # Window size (ignored in fullscreen)
+    'fullscr': True,            # UPDATED: Enable fullscreen mode
     'color': [-1, -1, -1],      # Black background (PsychoPy uses -1 to 1 range)
     'units': 'pix',
     'allowGUI': True,           # ADDED: Allow GUI elements
@@ -243,22 +243,22 @@ def get_system_font_bold():
     else:
         return 'DejaVu Sans Bold'  # Linux fallback
 
-# Text styling
+# Text styling - UPDATED: Moderately larger text for fullscreen readability
 TEXT_STYLE = {
     'font': get_system_font(),
-    'height': 30,
+    'height': 38,          # Reduced from 48 to 38 for better balance
     'color': [1, 1, 1],    # White text (PsychoPy uses -1 to 1 range)
-    'wrapWidth': 800,
-    'alignText': 'left',  # FIXED: Left-align text instead of center
-    'anchorHoriz': 'left'  # FIXED: Anchor text to left
+    'wrapWidth': 1200,     # Increased wrap width to work with -500 positioning
+    'alignText': 'left',   # Keep left-align for instructions (as requested)
+    'anchorHoriz': 'left'  # Keep left anchor for instructions (as requested)
 }
 
-# Velten text styling (centered)
+# Velten text styling (centered) - UPDATED: Moderately larger text for fullscreen
 VELTEN_TEXT_STYLE = {
     'font': get_system_font(),
-    'height': 30,
+    'height': 36,          # Reduced from 42 to 36 for better balance
     'color': [1, 1, 1],    # White text
-    'wrapWidth': 800,
+    'wrapWidth': 900,      # Reduced wrap width for better balance
     'pos': (0, 0),         # Centered position
     'alignText': 'center',
     'anchorHoriz': 'center'
@@ -273,27 +273,29 @@ MOOD_SCALE = {
     'granularity': 1
 }
 
-# Counterbalancing orders (updated to match exact specifications)
+# Counterbalancing orders (UPDATED: Consistent induction types with randomization)
+# Four possible orders: Positive Velten → Negative Velten, Negative Velten → Positive Velten,
+# Positive Video → Negative Video, Negative Video → Positive Video
 COUNTERBALANCING_ORDERS = {
-    1: {  # Order 1 (V+ → V+ → M− → M−) ✅ Mood Repair
+    1: {  # Order 1: Positive Velten → Negative Velten (ends with negative = mood repair)
         'sart_conditions': ['RI', 'NRI', 'RI', 'NRI'],
-        'mood_inductions': [('V', '+'), ('V', '+'), ('M', '-'), ('M', '-')],
-        'mood_repair': True  # FIXED: Order 1 DOES need mood repair (ends with negative)
+        'mood_inductions': [('V', '+'), ('V', '+'), ('V', '-'), ('V', '-')],
+        'mood_repair': True  # Ends with negative, needs mood repair
     },
-    2: {  # Order 2 (M− → M− → V+ → V+) ❌ No Repair
+    2: {  # Order 2: Negative Velten → Positive Velten (ends with positive = no repair)
         'sart_conditions': ['RI', 'NRI', 'RI', 'NRI'],
-        'mood_inductions': [('M', '-'), ('M', '-'), ('V', '+'), ('V', '+')],
-        'mood_repair': False  # No repair needed (ends with positive)
+        'mood_inductions': [('V', '-'), ('V', '-'), ('V', '+'), ('V', '+')],
+        'mood_repair': False  # Ends with positive, no repair needed
     },
-    3: {  # Order 3 (V− → V− → M+ → M+) ❌ No Repair
+    3: {  # Order 3: Positive Video → Negative Video (ends with negative = mood repair)
         'sart_conditions': ['NRI', 'RI', 'NRI', 'RI'],
-        'mood_inductions': [('V', '-'), ('V', '-'), ('M', '+'), ('M', '+')],
-        'mood_repair': False  # No repair needed (ends with positive)
+        'mood_inductions': [('M', '+'), ('M', '+'), ('M', '-'), ('M', '-')],
+        'mood_repair': True  # Ends with negative, needs mood repair
     },
-    4: {  # Order 4 (M+ → M+ → V− → V−) ✅ Mood Repair
+    4: {  # Order 4: Negative Video → Positive Video (ends with positive = no repair)
         'sart_conditions': ['NRI', 'RI', 'NRI', 'RI'],
-        'mood_inductions': [('M', '+'), ('M', '+'), ('V', '-'), ('V', '-')],
-        'mood_repair': True  # FIXED: Order 4 DOES need mood repair (ends with negative)
+        'mood_inductions': [('M', '-'), ('M', '-'), ('M', '+'), ('M', '+')],
+        'mood_repair': False  # Ends with positive, no repair needed
     }
 }
 
@@ -351,7 +353,8 @@ Press any key to begin the video"""
     },
     'velten_intro': {
         'text': """You will now read a series of statements while listening to music. Each statement will appear on the screen for a short time. While it is displayed, focus on the words and try to bring your mood in line with what the statement says.
-	Press any key to begin"""
+
+Press any key to begin"""
     },
     'velten_rating': {
         'text': """To what extent were you able to bring your mood in line with this statement? 1 = Not at all ... 7 = Completely"""

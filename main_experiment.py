@@ -85,6 +85,9 @@ class MoodSARTExperimentSimple:
         
         self.win = visual.Window(**screen_params)
         
+        # Hide mouse cursor by default (will be shown only for mood scale)
+        self.win.mouseVisible = False
+        
         # Set up keyboard with Mac-specific handling
         if config.IS_MAC:
             # Mac-specific keyboard setup to reduce HID errors
@@ -122,7 +125,7 @@ class MoodSARTExperimentSimple:
             height=config.TEXT_STYLE['height'],
             color=config.TEXT_STYLE['color'],
             wrapWidth=config.TEXT_STYLE['wrapWidth'],
-            pos=(-400, 0),  # FIXED: Move text to left side of screen
+            pos=(-500, 0),  # UPDATED: Better left positioning for equal left/right margins
             alignText=config.TEXT_STYLE.get('alignText', 'left'),  # FIXED: Left align
             anchorHoriz=config.TEXT_STYLE.get('anchorHoriz', 'left'),  # FIXED: Anchor left
             bold=False  # FIXED: Explicitly disable bold to prevent font warnings
@@ -186,7 +189,7 @@ class MoodSARTExperimentSimple:
             ticks=config.MOOD_SCALE['tick_positions'],
             labels=config.MOOD_SCALE['labels'],
             pos=(0, -200),
-            size=(600, 50),
+            size=(800, 70),  # Reduced from 900x80 to 800x70 for better balance
             granularity=config.MOOD_SCALE['granularity'],
             style='slider',  # FIXED: Use 'slider' style for horizontal appearance
             color=[0.5, 0.5, 0.5],     # Neutral gray color
@@ -196,11 +199,11 @@ class MoodSARTExperimentSimple:
             # Note: showValue parameter not supported in this PsychoPy version
         )
         
-        # Continue button for mood rating
+        # Continue button for mood rating - UPDATED: Moderately larger for fullscreen
         self.continue_button = visual.Rect(
             win=self.win,
-            width=200,
-            height=60,
+            width=260,  # Reduced from 300 to 260 for better balance
+            height=75,  # Reduced from 90 to 75 for better balance
             pos=(0, -300),
             fillColor=[0.0, 0.5, 1.0],  # Brighter blue button
             lineColor=[1.0, 1.0, 1.0]   # White border for better visibility
@@ -211,15 +214,15 @@ class MoodSARTExperimentSimple:
             text="Continue",
             pos=(0, -300),
             color='white',
-            height=28,  # Larger text
+            height=35,  # Reduced from 40 to 35 for better balance
             bold=True   # Bold text for better visibility
         )
         
-        # Continue button for mind-wandering probe sliders (same as mood rating)
+        # Continue button for mind-wandering probe sliders - UPDATED: Moderately larger for fullscreen
         self.mw_continue_button = visual.Rect(
             win=self.win,
-            width=200,
-            height=60,
+            width=260,  # Reduced from 300 to 260 for better balance
+            height=75,  # Reduced from 90 to 75 for better balance
             pos=(0, -200),  # Position below sliders
             fillColor=[0.0, 0.5, 1.0],  # Brighter blue button
             lineColor=[1.0, 1.0, 1.0]   # White border for better visibility
@@ -230,7 +233,7 @@ class MoodSARTExperimentSimple:
             text="Continue",
             pos=(0, -200),  # Position below sliders
             color='white',
-            height=28,  # Larger text
+            height=35,  # Reduced from 40 to 35 for better balance
             bold=True   # Bold text for better visibility
         )
         
@@ -240,7 +243,7 @@ class MoodSARTExperimentSimple:
             ticks=list(range(config.MW_PROBES['scale_range'][0], config.MW_PROBES['scale_range'][1] + 1)),
             labels=config.MW_PROBES['scale_labels'],
             pos=(0, -100),
-            size=(500, 30),  # Smaller height to reduce marker size
+            size=(650, 45),  # Reduced from 750x50 to 650x45 for better balance
             granularity=1,   # Force discrete integer values
             style='rating',  # Discrete tick selection
             color=[-1, -1, -1],      # Black color (invisible against black background)
@@ -255,7 +258,7 @@ class MoodSARTExperimentSimple:
             ticks=list(range(config.MW_PROBES['scale_range'][0], config.MW_PROBES['scale_range'][1] + 1)),
             labels=config.MW_PROBES['scale_labels'],
             pos=(0, -100),
-            size=(500, 30),  # Smaller height to reduce marker size
+            size=(650, 45),  # Reduced from 750x50 to 650x45 for better balance
             granularity=1,   # Force discrete integer values
             style='rating',  # Discrete tick selection
             color=[-1, -1, -1],      # Black color (invisible against black background)
@@ -270,7 +273,7 @@ class MoodSARTExperimentSimple:
             ticks=config.VELTEN_RATING_SCALE['tick_positions'],  # [1, 2, 3, 4, 5, 6, 7]
             labels=config.VELTEN_RATING_SCALE['scale_labels'],
             pos=(0, -200),  # Lower position for better visibility
-            size=(700, 40),  # Smaller height to reduce marker size
+            size=(750, 55),  # Reduced from 850x60 to 750x55 for better balance
             granularity=1,  # Force discrete integer values only (1, 2, 3, 4, 5, 6, 7)
             style='rating',  # Use rating style for discrete tick selection
             color=[-1, -1, -1],      # Black color (invisible against black background)
@@ -495,10 +498,10 @@ class MoodSARTExperimentSimple:
         
         # Display condition descriptions for reference (console only)
         condition_descriptions = {
-            1: "V(+) → V(+) → M(-) → M(-)",
-            2: "M(-) → M(-) → V(+) → V(+)",
-            3: "V(-) → V(-) → M(+) → M(+)",
-            4: "M(+) → M(+) → V(-) → V(-)"
+            1: "V(+) → V(+) → V(-) → V(-)",  # Positive Velten → Negative Velten
+            2: "V(-) → V(-) → V(+) → V(+)",  # Negative Velten → Positive Velten
+            3: "M(+) → M(+) → M(-) → M(-)",  # Positive Video → Negative Video
+            4: "M(-) → M(-) → M(+) → M(+)"   # Negative Video → Positive Video
         }
         
         print(f"🎲 Automatically assigned counterbalancing order: {condition}")
@@ -511,10 +514,15 @@ class MoodSARTExperimentSimple:
         """Get text input using keyboard - Normal typing for email addresses"""
         input_text = ""
         
+        # Store original wrap width to restore later
+        original_wrap_width = self.instruction_text.wrapWidth
+        
         while True:
             # Display current input with normal instructions
             display_text = f"{prompt}\n\nInput: {input_text}_\n\nPress ENTER when done, BACKSPACE to delete\nType normally - Shift+2 for @, period key for ."
             self.instruction_text.text = display_text
+            # Temporarily increase wrap width to prevent wrapping of long prompts
+            self.instruction_text.wrapWidth = 2000
             self.instruction_text.draw()
             self.win.flip()
             
@@ -530,8 +538,12 @@ class MoodSARTExperimentSimple:
                 
                 if key == 'return':
                     if input_text.strip():
+                        # Restore original wrap width before returning
+                        self.instruction_text.wrapWidth = original_wrap_width
                         return input_text.strip()
                 elif key == 'escape':
+                    # Restore original wrap width before quitting
+                    self.instruction_text.wrapWidth = original_wrap_width
                     core.quit()
                 elif key == 'backspace':
                     input_text = input_text[:-1]
@@ -631,7 +643,9 @@ class MoodSARTExperimentSimple:
         self.win.flip()
         
         if wait_for_key:
-            event.waitKeys()
+            keys = event.waitKeys()
+            if keys and 'escape' in keys:
+                core.quit()
     
     def collect_mood_rating(self, phase):
         """MODERN: Collect mood rating using Slider component with button and keyboard advance"""
@@ -709,6 +723,9 @@ class MoodSARTExperimentSimple:
         """Collect mood rating using mouse-click control with Continue button"""
         print(f"📊 COLLECTING MOOD RATING (Mouse Click + Button): {phase}")
         
+        # Show mouse cursor for mood scale only
+        self.win.mouseVisible = True
+        
         # Start with no rating - user must click to set initial position
         current_value = None
         self.mood_slider.reset()
@@ -773,6 +790,8 @@ Click on the slider to set your rating, then click Continue or press ENTER to pr
                             'video_file': None, 'audio_file': None, 'velten_statement': None
                         })
                         
+                        # Hide cursor when leaving mood scale
+                        self.win.mouseVisible = False
                         return current_value
                     else:
                         print("⚠️  Please click on the slider to set a rating before pressing ENTER")
@@ -803,6 +822,8 @@ Click on the slider to set your rating, then click Continue or press ENTER to pr
                         'video_file': None, 'audio_file': None, 'velten_statement': None
                     })
                     
+                    # Hide cursor when leaving mood scale
+                    self.win.mouseVisible = False
                     return current_value
     
     def collect_mood_rating_keyboard(self, phase):
@@ -873,7 +894,7 @@ Click on the slider to set your rating, then click Continue or press ENTER to pr
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=(800, 600),
+                            size=(1000, 750),  # Reduced from 1200x900 to 1000x750 for better balance
                             pos=(0, 0),
                             loop=False,
                             autoStart=False
@@ -1120,8 +1141,8 @@ Click on the slider to set your rating, then click Continue or press ENTER to pr
             event.waitKeys(keyList=['escape'])
             print("✅ Continuing experiment")
             
-            # Reset text position to original left-aligned position
-            self.instruction_text.pos = (-400, 0)
+            # Reset text position to better left positioning for equal margins
+            self.instruction_text.pos = (-500, 0)
                         
         except Exception as e:
             print(f"Error playing video: {e}")
@@ -1143,7 +1164,9 @@ Click on the slider to set your rating, then click Continue or press ENTER to pr
         self.instruction_text.text = f"[VIDEO PLACEHOLDER]\n\n{video_key.upper()}\n\nPress any key to continue..."
         self.instruction_text.draw()
         self.win.flip()
-        event.waitKeys()
+        keys = event.waitKeys()
+        if keys and 'escape' in keys:
+            core.quit()
     
     def load_velten_statements(self, valence):
         """UPDATED: Load Velten statements using new PDF-based structure with Set A/B counterbalancing"""
@@ -2446,7 +2469,9 @@ Current rating: {}"""
         loading_screen.text = "Loading complete! Press any key to continue."
         loading_screen.draw()
         self.win.flip()
-        event.waitKeys()
+        keys = event.waitKeys()
+        if keys and 'escape' in keys:
+            core.quit()
     
     def run_experiment(self):
         """Run the complete experiment following the exact step sequence provided"""

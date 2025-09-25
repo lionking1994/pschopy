@@ -33,7 +33,7 @@ class VideoPreloader:
                     video = visual.MovieStim3(
                         win=self.win,
                         filename=str(video_path),
-                        size=(800, 600),
+                        size=(1000, 750),  # Updated to match main experiment video size
                         pos=(0, 0),
                         noAudio=False,
                         loop=False,
@@ -45,7 +45,7 @@ class VideoPreloader:
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=(800, 600),
+                            size=(1000, 750),  # Updated to match main experiment video size
                             pos=(0, 0),
                             noAudio=False,
                             loop=False,
@@ -109,9 +109,12 @@ def create_loading_screen(win, text="Loading videos, please wait..."):
         win=win,
         text=text,
         font='Arial',
-        height=30,
+        height=42,  # Increased from 30 to 42 for fullscreen visibility
         color='white',
-        pos=(0, 0)
+        pos=(0, 0),
+        wrapWidth=2000,  # Wide wrap width to keep loading messages on one line
+        alignText='center',
+        anchorHoriz='center'
     )
     
     # Show loading screen
