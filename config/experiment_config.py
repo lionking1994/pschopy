@@ -196,7 +196,7 @@ SART_PARAMS = {
 
 # Screen dimensions and colors
 SCREEN_PARAMS = {
-    'size': [1920, 1080],       # High resolution for better video quality
+    # Remove 'size' parameter to let PsychoPy auto-detect screen size in fullscreen
     'fullscr': True,            # UPDATED: Enable fullscreen mode
     'color': [-1, -1, -1],      # Black background (PsychoPy uses -1 to 1 range)
     'units': 'pix',
@@ -209,16 +209,17 @@ SCREEN_PARAMS = {
 }
 
 # Visual cue parameters
+# Visual cue parameters - will be calculated relative to screen size
 CONDITION_CUES = {
     'inhibition': {
         'color': [1, 1, 0],  # Yellow
-        'pos': [-800, 450],  # Further top-left for fullscreen
-        'radius': 50         # Larger radius for better visibility
+        'pos_ratio': (-0.4, 0.4),  # Relative position (40% left, 40% up from center)
+        'radius': 40         # Moderate radius for visibility across screen sizes
     },
     'non_inhibition': {
         'color': [0, 0, 1],  # Blue
-        'pos': [-800, 450],  # Further top-left for fullscreen
-        'radius': 50         # Larger radius for better visibility
+        'pos_ratio': (-0.4, 0.4),  # Relative position (40% left, 40% up from center)
+        'radius': 40         # Moderate radius for visibility across screen sizes
     }
 }
 

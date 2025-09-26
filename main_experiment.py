@@ -62,9 +62,9 @@ class MoodSARTExperimentSimple:
     def setup_experiment(self):
         """Set up PsychoPy window and basic experiment parameters"""
         # Create window - FIXED: Use windowed mode and enable GUI
-        # Mac-specific window initialization to reduce HID errors
+        # Adaptive window initialization - auto-detects screen size in fullscreen
         screen_params = {
-            'size': config.SCREEN_PARAMS['size'],
+            # Don't specify 'size' - let PsychoPy auto-detect in fullscreen mode
             'fullscr': config.SCREEN_PARAMS['fullscr'],
             'color': config.SCREEN_PARAMS['color'],
             'units': config.SCREEN_PARAMS['units'],
@@ -122,7 +122,11 @@ class MoodSARTExperimentSimple:
         
     def setup_stimuli(self):
         """Set up visual and audio stimuli using modern PsychoPy components"""
-        # Text stimuli - FIXED: Left-aligned text
+        # Text stimuli - ADAPTIVE: Calculate position based on screen size
+        screen_width, screen_height = self.win.size
+        # Position text at 25% from left edge for balanced margins
+        text_x_pos = -screen_width * 0.25
+        
         self.instruction_text = visual.TextStim(
             win=self.win,
             text='',
@@ -130,7 +134,7 @@ class MoodSARTExperimentSimple:
             height=config.TEXT_STYLE['height'],
             color=config.TEXT_STYLE['color'],
             wrapWidth=config.TEXT_STYLE['wrapWidth'],
-            pos=(-500, 0),  # UPDATED: Better left positioning for equal left/right margins
+            pos=(text_x_pos, 0),  # ADAPTIVE: Position based on screen width
             alignText=config.TEXT_STYLE.get('alignText', 'left'),  # FIXED: Left align
             anchorHoriz=config.TEXT_STYLE.get('anchorHoriz', 'left'),  # FIXED: Anchor left
             bold=False  # FIXED: Explicitly disable bold to prevent font warnings
@@ -171,11 +175,23 @@ class MoodSARTExperimentSimple:
             bold=False  # FIXED: Explicitly disable bold to prevent font warnings
         )
         
-        # Condition cue circles
+        # Condition cue circles - calculate positions based on actual screen size
+        screen_width, screen_height = self.win.size
+        
+        # Calculate adaptive positions
+        inhibition_pos = (
+            config.CONDITION_CUES['inhibition']['pos_ratio'][0] * screen_width,
+            config.CONDITION_CUES['inhibition']['pos_ratio'][1] * screen_height
+        )
+        non_inhibition_pos = (
+            config.CONDITION_CUES['non_inhibition']['pos_ratio'][0] * screen_width,
+            config.CONDITION_CUES['non_inhibition']['pos_ratio'][1] * screen_height
+        )
+        
         self.inhibition_cue = visual.Circle(
             win=self.win,
             radius=config.CONDITION_CUES['inhibition']['radius'],
-            pos=config.CONDITION_CUES['inhibition']['pos'],
+            pos=inhibition_pos,
             fillColor=config.CONDITION_CUES['inhibition']['color'],
             lineColor=config.CONDITION_CUES['inhibition']['color']
         )
@@ -183,7 +199,7 @@ class MoodSARTExperimentSimple:
         self.non_inhibition_cue = visual.Circle(
             win=self.win,
             radius=config.CONDITION_CUES['non_inhibition']['radius'],
-            pos=config.CONDITION_CUES['non_inhibition']['pos'],
+            pos=non_inhibition_pos,
             fillColor=config.CONDITION_CUES['non_inhibition']['color'],
             lineColor=config.CONDITION_CUES['non_inhibition']['color']
         )
@@ -774,7 +790,7 @@ class MoodSARTExperimentSimple:
         # Updated instruction text for mouse-click control
         instruction_text = """Please rate your current mood by clicking anywhere on the slider.
 
-Click on the slider to set your rating, then click Continue or press ENTER to proceed."""
+Click on the slider to set your rating, then click Continue to proceed."""
         
         # Mouse for click detection
         mouse = event.Mouse(win=self.win)
@@ -813,28 +829,7 @@ Click on the slider to set your rating, then click Continue or press ENTER to pr
             for key in keys:
                 if key == 'escape':
                     core.quit()
-                elif key == 'return':
-                    # Only allow ENTER confirmation if a rating has been made
-                    if rating_made:
-                        print(f"😊 Mood Rating ({phase}): {current_value}/100 (via ENTER)")
-                        print(f"✅ Mood rating collection completed")
-                        
-                        # Save mood rating data
-                        self.save_trial_data({
-                            'phase': f'mood_rating_{phase}',
-                            'mood_rating': current_value,
-                            'block_type': None, 'block_number': None, 'trial_number': None,
-                            'stimulus': None, 'stimulus_position': None, 'response': None,
-                            'correct_response': None, 'accuracy': None, 'reaction_time': None,
-                            'mw_tut_rating': None, 'mw_fmt_rating': None, 'velten_rating': None,
-                            'video_file': None, 'audio_file': None, 'velten_statement': None
-                        })
-                        
-                        # Hide cursor when leaving mood scale
-                        self.win.mouseVisible = False
-                        return current_value
-                    else:
-                        print("⚠️  Please click on the slider to set a rating before pressing ENTER")
+                # REMOVED: ENTER key advancement - client wants button-only advancement
             
             # Check for button click (only if rating made)
             if rating_made and mouse.getPressed()[0]:
