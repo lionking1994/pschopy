@@ -196,7 +196,7 @@ SART_PARAMS = {
 
 # Screen dimensions and colors
 SCREEN_PARAMS = {
-    'size': [1024, 768],        # Window size (ignored in fullscreen)
+    'size': [1920, 1080],       # High resolution for better video quality
     'fullscr': True,            # UPDATED: Enable fullscreen mode
     'color': [-1, -1, -1],      # Black background (PsychoPy uses -1 to 1 range)
     'units': 'pix',

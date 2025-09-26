@@ -895,7 +895,7 @@ Click on the slider to set your rating, then click Continue or press ENTER to pr
                     video = visual.MovieStim3(
                         win=self.win,
                         filename=str(video_path),
-                        size=self.win.size,  # Use actual window size for better quality
+                        size=(1920, 1080),  # Large size to fill fullscreen with good quality
                         pos=(0, 0),
                         loop=False,
                         autoStart=False
@@ -908,7 +908,7 @@ Click on the slider to set your rating, then click Continue or press ENTER to pr
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=self.win.size,  # Use actual window size for better quality
+                            size=(1920, 1080),  # Large size to fill fullscreen with good quality
                             pos=(0, 0),
                             loop=False,
                             autoStart=False

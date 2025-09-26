@@ -33,7 +33,7 @@ class VideoPreloader:
                     video = visual.MovieStim3(
                         win=self.win,
                         filename=str(video_path),
-                        size=self.win.size,  # Use actual window size for better quality
+                        size=(1920, 1080),  # Large size to fill fullscreen with good quality
                         pos=(0, 0),
                         noAudio=False,
                         loop=False,
@@ -45,7 +45,7 @@ class VideoPreloader:
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=self.win.size,  # Use actual window size for better quality
+                            size=(1920, 1080),  # Large size to fill fullscreen with good quality
                             pos=(0, 0),
                             noAudio=False,
                             loop=False,
