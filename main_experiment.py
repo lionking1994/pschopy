@@ -88,6 +88,11 @@ class MoodSARTExperimentSimple:
         # Hide mouse cursor by default (will be shown only for mood scale)
         self.win.mouseVisible = False
         
+        # Ensure window is fully ready before proceeding
+        self.win.flip()  # Force initial flip to initialize graphics
+        core.wait(0.1)  # Brief pause to ensure window is ready
+        print("✅ Window initialization complete")
+        
         # Set up keyboard with Mac-specific handling
         if config.IS_MAC:
             # Mac-specific keyboard setup to reduce HID errors
@@ -632,6 +637,7 @@ class MoodSARTExperimentSimple:
     
     def show_instruction(self, instruction_key, wait_for_key=True, condition_cue=None):
         """Display instruction screen - FIXED: Can show condition indicators for SART"""
+        print(f"🔍 DEBUG - Showing instruction: {instruction_key}")
         instruction = config.INSTRUCTIONS[instruction_key]
         self.instruction_text.text = instruction['text']
         self.instruction_text.draw()
@@ -641,11 +647,19 @@ class MoodSARTExperimentSimple:
             condition_cue.draw()
         
         self.win.flip()
+        print(f"🔍 DEBUG - Instruction displayed, waiting for key: {wait_for_key}")
         
         if wait_for_key:
+            print("🔍 DEBUG - Waiting for key press...")
+            # Clear any pending keyboard events to ensure clean state
+            event.clearEvents('keyboard')
             keys = event.waitKeys()
+            print(f"🔍 DEBUG - Key pressed: {keys}")
             if keys and 'escape' in keys:
+                print("🔍 DEBUG - Escape pressed, quitting...")
                 core.quit()
+            else:
+                print("🔍 DEBUG - Continuing after key press")
     
     def collect_mood_rating(self, phase):
         """MODERN: Collect mood rating using Slider component with button and keyboard advance"""
@@ -881,7 +895,7 @@ Click on the slider to set your rating, then click Continue or press ENTER to pr
                     video = visual.MovieStim3(
                         win=self.win,
                         filename=str(video_path),
-                        size=self.win.size,  # Use actual screen size for better quality
+                        size=self.win.size,  # Use actual window size for better quality
                         pos=(0, 0),
                         loop=False,
                         autoStart=False
@@ -894,7 +908,7 @@ Click on the slider to set your rating, then click Continue or press ENTER to pr
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=self.win.size,  # Use actual screen size for better quality
+                            size=self.win.size,  # Use actual window size for better quality
                             pos=(0, 0),
                             loop=False,
                             autoStart=False
