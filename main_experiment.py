@@ -150,12 +150,12 @@ class MoodSARTExperimentSimple:
             bold=False  # FIXED: Explicitly disable bold to prevent font warnings
         )
         
-        # SART stimuli
+        # SART stimuli - Increased sizes for fullscreen visibility
         self.fixation = visual.TextStim(
             win=self.win,
             text='+',
             font=config.TEXT_STYLE['font'],
-            height=40,
+            height=80,  # Increased from 40 for better fullscreen visibility
             color=config.TEXT_STYLE['color'],
             pos=(0, 0),
             bold=False  # FIXED: Explicitly disable bold to prevent font warnings
@@ -165,7 +165,7 @@ class MoodSARTExperimentSimple:
             win=self.win,
             text='',
             font=config.TEXT_STYLE['font'],
-            height=60,
+            height=120,  # Increased from 60 for better fullscreen visibility
             color=config.TEXT_STYLE['color'],
             pos=(0, 0),
             bold=False  # FIXED: Explicitly disable bold to prevent font warnings
@@ -247,46 +247,47 @@ class MoodSARTExperimentSimple:
             win=self.win,
             ticks=list(range(config.MW_PROBES['scale_range'][0], config.MW_PROBES['scale_range'][1] + 1)),
             labels=config.MW_PROBES['scale_labels'],
-            pos=(0, -100),
-            size=(650, 45),  # Reduced from 750x50 to 650x45 for better balance
+            pos=(0, -200),  # Moved down for better spacing in fullscreen
+            size=(900, 70),  # Increased size for fullscreen visibility
             granularity=1,   # Force discrete integer values
             style='rating',  # Discrete tick selection
-            color=[-1, -1, -1],      # Black color (invisible against black background)
+            color=[-1, -1, -1],      # Invisible background - using custom tick marks
             markerColor=[1, 0, 0],   # Red marker for visibility
-            lineColor=[-1, -1, -1],  # Black line (invisible against black background)
-            labelColor='white',
-            labelHeight=16
+            lineColor=[-1, -1, -1],  # Invisible line - using custom tick marks
+            labelColor=[-1, -1, -1], # Invisible labels - using custom labels
+            labelHeight=22
         )
         
         self.mw_fmt_slider = visual.Slider(
             win=self.win,
             ticks=list(range(config.MW_PROBES['scale_range'][0], config.MW_PROBES['scale_range'][1] + 1)),
             labels=config.MW_PROBES['scale_labels'],
-            pos=(0, -100),
-            size=(650, 45),  # Reduced from 750x50 to 650x45 for better balance
+            pos=(0, -200),  # Moved down for better spacing in fullscreen
+            size=(900, 70),  # Increased size for fullscreen visibility
             granularity=1,   # Force discrete integer values
             style='rating',  # Discrete tick selection
-            color=[-1, -1, -1],      # Black color (invisible against black background)
+            color=[-1, -1, -1],      # Invisible background - using custom tick marks
             markerColor=[1, 0, 0],   # Red marker for visibility
-            lineColor=[-1, -1, -1],  # Black line (invisible against black background)
-            labelColor='white'
+            lineColor=[-1, -1, -1],  # Invisible line - using custom tick marks
+            labelColor=[-1, -1, -1], # Invisible labels - using custom labels
+            labelHeight=22
         )
         
-        # UPDATED: 7-point scale slider matching attached image design (no line, smaller marker)
+        # UPDATED: 7-point scale slider (made invisible - using custom tick marks instead)
         self.velten_slider = visual.Slider(
             win=self.win,
             ticks=config.VELTEN_RATING_SCALE['tick_positions'],  # [1, 2, 3, 4, 5, 6, 7]
             labels=config.VELTEN_RATING_SCALE['scale_labels'],
-            pos=(0, -280),  # Moved further down for better spacing from text block
-            size=(750, 55),  # Reduced from 850x60 to 750x55 for better balance
+            pos=(0, -380),  # Position (will be invisible)
+            size=(750, 60),  # Size (will be invisible)
             granularity=1,  # Force discrete integer values only (1, 2, 3, 4, 5, 6, 7)
             style='rating',  # Use rating style for discrete tick selection
-            color=[-1, -1, -1],      # Black color (invisible against black background)
-            markerColor=[1, 0, 0],   # Red marker for visibility
-            lineColor=[-1, -1, -1],  # Black line (invisible against black background)
-            labelColor='white',
-            labelHeight=18,  # Readable label text
-            flip=False,  # Ensure proper orientation
+            color=[-1, -1, -1],      # Invisible - using custom tick marks instead
+            markerColor=[-1, -1, -1], # Invisible - using custom tick marks instead
+            lineColor=[-1, -1, -1],   # Invisible - using custom tick marks instead
+            labelColor=[-1, -1, -1],  # Invisible - using custom tick marks instead
+            labelHeight=20,
+            flip=False,
             readOnly=False
         )
         
@@ -299,13 +300,38 @@ class MoodSARTExperimentSimple:
         # Preload audio for instant playback
         self.preload_audio_files()
     
+    def draw_velten_marker(self, current_value):
+        """Draw red marker at the current value position on custom tick marks"""
+        if current_value is None:
+            return
+            
+        # Calculate marker position based on current value (1-7)
+        slider_width = 750
+        slider_x = 0
+        slider_y = -320
+        
+        # Calculate x position for the marker
+        # Values 1-7 map to positions along the slider width
+        value_ratio = (current_value - 1) / 6  # Convert 1-7 to 0-1
+        marker_x = slider_x - (slider_width / 2) + (value_ratio * slider_width)
+        
+        # Create and draw red marker circle
+        marker = visual.Circle(
+            win=self.win,
+            radius=15,  # Size of the red dot
+            pos=(marker_x, slider_y),
+            fillColor=[1, 0, 0],  # Red color
+            lineColor=[1, 0, 0]   # Red border
+        )
+        marker.draw()
+    
     def create_custom_tick_marks(self):
         """Create custom tick marks with different heights and white horizontal line for 7-point scales"""
-        # Velten slider custom ticks (position: 0, -200, size: 700x40)
+        # Velten slider custom ticks (position closer to text for better layout)
         self.velten_tick_marks = []
-        slider_width = 700
+        slider_width = 750  # Match the invisible slider width
         slider_x = 0  # Center position
-        slider_y = -200
+        slider_y = -320  # Position closer to text (between text and old bottom position)
         
         # Create horizontal line connecting all ticks
         line_start_x = slider_x - (slider_width / 2)
@@ -362,11 +388,11 @@ class MoodSARTExperimentSimple:
             )
             self.velten_tick_marks.append(tick_mark)
         
-        # MW probe sliders custom ticks (position: 0, -100, size: 500x30)
+        # MW probe sliders custom ticks (match actual slider position: 0, -200, size: 900x70)
         self.mw_tick_marks = []
-        mw_slider_width = 500
+        mw_slider_width = 900  # Match actual slider width
         mw_slider_x = 0  # Center position
-        mw_slider_y = -100
+        mw_slider_y = -200  # Match actual slider position
         
         # Create horizontal line connecting all MW ticks
         mw_line_start_x = mw_slider_x - (mw_slider_width / 2)
@@ -1512,7 +1538,7 @@ A = decrease rating, D = increase rating
             # Update instruction text (no current value display)
             self.instruction_text.text = instruction_text
             self.instruction_text.draw()
-            self.velten_slider.draw()
+            # Don't draw the invisible built-in slider - using custom tick marks instead
             # Draw horizontal line
             self.velten_horizontal_line.draw()
             # Draw custom tick marks with different heights
@@ -1521,6 +1547,8 @@ A = decrease rating, D = increase rating
             # Draw text labels at start and end
             self.velten_start_label.draw()
             self.velten_end_label.draw()
+            # Draw red marker at current position
+            self.draw_velten_marker(current_value)
             self.win.flip()
             
             # Handle ENTER and ESCAPE keys (only process if not handled by hold logic)

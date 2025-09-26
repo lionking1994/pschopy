@@ -212,13 +212,13 @@ SCREEN_PARAMS = {
 CONDITION_CUES = {
     'inhibition': {
         'color': [1, 1, 0],  # Yellow
-        'pos': [-450, 300],  # Top-left corner
-        'radius': 30
+        'pos': [-800, 450],  # Further top-left for fullscreen
+        'radius': 50         # Larger radius for better visibility
     },
     'non_inhibition': {
         'color': [0, 0, 1],  # Blue
-        'pos': [-450, 300],  # Top-left corner
-        'radius': 30
+        'pos': [-800, 450],  # Further top-left for fullscreen
+        'radius': 50         # Larger radius for better visibility
     }
 }
 
