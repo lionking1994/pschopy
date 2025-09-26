@@ -33,7 +33,7 @@ class VideoPreloader:
                     video = visual.MovieStim3(
                         win=self.win,
                         filename=str(video_path),
-                        size=(1000, 750),  # Updated to match main experiment video size
+                        size=None,  # Auto-scale to fill fullscreen
                         pos=(0, 0),
                         noAudio=False,
                         loop=False,
@@ -45,7 +45,7 @@ class VideoPreloader:
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=(1000, 750),  # Updated to match main experiment video size
+                            size=None,  # Auto-scale to fill fullscreen
                             pos=(0, 0),
                             noAudio=False,
                             loop=False,

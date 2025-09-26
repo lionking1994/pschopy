@@ -272,7 +272,7 @@ class MoodSARTExperimentSimple:
             win=self.win,
             ticks=config.VELTEN_RATING_SCALE['tick_positions'],  # [1, 2, 3, 4, 5, 6, 7]
             labels=config.VELTEN_RATING_SCALE['scale_labels'],
-            pos=(0, -200),  # Lower position for better visibility
+            pos=(0, -280),  # Moved further down for better spacing from text block
             size=(750, 55),  # Reduced from 850x60 to 750x55 for better balance
             granularity=1,  # Force discrete integer values only (1, 2, 3, 4, 5, 6, 7)
             style='rating',  # Use rating style for discrete tick selection
@@ -881,7 +881,7 @@ Click on the slider to set your rating, then click Continue or press ENTER to pr
                     video = visual.MovieStim3(
                         win=self.win,
                         filename=str(video_path),
-                        size=(800, 600),
+                        size=None,  # Auto-scale to fill fullscreen
                         pos=(0, 0),
                         loop=False,
                         autoStart=False
@@ -894,7 +894,7 @@ Click on the slider to set your rating, then click Continue or press ENTER to pr
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=(1000, 750),  # Reduced from 1200x900 to 1000x750 for better balance
+                            size=None,  # Auto-scale to fill fullscreen
                             pos=(0, 0),
                             loop=False,
                             autoStart=False
