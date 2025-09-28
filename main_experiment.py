@@ -62,9 +62,9 @@ class MoodSARTExperimentSimple:
     def setup_experiment(self):
         """Set up PsychoPy window and basic experiment parameters"""
         # Create window - FIXED: Use windowed mode and enable GUI
-        # Adaptive window initialization - auto-detects screen size in fullscreen
+        # Mac-specific window initialization to reduce HID errors
         screen_params = {
-            # Don't specify 'size' - let PsychoPy auto-detect in fullscreen mode
+            'size': config.SCREEN_PARAMS['size'],
             'fullscr': config.SCREEN_PARAMS['fullscr'],
             'color': config.SCREEN_PARAMS['color'],
             'units': config.SCREEN_PARAMS['units'],
@@ -122,30 +122,50 @@ class MoodSARTExperimentSimple:
         
     def setup_stimuli(self):
         """Set up visual and audio stimuli using modern PsychoPy components"""
-        # Text stimuli - ADAPTIVE: Calculate position based on screen size
-        screen_width, screen_height = self.win.size
-        # Position text at 25% from left edge for balanced margins
-        text_x_pos = -screen_width * 0.25
-        
+        # Text stimuli - RESPONSIVE: Use layout configuration for positioning
+        # Get text position from layout config (if available) or use default
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            text_pos = config.LAYOUT_CONFIG['text_pos']
+            print(f"📐 Using layout config text position: {text_pos}")
+        else:
+            text_pos = (-500, 0)  # Default fallback
+            print(f"📐 Using default text position: {text_pos}")
+            
+        # Get responsive text height from layout config
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG and 'text_height' in config.LAYOUT_CONFIG:
+            text_height = config.LAYOUT_CONFIG['text_height']
+            print(f"📐 Using responsive text height: {text_height}")
+        else:
+            text_height = config.TEXT_STYLE['height']  # Fallback
+            print(f"📐 Using default text height: {text_height}")
+            
         self.instruction_text = visual.TextStim(
             win=self.win,
             text='',
             font=config.TEXT_STYLE['font'],
-            height=config.TEXT_STYLE['height'],
+            height=text_height,  # RESPONSIVE: Use calculated height
             color=config.TEXT_STYLE['color'],
             wrapWidth=config.TEXT_STYLE['wrapWidth'],
-            pos=(text_x_pos, 0),  # ADAPTIVE: Position based on screen width
+            pos=text_pos,  # RESPONSIVE: Use calculated position
             alignText=config.TEXT_STYLE.get('alignText', 'left'),  # FIXED: Left align
             anchorHoriz=config.TEXT_STYLE.get('anchorHoriz', 'left'),  # FIXED: Anchor left
             bold=False  # FIXED: Explicitly disable bold to prevent font warnings
         )
+         
+        # Get responsive Velten text height from layout config
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG and 'velten_text_height' in config.LAYOUT_CONFIG:
+            velten_text_height = config.LAYOUT_CONFIG['velten_text_height']
+            print(f"📐 Using responsive Velten text height: {velten_text_height}")
+        else:
+            velten_text_height = config.VELTEN_TEXT_STYLE['height']  # Fallback
+            print(f"📐 Using default Velten text height: {velten_text_height}")
          
         # Centered text stimulus for Velten statements
         self.velten_text = visual.TextStim(
             win=self.win,
             text='',
             font=config.VELTEN_TEXT_STYLE['font'],
-            height=config.VELTEN_TEXT_STYLE['height'],
+            height=velten_text_height,  # RESPONSIVE: Use calculated height
             color=config.VELTEN_TEXT_STYLE['color'],
             wrapWidth=config.VELTEN_TEXT_STYLE['wrapWidth'],
             pos=config.VELTEN_TEXT_STYLE['pos'],
@@ -154,12 +174,22 @@ class MoodSARTExperimentSimple:
             bold=False  # FIXED: Explicitly disable bold to prevent font warnings
         )
         
-        # SART stimuli - Increased sizes for fullscreen visibility
+        # Get responsive SART element sizes from layout config
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            fixation_height = config.LAYOUT_CONFIG.get('fixation_height', 80)
+            digit_height = config.LAYOUT_CONFIG.get('digit_height', 120)
+            print(f"📐 Using responsive SART sizes: fixation={fixation_height}, digit={digit_height}")
+        else:
+            fixation_height = 80  # Fallback
+            digit_height = 120    # Fallback
+            print(f"📐 Using default SART sizes: fixation={fixation_height}, digit={digit_height}")
+            
+        # SART stimuli - Responsive sizes for different displays
         self.fixation = visual.TextStim(
             win=self.win,
             text='+',
             font=config.TEXT_STYLE['font'],
-            height=80,  # Increased from 40 for better fullscreen visibility
+            height=fixation_height,  # RESPONSIVE: Use calculated height
             color=config.TEXT_STYLE['color'],
             pos=(0, 0),
             bold=False  # FIXED: Explicitly disable bold to prevent font warnings
@@ -169,48 +199,64 @@ class MoodSARTExperimentSimple:
             win=self.win,
             text='',
             font=config.TEXT_STYLE['font'],
-            height=120,  # Increased from 60 for better fullscreen visibility
+            height=digit_height,  # RESPONSIVE: Use calculated height
             color=config.TEXT_STYLE['color'],
             pos=(0, 0),
             bold=False  # FIXED: Explicitly disable bold to prevent font warnings
         )
         
-        # Condition cue circles - calculate positions based on actual screen size
-        screen_width, screen_height = self.win.size
-        
-        # Calculate adaptive positions
-        inhibition_pos = (
-            config.CONDITION_CUES['inhibition']['pos_ratio'][0] * screen_width,
-            config.CONDITION_CUES['inhibition']['pos_ratio'][1] * screen_height
-        )
-        non_inhibition_pos = (
-            config.CONDITION_CUES['non_inhibition']['pos_ratio'][0] * screen_width,
-            config.CONDITION_CUES['non_inhibition']['pos_ratio'][1] * screen_height
-        )
-        
+        # Condition cue circles - RESPONSIVE: Use layout configuration
+        # Get cue position and size from layout config (if available) or use config defaults
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            cue_pos = config.LAYOUT_CONFIG['cue_pos']
+            cue_radius = config.LAYOUT_CONFIG['cue_radius']
+            print(f"📐 Using layout config cue position: {cue_pos}, radius: {cue_radius}")
+        else:
+            cue_pos = config.CONDITION_CUES['inhibition']['pos']
+            cue_radius = config.CONDITION_CUES['inhibition']['radius']
+            print(f"📐 Using default cue position: {cue_pos}, radius: {cue_radius}")
+            
         self.inhibition_cue = visual.Circle(
             win=self.win,
-            radius=config.CONDITION_CUES['inhibition']['radius'],
-            pos=inhibition_pos,
+            radius=cue_radius,  # RESPONSIVE: Use calculated radius
+            pos=cue_pos,        # RESPONSIVE: Use calculated position
             fillColor=config.CONDITION_CUES['inhibition']['color'],
             lineColor=config.CONDITION_CUES['inhibition']['color']
         )
         
         self.non_inhibition_cue = visual.Circle(
             win=self.win,
-            radius=config.CONDITION_CUES['non_inhibition']['radius'],
-            pos=non_inhibition_pos,
+            radius=cue_radius,  # RESPONSIVE: Use calculated radius
+            pos=cue_pos,        # RESPONSIVE: Use calculated position
             fillColor=config.CONDITION_CUES['non_inhibition']['color'],
             lineColor=config.CONDITION_CUES['non_inhibition']['color']
         )
         
-        # MODERN: Mood rating slider (replaces RatingScale) - Neutral colors, no midpoint
+        # Get responsive mood slider size from layout config
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            mood_slider_width = config.LAYOUT_CONFIG.get('mood_slider_width', 800)
+            mood_slider_height = config.LAYOUT_CONFIG.get('mood_slider_height', 70)
+            print(f"📐 Using responsive mood slider size: {mood_slider_width}x{mood_slider_height}")
+        else:
+            mood_slider_width = 800   # Fallback
+            mood_slider_height = 70   # Fallback
+            print(f"📐 Using default mood slider size: {mood_slider_width}x{mood_slider_height}")
+            
+        # Get responsive mood slider position from layout config
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            mood_slider_pos = (0, config.LAYOUT_CONFIG.get('mood_slider_pos', -200))
+            print(f"📐 Using responsive mood slider position: {mood_slider_pos}")
+        else:
+            mood_slider_pos = (0, -200)  # Fallback
+            print(f"📐 Using default mood slider position: {mood_slider_pos}")
+            
+        # MODERN: Mood rating slider (replaces RatingScale) - Responsive sizing and positioning
         self.mood_slider = visual.Slider(
             win=self.win,
             ticks=config.MOOD_SCALE['tick_positions'],
             labels=config.MOOD_SCALE['labels'],
-            pos=(0, -200),
-            size=(800, 70),  # Reduced from 900x80 to 800x70 for better balance
+            pos=mood_slider_pos,  # RESPONSIVE: Use calculated position
+            size=(mood_slider_width, mood_slider_height),  # RESPONSIVE: Use calculated size
             granularity=config.MOOD_SCALE['granularity'],
             style='slider',  # FIXED: Use 'slider' style for horizontal appearance
             color=[0.5, 0.5, 0.5],     # Neutral gray color
@@ -220,11 +266,23 @@ class MoodSARTExperimentSimple:
             # Note: showValue parameter not supported in this PsychoPy version
         )
         
-        # Continue button for mood rating - UPDATED: Moderately larger for fullscreen
+        # Get responsive button sizes from layout config
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            button_width = config.LAYOUT_CONFIG.get('button_width', 260)
+            button_height = config.LAYOUT_CONFIG.get('button_height', 75)
+            button_text_height = config.LAYOUT_CONFIG.get('button_text_height', 35)
+            print(f"📐 Using responsive button size: {button_width}x{button_height}, text={button_text_height}")
+        else:
+            button_width = 260    # Fallback
+            button_height = 75    # Fallback
+            button_text_height = 35  # Fallback
+            print(f"📐 Using default button size: {button_width}x{button_height}, text={button_text_height}")
+            
+        # Continue button for mood rating - Responsive sizing
         self.continue_button = visual.Rect(
             win=self.win,
-            width=260,  # Reduced from 300 to 260 for better balance
-            height=75,  # Reduced from 90 to 75 for better balance
+            width=button_width,   # RESPONSIVE: Use calculated width
+            height=button_height, # RESPONSIVE: Use calculated height
             pos=(0, -300),
             fillColor=[0.0, 0.5, 1.0],  # Brighter blue button
             lineColor=[1.0, 1.0, 1.0]   # White border for better visibility
@@ -235,15 +293,15 @@ class MoodSARTExperimentSimple:
             text="Continue",
             pos=(0, -300),
             color='white',
-            height=35,  # Reduced from 40 to 35 for better balance
+            height=button_text_height,  # RESPONSIVE: Use calculated height
             bold=True   # Bold text for better visibility
         )
         
-        # Continue button for mind-wandering probe sliders - UPDATED: Moderately larger for fullscreen
+        # Continue button for mind-wandering probe sliders - Responsive sizing
         self.mw_continue_button = visual.Rect(
             win=self.win,
-            width=260,  # Reduced from 300 to 260 for better balance
-            height=75,  # Reduced from 90 to 75 for better balance
+            width=button_width,   # RESPONSIVE: Use same calculated width
+            height=button_height, # RESPONSIVE: Use same calculated height
             pos=(0, -200),  # Position below sliders
             fillColor=[0.0, 0.5, 1.0],  # Brighter blue button
             lineColor=[1.0, 1.0, 1.0]   # White border for better visibility
@@ -254,17 +312,35 @@ class MoodSARTExperimentSimple:
             text="Continue",
             pos=(0, -200),  # Position below sliders
             color='white',
-            height=35,  # Reduced from 40 to 35 for better balance
+            height=button_text_height,  # RESPONSIVE: Use same calculated height
             bold=True   # Bold text for better visibility
         )
         
-        # MODERN: Mind-wandering probe sliders - 7-point discrete scales (no line, smaller height for smaller marker)
+        # Get responsive MW slider sizes from layout config
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            mw_slider_width = config.LAYOUT_CONFIG.get('mw_slider_width', 900)
+            mw_slider_height = config.LAYOUT_CONFIG.get('mw_slider_height', 70)
+            print(f"📐 Using responsive MW slider size: {mw_slider_width}x{mw_slider_height}")
+        else:
+            mw_slider_width = 900   # Fallback
+            mw_slider_height = 70   # Fallback
+            print(f"📐 Using default MW slider size: {mw_slider_width}x{mw_slider_height}")
+            
+        # Get responsive MW slider position from layout config
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            mw_slider_pos = (0, config.LAYOUT_CONFIG.get('mw_slider_pos', -200))
+            print(f"📐 Using responsive MW slider position: {mw_slider_pos}")
+        else:
+            mw_slider_pos = (0, -200)  # Fallback
+            print(f"📐 Using default MW slider position: {mw_slider_pos}")
+            
+        # MODERN: Mind-wandering probe sliders - Responsive sizing and positioning
         self.mw_tut_slider = visual.Slider(
             win=self.win,
             ticks=list(range(config.MW_PROBES['scale_range'][0], config.MW_PROBES['scale_range'][1] + 1)),
             labels=config.MW_PROBES['scale_labels'],
-            pos=(0, -200),  # Moved down for better spacing in fullscreen
-            size=(900, 70),  # Increased size for fullscreen visibility
+            pos=mw_slider_pos,  # RESPONSIVE: Use calculated position
+            size=(mw_slider_width, mw_slider_height),  # RESPONSIVE: Use calculated size
             granularity=1,   # Force discrete integer values
             style='rating',  # Discrete tick selection
             color=[-1, -1, -1],      # Invisible background - using custom tick marks
@@ -278,8 +354,8 @@ class MoodSARTExperimentSimple:
             win=self.win,
             ticks=list(range(config.MW_PROBES['scale_range'][0], config.MW_PROBES['scale_range'][1] + 1)),
             labels=config.MW_PROBES['scale_labels'],
-            pos=(0, -200),  # Moved down for better spacing in fullscreen
-            size=(900, 70),  # Increased size for fullscreen visibility
+            pos=mw_slider_pos,  # RESPONSIVE: Use same calculated position
+            size=(mw_slider_width, mw_slider_height),  # RESPONSIVE: Use same calculated size
             granularity=1,   # Force discrete integer values
             style='rating',  # Discrete tick selection
             color=[-1, -1, -1],      # Invisible background - using custom tick marks
@@ -289,13 +365,31 @@ class MoodSARTExperimentSimple:
             labelHeight=22
         )
         
+        # Get responsive Velten slider sizes from layout config
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            velten_slider_width = config.LAYOUT_CONFIG.get('velten_slider_width', 750)
+            velten_slider_height = config.LAYOUT_CONFIG.get('velten_slider_height', 60)
+            print(f"📐 Using responsive Velten slider size: {velten_slider_width}x{velten_slider_height}")
+        else:
+            velten_slider_width = 750   # Fallback
+            velten_slider_height = 60   # Fallback
+            print(f"📐 Using default Velten slider size: {velten_slider_width}x{velten_slider_height}")
+            
+        # Get responsive Velten slider position from layout config
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            velten_slider_pos = (0, config.LAYOUT_CONFIG.get('velten_slider_pos', -380))
+            print(f"📐 Using responsive Velten slider position: {velten_slider_pos}")
+        else:
+            velten_slider_pos = (0, -380)  # Fallback
+            print(f"📐 Using default Velten slider position: {velten_slider_pos}")
+            
         # UPDATED: 7-point scale slider (made invisible - using custom tick marks instead)
         self.velten_slider = visual.Slider(
             win=self.win,
             ticks=config.VELTEN_RATING_SCALE['tick_positions'],  # [1, 2, 3, 4, 5, 6, 7]
             labels=config.VELTEN_RATING_SCALE['scale_labels'],
-            pos=(0, -380),  # Position (will be invisible)
-            size=(750, 60),  # Size (will be invisible)
+            pos=velten_slider_pos,  # RESPONSIVE: Use calculated position
+            size=(velten_slider_width, velten_slider_height),  # RESPONSIVE: Use calculated size
             granularity=1,  # Force discrete integer values only (1, 2, 3, 4, 5, 6, 7)
             style='rating',  # Use rating style for discrete tick selection
             color=[-1, -1, -1],      # Invisible - using custom tick marks instead
@@ -321,10 +415,20 @@ class MoodSARTExperimentSimple:
         if current_value is None:
             return
             
+        # Get responsive Velten slider size from layout config
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            slider_width = config.LAYOUT_CONFIG.get('velten_slider_width', 750)
+        else:
+            slider_width = 750  # Fallback
+            
         # Calculate marker position based on current value (1-7)
-        slider_width = 750
         slider_x = 0
-        slider_y = -320
+        # Get responsive Velten tick marks Y position (matches create_custom_tick_marks calculation)
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            velten_slider_pos_y = config.LAYOUT_CONFIG.get('velten_slider_pos', -380)
+            slider_y = velten_slider_pos_y + 60  # Match the custom tick marks position
+        else:
+            slider_y = -320  # Fallback position
         
         # Calculate x position for the marker
         # Values 1-7 map to positions along the slider width
@@ -343,11 +447,24 @@ class MoodSARTExperimentSimple:
     
     def create_custom_tick_marks(self):
         """Create custom tick marks with different heights and white horizontal line for 7-point scales"""
-        # Velten slider custom ticks (position closer to text for better layout)
+        # Get responsive slider widths from layout config
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            velten_width = config.LAYOUT_CONFIG.get('velten_slider_width', 750)
+            mw_width = config.LAYOUT_CONFIG.get('mw_slider_width', 900)
+        else:
+            velten_width = 750  # Fallback
+            mw_width = 900      # Fallback
+            
+        # Velten slider custom ticks (responsive positioning for better layout)
         self.velten_tick_marks = []
-        slider_width = 750  # Match the invisible slider width
+        slider_width = velten_width  # RESPONSIVE: Use calculated width
         slider_x = 0  # Center position
-        slider_y = -320  # Position closer to text (between text and old bottom position)
+        # Calculate Velten tick marks position (offset from slider position for better visibility)
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            velten_slider_pos_y = config.LAYOUT_CONFIG.get('velten_slider_pos', -380)
+            slider_y = velten_slider_pos_y + 60  # Position above the invisible slider for better visibility
+        else:
+            slider_y = -320  # Fallback position
         
         # Create horizontal line connecting all ticks
         line_start_x = slider_x - (slider_width / 2)
@@ -404,11 +521,15 @@ class MoodSARTExperimentSimple:
             )
             self.velten_tick_marks.append(tick_mark)
         
-        # MW probe sliders custom ticks (match actual slider position: 0, -200, size: 900x70)
+        # MW probe sliders custom ticks (match actual slider position with responsive positioning)
         self.mw_tick_marks = []
-        mw_slider_width = 900  # Match actual slider width
+        mw_slider_width = mw_width  # RESPONSIVE: Use calculated width
         mw_slider_x = 0  # Center position
-        mw_slider_y = -200  # Match actual slider position
+        # Get responsive MW slider Y position
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            mw_slider_y = config.LAYOUT_CONFIG.get('mw_slider_pos', -200)
+        else:
+            mw_slider_y = -200  # Fallback
         
         # Create horizontal line connecting all MW ticks
         mw_line_start_x = mw_slider_x - (mw_slider_width / 2)
@@ -787,14 +908,14 @@ class MoodSARTExperimentSimple:
         self.mood_slider.reset()
         # Don't set initial rating - slider starts empty
         
-        # Updated instruction text for mouse-click control
+        # Updated instruction text for mouse-click control (button-only per client request)
         instruction_text = """Please rate your current mood by clicking anywhere on the slider.
-
-Click on the slider to set your rating, then click Continue to proceed."""
+ 
+Click on the slider to set your rating, then click the Continue button to proceed."""
         
         # Mouse for click detection
         mouse = event.Mouse(win=self.win)
-         
+        
         while True:
             # Update current_value based on any slider interaction (click or drag)
             slider_val = self.mood_slider.getRating()
@@ -824,12 +945,11 @@ Click on the slider to set your rating, then click Continue to proceed."""
             self.continue_button_text.draw()
             self.win.flip()
             
-            # Check for keyboard input
-            keys = event.getKeys()
+            # Check for keyboard input (ENTER disabled - button click only per client request)
+            keys = event.getKeys(['escape'])  # Only listen for escape key
             for key in keys:
                 if key == 'escape':
                     core.quit()
-                # REMOVED: ENTER key advancement - client wants button-only advancement
             
             # Check for button click (only if rating made)
             if rating_made and mouse.getPressed()[0]:
@@ -911,12 +1031,20 @@ Click on the slider to set your rating, then click Continue to proceed."""
                 video = None
                 video_errors = []
                 
+                # Get responsive video size from layout config or window size
+                if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG and 'screen_size' in config.LAYOUT_CONFIG:
+                    video_size = tuple(config.LAYOUT_CONFIG['screen_size'])
+                    print(f"📺 Using responsive video size: {video_size[0]}x{video_size[1]}")
+                else:
+                    video_size = self.win.size if hasattr(self.win, 'size') else (1920, 1080)
+                    print(f"📺 Using window video size: {video_size[0]}x{video_size[1]}")
+                
                 # Try MovieStim3 first
                 try:
                     video = visual.MovieStim3(
                         win=self.win,
                         filename=str(video_path),
-                        size=(1920, 1080),  # Large size to fill fullscreen with good quality
+                        size=video_size,  # RESPONSIVE: Use calculated video size
                         pos=(0, 0),
                         loop=False,
                         autoStart=False
@@ -929,7 +1057,7 @@ Click on the slider to set your rating, then click Continue to proceed."""
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=(1920, 1080),  # Large size to fill fullscreen with good quality
+                            size=video_size,  # RESPONSIVE: Use same calculated video size
                             pos=(0, 0),
                             loop=False,
                             autoStart=False
@@ -1362,8 +1490,16 @@ Click on the slider to set your rating, then click Continue to proceed."""
             self.velten_text.draw()
             self.win.flip()
             
-            # Wait for statement duration while keeping audio playing
-            core.wait(config.TIMING['velten_statement_duration'])
+            # Wait for statement duration while keeping audio playing and clearing keyboard events
+            statement_start_time = core.getTime()
+            statement_duration = config.TIMING['velten_statement_duration']
+            
+            while (core.getTime() - statement_start_time) < statement_duration:
+                # Clear any keyboard events during statement display to prevent carryover
+                event.clearEvents(eventType='keyboard')
+                core.wait(0.1)  # Small wait to prevent excessive CPU usage
+            
+            print(f"🔄 Keyboard events cleared during statement {i+1} display")
             
             # UPDATED: Get rating using numbered Likert scale
             rating = self.get_velten_rating_slider()

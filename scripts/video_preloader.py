@@ -28,12 +28,21 @@ class VideoPreloader:
         """Preload a single video"""
         try:
             if video_path.exists():
+                # Get responsive video size from layout config or window size
+                import config
+                if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG and 'screen_size' in config.LAYOUT_CONFIG:
+                    video_size = tuple(config.LAYOUT_CONFIG['screen_size'])
+                    print(f"📺 Preloader using responsive video size: {video_size[0]}x{video_size[1]}")
+                else:
+                    video_size = self.win.size if hasattr(self.win, 'size') else (1920, 1080)
+                    print(f"📺 Preloader using window video size: {video_size[0]}x{video_size[1]}")
+                
                 # Try different video components based on availability
                 try:
                     video = visual.MovieStim3(
                         win=self.win,
                         filename=str(video_path),
-                        size=(1920, 1080),  # Large size to fill fullscreen with good quality
+                        size=video_size,  # RESPONSIVE: Use calculated video size
                         pos=(0, 0),
                         noAudio=False,
                         loop=False,
@@ -45,7 +54,7 @@ class VideoPreloader:
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=(1920, 1080),  # Large size to fill fullscreen with good quality
+                            size=video_size,  # RESPONSIVE: Use same calculated video size
                             pos=(0, 0),
                             noAudio=False,
                             loop=False,
