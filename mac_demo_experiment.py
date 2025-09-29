@@ -59,21 +59,29 @@ sys.path.append(str(Path(__file__).parent / 'config'))
 def setup_display_config(display_size=None):
     """Setup display configuration based on user selection"""
     from display_config import get_layout_for_config, print_available_configs
-    import tkinter as tk
     
-    # Debug: Detect actual screen size
+    # Debug: Detect actual screen size (with fallback for missing tkinter)
     print("\n🔍 DEBUG - Display Detection:")
     print("=" * 50)
     try:
+        import tkinter as tk
         root = tk.Tk()
         actual_width = root.winfo_screenwidth()
         actual_height = root.winfo_screenheight()
         root.destroy()
-        print(f"✅ Actual screen size detected: {actual_width}x{actual_height}")
+        print(f"✅ Actual screen size detected (tkinter): {actual_width}x{actual_height}")
         print(f"   Platform: {sys.platform}")
         print(f"   Is Mac: {sys.platform == 'darwin'}")
+    except ImportError:
+        print(f"⚠️  tkinter not available in PsychoPy environment")
+        print(f"   Platform: {sys.platform}")
+        print(f"   Is Mac: {sys.platform == 'darwin'}")
+        print(f"   Using display_config.py for screen detection")
+        actual_width, actual_height = None, None
     except Exception as e:
         print(f"❌ Could not detect screen size: {e}")
+        print(f"   Platform: {sys.platform}")
+        print(f"   Is Mac: {sys.platform == 'darwin'}")
         actual_width, actual_height = None, None
     print("=" * 50)
     
