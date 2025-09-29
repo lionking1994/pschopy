@@ -2,11 +2,14 @@
 """
 Mac-optimized demo experiment launcher for PsychoPy
 Includes Mac-specific optimizations to reduce HID and timing warnings.
+Features responsive UI with display size selection for different screen configurations.
 """
 
 import sys
 import os
 import warnings
+import argparse
+from pathlib import Path
 
 # Suppress Mac-specific warnings that don't affect functionality
 warnings.filterwarnings("ignore", message=".*Monitor specification not found.*")
@@ -49,6 +52,120 @@ if sys.platform == 'darwin':  # macOS
     def suppress_all_warnings():
         """Context manager to suppress all warnings and HID output"""
         return contextlib.redirect_stderr(io.StringIO())
+
+# Add config to path
+sys.path.append(str(Path(__file__).parent / 'config'))
+
+def setup_display_config(display_size=None):
+    """Setup display configuration based on user selection"""
+    from display_config import get_layout_for_config, print_available_configs
+    import tkinter as tk
+    
+    # Debug: Detect actual screen size
+    print("\n🔍 DEBUG - Display Detection:")
+    print("=" * 50)
+    try:
+        root = tk.Tk()
+        actual_width = root.winfo_screenwidth()
+        actual_height = root.winfo_screenheight()
+        root.destroy()
+        print(f"✅ Actual screen size detected: {actual_width}x{actual_height}")
+        print(f"   Platform: {sys.platform}")
+        print(f"   Is Mac: {sys.platform == 'darwin'}")
+    except Exception as e:
+        print(f"❌ Could not detect screen size: {e}")
+        actual_width, actual_height = None, None
+    print("=" * 50)
+    
+    if display_size is None:
+        # Interactive selection
+        print("\n🖥️  Select Display Configuration:")
+        print("=" * 50)
+        print("📱 Small Displays:")
+        print("  1. tiny     - Tiny Display (1024x768)")
+        print("  2. compact  - Compact Display (1280x720)")
+        print("  3. small    - Small Display (1366x768)")
+        print()
+        print("🖥️  Standard Displays:")
+        print("  4. standard - Standard Display (1440x900)")
+        print("  5. medium   - Medium Display (1600x900)")
+        print("  6. wide     - Wide Display (1680x1050)")
+        print()
+        print("🖥️  Large Displays:")
+        print("  7. large    - Large Display (1920x1080)")
+        print("  8. tall     - Tall Display (1920x1200)")
+        print("  9. retina   - Retina Display (2880x1800)")
+        print()
+        print("🖥️  High-Resolution Displays:")
+        print(" 10. xlarge   - Extra Large Display (2560x1440)")
+        print(" 11. ultrawide- Ultrawide Display (3440x1440)")
+        print(" 12. 4k       - 4K Display (3840x2160)")
+        print()
+        print(" 13. auto     - Auto-detect Display Size")
+        print()
+        
+        # Create mapping for numeric choices
+        choice_map = {
+            '1': 'tiny', '2': 'compact', '3': 'small', '4': 'standard',
+            '5': 'medium', '6': 'wide', '7': 'large', '8': 'tall',
+            '9': 'retina', '10': 'xlarge', '11': 'ultrawide', '12': '4k',
+            '13': 'auto'
+        }
+        
+        while True:
+            try:
+                choice = input("Enter your choice (1-13) or display name: ").strip()
+                
+                if choice in choice_map:
+                    display_size = choice_map[choice]
+                    break
+                elif choice in ['tiny', 'compact', 'small', 'standard', 'medium', 'wide', 
+                              'large', 'tall', 'retina', 'xlarge', 'ultrawide', '4k', 'auto']:
+                    display_size = choice
+                    break
+                else:
+                    print("❌ Invalid choice. Please enter a number (1-13) or display name.")
+                    continue
+            except KeyboardInterrupt:
+                print("\n👋 Setup cancelled by user")
+                sys.exit(0)
+            except Exception as e:
+                print(f"❌ Input error: {e}")
+                continue
+    
+    # Get layout configuration
+    layout_config = get_layout_for_config(display_size)
+    
+    print(f"\n🎯 Selected Configuration: {layout_config['name']}")
+    print(f"   📏 Resolution: {layout_config['size'][0]}x{layout_config['size'][1]}")
+    print(f"   🖥️  Mode: {'Fullscreen' if layout_config['fullscr'] else 'Windowed'}")
+    print(f"   📝 Text wrap: {layout_config['text_wrap']} pixels")
+    print(f"   🎬 Video quality: {layout_config['video_quality']['rating']}")
+    print(f"   💡 {layout_config['video_quality']['recommendation']}")
+    
+    # Debug: Print detailed layout configuration
+    print("\n🔍 DEBUG - Layout Configuration Details:")
+    print("=" * 50)
+    print(f"   Screen size: {layout_config.get('screen_size', 'N/A')}")
+    print(f"   Scale factor: {layout_config.get('scale_factor', 'N/A'):.3f}")
+    print(f"   Text position: {layout_config.get('text_pos', 'N/A')}")
+    print(f"   Text height: {layout_config.get('text_height', 'N/A')}")
+    print(f"   Velten text height: {layout_config.get('velten_text_height', 'N/A')}")
+    print(f"   Cue position: {layout_config.get('cue_pos', 'N/A')}")
+    print(f"   Cue radius: {layout_config.get('cue_radius', 'N/A')}")
+    print(f"   Button size: {layout_config.get('button_width', 'N/A')}x{layout_config.get('button_height', 'N/A')}")
+    print(f"   Mood slider: {layout_config.get('mood_slider_width', 'N/A')}x{layout_config.get('mood_slider_height', 'N/A')}")
+    print(f"   Mood slider pos: {layout_config.get('mood_slider_pos', 'N/A')}")
+    print(f"   Velten slider: {layout_config.get('velten_slider_width', 'N/A')}x{layout_config.get('velten_slider_height', 'N/A')}")
+    print(f"   Velten slider pos: {layout_config.get('velten_slider_pos', 'N/A')}")
+    print(f"   MW slider: {layout_config.get('mw_slider_width', 'N/A')}x{layout_config.get('mw_slider_height', 'N/A')}")
+    print(f"   MW slider pos: {layout_config.get('mw_slider_pos', 'N/A')}")
+    print(f"   Fixation height: {layout_config.get('fixation_height', 'N/A')}")
+    print(f"   Digit height: {layout_config.get('digit_height', 'N/A')}")
+    print("=" * 50)
+    print()
+    
+    return layout_config
 
 # Clear any cached modules to ensure fresh import
 import sys
@@ -126,14 +243,101 @@ except Exception as e:
     sys.exit(1)
 
 def main():
-    """Run the Mac-optimized demo experiment"""
+    """Run the Mac-optimized demo experiment with responsive UI"""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description='Mac-optimized Demo Experiment with Display Configuration',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Available Display Configurations:
+  tiny      - Tiny Display (1024x768)
+  compact   - Compact Display (1280x720) 
+  small     - Small Display (1366x768)
+  standard  - Standard Display (1440x900)
+  medium    - Medium Display (1600x900)
+  wide      - Wide Display (1680x1050)
+  large     - Large Display (1920x1080)
+  tall      - Tall Display (1920x1200)
+  retina    - Retina Display (2880x1800)
+  xlarge    - Extra Large Display (2560x1440)
+  ultrawide - Ultrawide Display (3440x1440)
+  4k        - 4K Display (3840x2160)
+  auto      - Auto-detect Display Size
+
+Examples:
+  python mac_demo_experiment.py --display auto
+  python mac_demo_experiment.py --display large
+  python mac_demo_experiment.py  # Interactive selection
+        """
+    )
+    
+    parser.add_argument('--display', type=str, default=None,
+                        choices=['tiny', 'compact', 'small', 'standard', 'medium', 'wide', 
+                                'large', 'tall', 'retina', 'xlarge', 'ultrawide', '4k', 'auto'],
+                        help='Display configuration to use')
+    
+    args = parser.parse_args()
+    
     try:
         print("🚀 Starting Mac-optimized DEMO experiment...")
+        print("🍎 Mac-specific optimizations enabled")
+        
+        # Setup display configuration
+        layout_config = setup_display_config(args.display)
+        
+        # Apply layout configuration to experiment config
+        print("\n🔍 DEBUG - Applying Configuration to Experiment:")
+        print("=" * 50)
+        
+        print(f"📐 Before - SCREEN_PARAMS['size']: {config.SCREEN_PARAMS['size']}")
+        config.SCREEN_PARAMS['size'] = layout_config['size']
+        print(f"📐 After  - SCREEN_PARAMS['size']: {config.SCREEN_PARAMS['size']}")
+        
+        print(f"📐 Before - SCREEN_PARAMS['fullscr']: {config.SCREEN_PARAMS['fullscr']}")
+        config.SCREEN_PARAMS['fullscr'] = layout_config['fullscr']
+        print(f"📐 After  - SCREEN_PARAMS['fullscr']: {config.SCREEN_PARAMS['fullscr']}")
+        
+        config.LAYOUT_CONFIG = layout_config
+        print(f"📐 LAYOUT_CONFIG assigned: {type(layout_config)}")
+        
+        # Update text styles with responsive sizing
+        print(f"📐 TEXT_STYLE['height']: {config.TEXT_STYLE.get('height', 'N/A')} → {layout_config['text_height']}")
+        config.TEXT_STYLE['height'] = layout_config['text_height']
+        
+        print(f"📐 TEXT_STYLE['wrapWidth']: {config.TEXT_STYLE.get('wrapWidth', 'N/A')} → {layout_config['text_wrap']}")
+        config.TEXT_STYLE['wrapWidth'] = layout_config['text_wrap']
+        
+        print(f"📐 TEXT_STYLE['pos']: {config.TEXT_STYLE.get('pos', 'N/A')} → {layout_config['text_pos']}")
+        config.TEXT_STYLE['pos'] = layout_config['text_pos']
+        
+        print(f"📐 VELTEN_TEXT_STYLE['height']: {config.VELTEN_TEXT_STYLE.get('height', 'N/A')} → {layout_config['velten_text_height']}")
+        config.VELTEN_TEXT_STYLE['height'] = layout_config['velten_text_height']
+        
+        print(f"📐 VELTEN_TEXT_STYLE['wrapWidth']: {config.VELTEN_TEXT_STYLE.get('wrapWidth', 'N/A')} → {layout_config['text_wrap']}")
+        config.VELTEN_TEXT_STYLE['wrapWidth'] = layout_config['text_wrap']
+        
+        # IMPORTANT: Velten text should remain centered, not left-aligned
+        print(f"📐 VELTEN_TEXT_STYLE['pos']: {config.VELTEN_TEXT_STYLE.get('pos', 'N/A')} → (0, 0) [CENTERED]")
+        config.VELTEN_TEXT_STYLE['pos'] = (0, 0)  # Keep centered
+        
+        # Update SART cue positions and sizes
+        print(f"📐 SART cue pos: → {layout_config['cue_pos']}")
+        config.CONDITION_CUES['inhibition']['pos'] = layout_config['cue_pos']
+        config.CONDITION_CUES['non_inhibition']['pos'] = layout_config['cue_pos']
+        
+        print(f"📐 SART cue radius: → {layout_config['cue_radius']}")
+        config.CONDITION_CUES['inhibition']['radius'] = layout_config['cue_radius']
+        config.CONDITION_CUES['non_inhibition']['radius'] = layout_config['cue_radius']
+        
+        print("=" * 50)
+        print("✅ Display configuration applied to experiment settings")
         
         # Final configuration verification before creating experiment
         print("🔍 FINAL CONFIGURATION CHECK:")
         print(f"   config.DEMO_MODE: {config.DEMO_MODE}")
         print(f"   config.SART_PARAMS['total_trials']: {config.SART_PARAMS['total_trials']}")
+        print(f"   Screen size: {config.SCREEN_PARAMS['size']}")
+        print(f"   Fullscreen: {config.SCREEN_PARAMS['fullscr']}")
         
         # Create and run experiment with Mac-specific error handling
         if sys.platform == 'darwin':
