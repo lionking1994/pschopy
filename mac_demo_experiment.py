@@ -60,30 +60,19 @@ def setup_display_config(display_size=None):
     """Setup display configuration based on user selection"""
     from display_config import get_layout_for_config, print_available_configs
     
-    # Debug: Detect actual screen size (with fallback for missing tkinter)
-    print("\n🔍 DEBUG - Display Detection:")
-    print("=" * 50)
+    # Detect actual screen size (with fallback for missing tkinter)
     try:
         import tkinter as tk
         root = tk.Tk()
         actual_width = root.winfo_screenwidth()
         actual_height = root.winfo_screenheight()
         root.destroy()
-        print(f"✅ Actual screen size detected (tkinter): {actual_width}x{actual_height}")
-        print(f"   Platform: {sys.platform}")
-        print(f"   Is Mac: {sys.platform == 'darwin'}")
     except ImportError:
-        print(f"⚠️  tkinter not available in PsychoPy environment")
-        print(f"   Platform: {sys.platform}")
-        print(f"   Is Mac: {sys.platform == 'darwin'}")
-        print(f"   Using display_config.py for screen detection")
+        # tkinter not available in PsychoPy environment - use display_config.py fallback
         actual_width, actual_height = None, None
     except Exception as e:
-        print(f"❌ Could not detect screen size: {e}")
-        print(f"   Platform: {sys.platform}")
-        print(f"   Is Mac: {sys.platform == 'darwin'}")
+        # Screen detection failed - use display_config.py fallback
         actual_width, actual_height = None, None
-    print("=" * 50)
     
     if display_size is None:
         # Interactive selection
@@ -147,30 +136,7 @@ def setup_display_config(display_size=None):
     print(f"\n🎯 Selected Configuration: {layout_config['name']}")
     print(f"   📏 Resolution: {layout_config['size'][0]}x{layout_config['size'][1]}")
     print(f"   🖥️  Mode: {'Fullscreen' if layout_config['fullscr'] else 'Windowed'}")
-    print(f"   📝 Text wrap: {layout_config['text_wrap']} pixels")
     print(f"   🎬 Video quality: {layout_config['video_quality']['rating']}")
-    print(f"   💡 {layout_config['video_quality']['recommendation']}")
-    
-    # Debug: Print detailed layout configuration
-    print("\n🔍 DEBUG - Layout Configuration Details:")
-    print("=" * 50)
-    print(f"   Screen size: {layout_config.get('screen_size', 'N/A')}")
-    print(f"   Scale factor: {layout_config.get('scale_factor', 'N/A'):.3f}")
-    print(f"   Text position: {layout_config.get('text_pos', 'N/A')}")
-    print(f"   Text height: {layout_config.get('text_height', 'N/A')}")
-    print(f"   Velten text height: {layout_config.get('velten_text_height', 'N/A')}")
-    print(f"   Cue position: {layout_config.get('cue_pos', 'N/A')}")
-    print(f"   Cue radius: {layout_config.get('cue_radius', 'N/A')}")
-    print(f"   Button size: {layout_config.get('button_width', 'N/A')}x{layout_config.get('button_height', 'N/A')}")
-    print(f"   Mood slider: {layout_config.get('mood_slider_width', 'N/A')}x{layout_config.get('mood_slider_height', 'N/A')}")
-    print(f"   Mood slider pos: {layout_config.get('mood_slider_pos', 'N/A')}")
-    print(f"   Velten slider: {layout_config.get('velten_slider_width', 'N/A')}x{layout_config.get('velten_slider_height', 'N/A')}")
-    print(f"   Velten slider pos: {layout_config.get('velten_slider_pos', 'N/A')}")
-    print(f"   MW slider: {layout_config.get('mw_slider_width', 'N/A')}x{layout_config.get('mw_slider_height', 'N/A')}")
-    print(f"   MW slider pos: {layout_config.get('mw_slider_pos', 'N/A')}")
-    print(f"   Fixation height: {layout_config.get('fixation_height', 'N/A')}")
-    print(f"   Digit height: {layout_config.get('digit_height', 'N/A')}")
-    print("=" * 50)
     print()
     
     return layout_config
@@ -294,58 +260,27 @@ Examples:
         layout_config = setup_display_config(args.display)
         
         # Apply layout configuration to experiment config
-        print("\n🔍 DEBUG - Applying Configuration to Experiment:")
-        print("=" * 50)
-        
-        print(f"📐 Before - SCREEN_PARAMS['size']: {config.SCREEN_PARAMS['size']}")
         config.SCREEN_PARAMS['size'] = layout_config['size']
-        print(f"📐 After  - SCREEN_PARAMS['size']: {config.SCREEN_PARAMS['size']}")
-        
-        print(f"📐 Before - SCREEN_PARAMS['fullscr']: {config.SCREEN_PARAMS['fullscr']}")
         config.SCREEN_PARAMS['fullscr'] = layout_config['fullscr']
-        print(f"📐 After  - SCREEN_PARAMS['fullscr']: {config.SCREEN_PARAMS['fullscr']}")
-        
         config.LAYOUT_CONFIG = layout_config
-        print(f"📐 LAYOUT_CONFIG assigned: {type(layout_config)}")
         
         # Update text styles with responsive sizing
-        print(f"📐 TEXT_STYLE['height']: {config.TEXT_STYLE.get('height', 'N/A')} → {layout_config['text_height']}")
         config.TEXT_STYLE['height'] = layout_config['text_height']
-        
-        print(f"📐 TEXT_STYLE['wrapWidth']: {config.TEXT_STYLE.get('wrapWidth', 'N/A')} → {layout_config['text_wrap']}")
         config.TEXT_STYLE['wrapWidth'] = layout_config['text_wrap']
-        
-        print(f"📐 TEXT_STYLE['pos']: {config.TEXT_STYLE.get('pos', 'N/A')} → {layout_config['text_pos']}")
         config.TEXT_STYLE['pos'] = layout_config['text_pos']
         
-        print(f"📐 VELTEN_TEXT_STYLE['height']: {config.VELTEN_TEXT_STYLE.get('height', 'N/A')} → {layout_config['velten_text_height']}")
         config.VELTEN_TEXT_STYLE['height'] = layout_config['velten_text_height']
-        
-        print(f"📐 VELTEN_TEXT_STYLE['wrapWidth']: {config.VELTEN_TEXT_STYLE.get('wrapWidth', 'N/A')} → {layout_config['text_wrap']}")
         config.VELTEN_TEXT_STYLE['wrapWidth'] = layout_config['text_wrap']
-        
-        # IMPORTANT: Velten text should remain centered, not left-aligned
-        print(f"📐 VELTEN_TEXT_STYLE['pos']: {config.VELTEN_TEXT_STYLE.get('pos', 'N/A')} → (0, 0) [CENTERED]")
         config.VELTEN_TEXT_STYLE['pos'] = (0, 0)  # Keep centered
         
         # Update SART cue positions and sizes
-        print(f"📐 SART cue pos: → {layout_config['cue_pos']}")
         config.CONDITION_CUES['inhibition']['pos'] = layout_config['cue_pos']
-        config.CONDITION_CUES['non_inhibition']['pos'] = layout_config['cue_pos']
-        
-        print(f"📐 SART cue radius: → {layout_config['cue_radius']}")
         config.CONDITION_CUES['inhibition']['radius'] = layout_config['cue_radius']
+        config.CONDITION_CUES['non_inhibition']['pos'] = layout_config['cue_pos']
         config.CONDITION_CUES['non_inhibition']['radius'] = layout_config['cue_radius']
         
-        print("=" * 50)
-        print("✅ Display configuration applied to experiment settings")
-        
-        # Final configuration verification before creating experiment
-        print("🔍 FINAL CONFIGURATION CHECK:")
-        print(f"   config.DEMO_MODE: {config.DEMO_MODE}")
-        print(f"   config.SART_PARAMS['total_trials']: {config.SART_PARAMS['total_trials']}")
-        print(f"   Screen size: {config.SCREEN_PARAMS['size']}")
-        print(f"   Fullscreen: {config.SCREEN_PARAMS['fullscr']}")
+        # Configuration summary
+        print(f"✅ Configuration applied: {config.SCREEN_PARAMS['size'][0]}x{config.SCREEN_PARAMS['size'][1]} ({'Fullscreen' if config.SCREEN_PARAMS['fullscr'] else 'Windowed'})")
         
         # Create and run experiment with Mac-specific error handling
         if sys.platform == 'darwin':
