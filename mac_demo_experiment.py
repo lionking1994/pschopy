@@ -67,30 +67,36 @@ def setup_display_config(display_size=None, no_input=False):
     """Setup display configuration based on user selection"""
     from display_config import get_layout_for_config, print_available_configs
     
-    # Detect actual screen size (with fallback for missing tkinter)
-    try:
-        import tkinter as tk
-        # Suppress tkinter theme debug output
-        import contextlib
-        import io
-        with contextlib.redirect_stderr(io.StringIO()):
-            root = tk.Tk()
-            root.withdraw()  # Hide the root window
-            actual_width = root.winfo_screenwidth()
-            actual_height = root.winfo_screenheight()
-            root.destroy()
-    except ImportError:
-        # tkinter not available in PsychoPy environment - use display_config.py fallback
-        actual_width, actual_height = None, None
-    except Exception as e:
-        # Screen detection failed - use display_config.py fallback
-        actual_width, actual_height = None, None
+    # Skip tkinter detection on Mac to prevent freezing
+    # Tkinter can cause conflicts with PsychoPy on macOS
+    actual_width, actual_height = None, None
+    
+    # Only attempt screen detection on non-Mac systems if explicitly enabled
+    if sys.platform != 'darwin' and os.environ.get('ENABLE_TKINTER_DETECTION', '0') == '1':
+        try:
+            import tkinter as tk
+            # Suppress tkinter theme debug output
+            import contextlib
+            import io
+            with contextlib.redirect_stderr(io.StringIO()):
+                root = tk.Tk()
+                root.withdraw()  # Hide the root window
+                actual_width = root.winfo_screenwidth()
+                actual_height = root.winfo_screenheight()
+                root.destroy()
+        except:
+            # Any error, just skip detection
+            pass
     
     if display_size is None:
         if no_input:
-            # Skip interactive input and use auto-detection
-            print("🔄 Skipping interactive input, using auto-detection...")
-            display_size = 'auto'
+            # Skip interactive input and use safe default for Mac
+            if sys.platform == 'darwin':
+                print("🔄 Mac detected, using retina16 configuration for safety...")
+                display_size = 'retina16'
+            else:
+                print("🔄 Skipping interactive input, using auto-detection...")
+                display_size = 'auto'
         else:
             # Interactive selection
             print("\n🖥️  Select Display Configuration:")
@@ -127,9 +133,24 @@ def setup_display_config(display_size=None, no_input=False):
                 '13': '4k', '14': 'auto'
             }
             
+            # Add timeout protection for Mac environments
+            import signal
+            
+            def timeout_handler(signum, frame):
+                raise TimeoutError("Input timeout")
+            
             while True:
                 try:
+                    # Set a timeout for input on Mac to prevent freezing
+                    if sys.platform == 'darwin':
+                        signal.signal(signal.SIGALRM, timeout_handler)
+                        signal.alarm(30)  # 30 second timeout
+                    
                     choice = input("Enter your choice (1-14) or display name: ").strip()
+                    
+                    # Cancel the alarm if input was successful
+                    if sys.platform == 'darwin':
+                        signal.alarm(0)
                     
                     if choice in choice_map:
                         display_size = choice_map[choice]
@@ -144,15 +165,31 @@ def setup_display_config(display_size=None, no_input=False):
                 except KeyboardInterrupt:
                     print("\n👋 Setup cancelled by user")
                     sys.exit(0)
+                except TimeoutError:
+                    print("\n⏱️  Input timeout - using safe default")
+                    if sys.platform == 'darwin':
+                        print("🔄 Using 'retina16' configuration for MacBook Pro 16\"...")
+                        display_size = 'retina16'
+                    else:
+                        display_size = 'auto'
+                    break
                 except (EOFError, OSError) as e:
-                    print(f"\n⚠️  Input not available in this environment: {e}")
-                    print("🔄 Automatically using 'retina16' for MacBook Pro 16\" display...")
-                    display_size = 'retina16'
+                    print(f"\n⚠️  Input not available in this environment")
+                    if sys.platform == 'darwin':
+                        print("🔄 Automatically using 'retina16' for MacBook Pro 16\" display...")
+                        display_size = 'retina16'
+                    else:
+                        print("🔄 Falling back to auto-detect...")
+                        display_size = 'auto'
                     break
                 except Exception as e:
-                    print(f"❌ Input error: {e}")
-                    print("🔄 Falling back to auto-detect...")
-                    display_size = 'auto'
+                    print(f"⚠️  Input error detected")
+                    if sys.platform == 'darwin':
+                        print("🔄 Using 'retina16' as safe default for Mac...")
+                        display_size = 'retina16'
+                    else:
+                        print("🔄 Falling back to auto-detect...")
+                        display_size = 'auto'
                     break
     
     # Get layout configuration
@@ -285,6 +322,13 @@ Examples:
     try:
         print("🚀 Starting Mac-optimized DEMO experiment...")
         print("🍎 Mac-specific optimizations enabled")
+        
+        # Recommend using command-line arguments on Mac
+        if sys.platform == 'darwin' and args.display is None and not args.no_input:
+            print("\n💡 TIP: For best results on Mac, use command-line arguments:")
+            print("   python mac_demo_experiment.py --display retina16")
+            print("   python mac_demo_experiment.py --no-input")
+            print()
         
         # Setup display configuration
         layout_config = setup_display_config(args.display, args.no_input)
