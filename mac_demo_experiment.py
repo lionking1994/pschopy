@@ -56,7 +56,7 @@ if sys.platform == 'darwin':  # macOS
 # Add config to path
 sys.path.append(str(Path(__file__).parent / 'config'))
 
-def setup_display_config(display_size=None):
+def setup_display_config(display_size=None, no_input=False):
     """Setup display configuration based on user selection"""
     from display_config import get_layout_for_config, print_available_configs
     
@@ -75,60 +75,73 @@ def setup_display_config(display_size=None):
         actual_width, actual_height = None, None
     
     if display_size is None:
-        # Interactive selection
-        print("\n🖥️  Select Display Configuration:")
-        print("=" * 50)
-        print("📱 Small Displays:")
-        print("  1. tiny     - Tiny Display (1024x768)")
-        print("  2. compact  - Compact Display (1280x720)")
-        print("  3. small    - Small Display (1366x768)")
-        print()
-        print("🖥️  Standard Displays:")
-        print("  4. standard - Standard Display (1440x900)")
-        print("  5. medium   - Medium Display (1600x900)")
-        print("  6. wide     - Wide Display (1680x1050)")
-        print()
-        print("🖥️  Large Displays:")
-        print("  7. large    - Large Display (1920x1080)")
-        print("  8. tall     - Tall Display (1920x1200)")
-        print("  9. retina   - Retina Display (2880x1800)")
-        print()
-        print("🖥️  High-Resolution Displays:")
-        print(" 10. xlarge   - Extra Large Display (2560x1440)")
-        print(" 11. ultrawide- Ultrawide Display (3440x1440)")
-        print(" 12. 4k       - 4K Display (3840x2160)")
-        print()
-        print(" 13. auto     - Auto-detect Display Size")
-        print()
-        
-        # Create mapping for numeric choices
-        choice_map = {
-            '1': 'tiny', '2': 'compact', '3': 'small', '4': 'standard',
-            '5': 'medium', '6': 'wide', '7': 'large', '8': 'tall',
-            '9': 'retina', '10': 'xlarge', '11': 'ultrawide', '12': '4k',
-            '13': 'auto'
-        }
-        
-        while True:
-            try:
-                choice = input("Enter your choice (1-13) or display name: ").strip()
-                
-                if choice in choice_map:
-                    display_size = choice_map[choice]
+        if no_input:
+            # Skip interactive input and use auto-detection
+            print("🔄 Skipping interactive input, using auto-detection...")
+            display_size = 'auto'
+        else:
+            # Interactive selection
+            print("\n🖥️  Select Display Configuration:")
+            print("=" * 50)
+            print("📱 Small Displays:")
+            print("  1. tiny     - Tiny Display (1024x768)")
+            print("  2. compact  - Compact Display (1280x720)")
+            print("  3. small    - Small Display (1366x768)")
+            print()
+            print("🖥️  Standard Displays:")
+            print("  4. standard - Standard Display (1440x900)")
+            print("  5. medium   - Medium Display (1600x900)")
+            print("  6. wide     - Wide Display (1680x1050)")
+            print()
+            print("🖥️  Large Displays:")
+            print("  7. large    - Large Display (1920x1080)")
+            print("  8. tall     - Tall Display (1920x1200)")
+            print("  9. retina   - Retina Display (2880x1800)")
+            print(" 10. retina16 - MacBook Pro 16\" (3456x2234)")
+            print()
+            print("🖥️  High-Resolution Displays:")
+            print(" 11. xlarge   - Extra Large Display (2560x1440)")
+            print(" 12. ultrawide- Ultrawide Display (3440x1440)")
+            print(" 13. 4k       - 4K Display (3840x2160)")
+            print()
+            print(" 14. auto     - Auto-detect Display Size")
+            print()
+            
+            # Create mapping for numeric choices
+            choice_map = {
+                '1': 'tiny', '2': 'compact', '3': 'small', '4': 'standard',
+                '5': 'medium', '6': 'wide', '7': 'large', '8': 'tall',
+                '9': 'retina', '10': 'retina16', '11': 'xlarge', '12': 'ultrawide', 
+                '13': '4k', '14': 'auto'
+            }
+            
+            while True:
+                try:
+                    choice = input("Enter your choice (1-14) or display name: ").strip()
+                    
+                    if choice in choice_map:
+                        display_size = choice_map[choice]
+                        break
+                    elif choice in ['tiny', 'compact', 'small', 'standard', 'medium', 'wide', 
+                                   'large', 'tall', 'retina', 'retina16', 'xlarge', 'ultrawide', '4k', 'auto']:
+                        display_size = choice
+                        break
+                    else:
+                        print("❌ Invalid choice. Please enter a number (1-14) or display name.")
+                        continue
+                except KeyboardInterrupt:
+                    print("\n👋 Setup cancelled by user")
+                    sys.exit(0)
+                except (EOFError, OSError) as e:
+                    print(f"\n⚠️  Input not available in this environment: {e}")
+                    print("🔄 Automatically using 'retina16' for MacBook Pro 16\" display...")
+                    display_size = 'retina16'
                     break
-                elif choice in ['tiny', 'compact', 'small', 'standard', 'medium', 'wide', 
-                              'large', 'tall', 'retina', 'xlarge', 'ultrawide', '4k', 'auto']:
-                    display_size = choice
+                except Exception as e:
+                    print(f"❌ Input error: {e}")
+                    print("🔄 Falling back to auto-detect...")
+                    display_size = 'auto'
                     break
-                else:
-                    print("❌ Invalid choice. Please enter a number (1-13) or display name.")
-                    continue
-            except KeyboardInterrupt:
-                print("\n👋 Setup cancelled by user")
-                sys.exit(0)
-            except Exception as e:
-                print(f"❌ Input error: {e}")
-                continue
     
     # Get layout configuration
     layout_config = get_layout_for_config(display_size)
@@ -233,6 +246,7 @@ Available Display Configurations:
   large     - Large Display (1920x1080)
   tall      - Tall Display (1920x1200)
   retina    - Retina Display (2880x1800)
+  retina16  - MacBook Pro 16" (3456x2234)
   xlarge    - Extra Large Display (2560x1440)
   ultrawide - Ultrawide Display (3440x1440)
   4k        - 4K Display (3840x2160)
@@ -240,15 +254,19 @@ Available Display Configurations:
 
 Examples:
   python mac_demo_experiment.py --display auto
-  python mac_demo_experiment.py --display large
+  python mac_demo_experiment.py --display retina16
+  python mac_demo_experiment.py --no-input  # Skip input, auto-detect
   python mac_demo_experiment.py  # Interactive selection
         """
     )
     
     parser.add_argument('--display', type=str, default=None,
                         choices=['tiny', 'compact', 'small', 'standard', 'medium', 'wide', 
-                                'large', 'tall', 'retina', 'xlarge', 'ultrawide', '4k', 'auto'],
+                                'large', 'tall', 'retina', 'retina16', 'xlarge', 'ultrawide', '4k', 'auto'],
                         help='Display configuration to use')
+    
+    parser.add_argument('--no-input', action='store_true',
+                        help='Skip interactive input and use auto-detection (useful for environments without input support)')
     
     args = parser.parse_args()
     
@@ -257,7 +275,7 @@ Examples:
         print("🍎 Mac-specific optimizations enabled")
         
         # Setup display configuration
-        layout_config = setup_display_config(args.display)
+        layout_config = setup_display_config(args.display, args.no_input)
         
         # Apply layout configuration to experiment config
         config.SCREEN_PARAMS['size'] = layout_config['size']

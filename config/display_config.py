@@ -68,6 +68,11 @@ DISPLAY_CONFIGS = {
         'size': [2880, 1800],
         'description': 'MacBook Pro Retina display'
     },
+    'retina16': {
+        'name': 'MacBook Pro 16" (3456x2234)',
+        'size': [3456, 2234],
+        'description': 'MacBook Pro 16-inch Retina display'
+    },
     'auto': {
         'name': 'Auto-detect Display Size',
         'size': None,  # Will be detected automatically
