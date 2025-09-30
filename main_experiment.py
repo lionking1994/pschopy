@@ -1689,7 +1689,7 @@ A = decrease rating, D = increase rating
                 for key in keys:
                     if key == 'escape':
                         print("🔍 DEBUG - ESCAPE key detected, quitting...")
-                core.quit()
+                        core.quit()
                     elif key == 'return':
                         print(f"🔍 DEBUG - ENTER key pressed, confirming rating: {current_value}")
                         # Confirm selection
