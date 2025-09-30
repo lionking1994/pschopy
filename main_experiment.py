@@ -266,24 +266,30 @@ class MoodSARTExperimentSimple:
             # Note: showValue parameter not supported in this PsychoPy version
         )
         
-        # Get responsive button sizes from layout config
+        # Get responsive button sizes and positions from layout config
         if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
             button_width = config.LAYOUT_CONFIG.get('button_width', 260)
             button_height = config.LAYOUT_CONFIG.get('button_height', 75)
             button_text_height = config.LAYOUT_CONFIG.get('button_text_height', 35)
+            mood_button_pos = (0, config.LAYOUT_CONFIG.get('mood_button_pos', -300))
+            mw_button_pos = (0, config.LAYOUT_CONFIG.get('mw_button_pos', -200))
             print(f"📐 Using responsive button size: {button_width}x{button_height}, text={button_text_height}")
+            print(f"📐 Using responsive button positions: mood={mood_button_pos}, mw={mw_button_pos}")
         else:
             button_width = 260    # Fallback
             button_height = 75    # Fallback
             button_text_height = 35  # Fallback
+            mood_button_pos = (0, -300)  # Fallback
+            mw_button_pos = (0, -200)    # Fallback
             print(f"📐 Using default button size: {button_width}x{button_height}, text={button_text_height}")
+            print(f"📐 Using default button positions: mood={mood_button_pos}, mw={mw_button_pos}")
             
-        # Continue button for mood rating - Responsive sizing
+        # Continue button for mood rating - Responsive sizing and positioning
         self.continue_button = visual.Rect(
             win=self.win,
             width=button_width,   # RESPONSIVE: Use calculated width
             height=button_height, # RESPONSIVE: Use calculated height
-            pos=(0, -300),
+            pos=mood_button_pos,  # RESPONSIVE: Use calculated position
             fillColor=[0.0, 0.5, 1.0],  # Brighter blue button
             lineColor=[1.0, 1.0, 1.0]   # White border for better visibility
         )
@@ -291,18 +297,18 @@ class MoodSARTExperimentSimple:
         self.continue_button_text = visual.TextStim(
             win=self.win,
             text="Continue",
-            pos=(0, -300),
+            pos=mood_button_pos,  # RESPONSIVE: Use same calculated position
             color='white',
             height=button_text_height,  # RESPONSIVE: Use calculated height
             bold=True   # Bold text for better visibility
         )
         
-        # Continue button for mind-wandering probe sliders - Responsive sizing
+        # Continue button for mind-wandering probe sliders - Responsive sizing and positioning
         self.mw_continue_button = visual.Rect(
             win=self.win,
             width=button_width,   # RESPONSIVE: Use same calculated width
             height=button_height, # RESPONSIVE: Use same calculated height
-            pos=(0, -200),  # Position below sliders
+            pos=mw_button_pos,    # RESPONSIVE: Use calculated position
             fillColor=[0.0, 0.5, 1.0],  # Brighter blue button
             lineColor=[1.0, 1.0, 1.0]   # White border for better visibility
         )
@@ -310,7 +316,7 @@ class MoodSARTExperimentSimple:
         self.mw_continue_button_text = visual.TextStim(
             win=self.win,
             text="Continue",
-            pos=(0, -200),  # Position below sliders
+            pos=mw_button_pos,    # RESPONSIVE: Use same calculated position
             color='white',
             height=button_text_height,  # RESPONSIVE: Use same calculated height
             bold=True   # Bold text for better visibility
@@ -1689,7 +1695,7 @@ A = decrease rating, D = increase rating
                 for key in keys:
                     if key == 'escape':
                         print("🔍 DEBUG - ESCAPE key detected, quitting...")
-                        core.quit()
+                core.quit()
                     elif key == 'return':
                         print(f"🔍 DEBUG - ENTER key pressed, confirming rating: {current_value}")
                         # Confirm selection

@@ -102,10 +102,17 @@ def calculate_responsive_layout(screen_width, screen_height):
     text_pos_x = -(screen_width // 2) + left_margin
     text_pos = (text_pos_x, 0)
     
-    # Calculate SART cue position (top-left corner, but visible)
-    margin_x = int(screen_width * 0.05)  # 5% margin from edge
-    margin_y = int(screen_height * 0.05) # 5% margin from edge
-    cue_pos = [-(screen_width//2) + margin_x + 50, (screen_height//2) - margin_y - 50]
+    # Calculate SART cue position (top-left corner, but fully visible)
+    # Use conservative positioning to ensure visibility on all displays
+    cue_radius_temp = max(30, min(60, int(min(screen_width, screen_height) * 0.04)))
+    
+    # Position cue in top-left with generous margins
+    # For 3456x2234: x from -1728 to +1728, y from -1117 to +1117
+    margin_from_edge = max(100, int(min(screen_width, screen_height) * 0.1))  # 10% margin or 100px minimum
+    
+    cue_x = -(screen_width//2) + margin_from_edge + cue_radius_temp
+    cue_y = (screen_height//2) - margin_from_edge - cue_radius_temp
+    cue_pos = [cue_x, cue_y]
     
     # Calculate cue radius based on screen size
     cue_radius = max(30, min(60, int(min(screen_width, screen_height) * 0.04)))
@@ -121,10 +128,14 @@ def calculate_responsive_layout(screen_width, screen_height):
     text_height = max(30, int(46 * scale_factor))  # Min 30, scaled from base 46 (increased)
     velten_text_height = max(28, int(42 * scale_factor))  # Min 28, scaled from base 42 (increased)
     
-    # Button sizes
+    # Button sizes and positions
     button_width = max(200, int(260 * scale_factor))  # Min 200, scaled from base 260
     button_height = max(60, int(75 * scale_factor))   # Min 60, scaled from base 75
     button_text_height = max(24, int(38 * scale_factor))  # Min 24, scaled from base 38 (increased)
+    
+    # Button positions (responsive to screen height)
+    mood_button_pos = max(-400, int(-300 * (screen_height / base_height)))  # Scale with screen height
+    mw_button_pos = max(-300, int(-200 * (screen_height / base_height)))    # Scale with screen height
     
     # Slider sizes (mood slider increased for better visibility)
     mood_slider_width = max(450, int(650 * scale_factor))  # Min 450, scaled from base 650 (increased)
@@ -150,10 +161,12 @@ def calculate_responsive_layout(screen_width, screen_height):
         # Text sizes
         'text_height': text_height,
         'velten_text_height': velten_text_height,
-        # Button sizes
+        # Button sizes and positions
         'button_width': button_width,
         'button_height': button_height,
         'button_text_height': button_text_height,
+        'mood_button_pos': mood_button_pos,
+        'mw_button_pos': mw_button_pos,
         # Slider sizes
         'mood_slider_width': mood_slider_width,
         'mood_slider_height': mood_slider_height,

@@ -22,6 +22,13 @@ warnings.filterwarnings("ignore", message=".*Multiple dropped frames.*")
 warnings.filterwarnings("ignore", message=".*Font Manager failed to load.*")
 warnings.filterwarnings("ignore", message=".*Boolean HIDBuildMultiDeviceList.*")
 
+# Suppress Tkinter theme debug output
+warnings.filterwarnings("ignore", message=".*ThemeChanged.*")
+warnings.filterwarnings("ignore", message=".*ttk::ThemeChanged.*")
+
+# Suppress stderr output during tkinter operations
+os.environ['TK_SILENCE_DEPRECATION'] = '1'
+
 # Mac-specific environment setup
 if sys.platform == 'darwin':  # macOS
     print("🍎 macOS detected - applying Mac-specific optimizations...")
@@ -63,10 +70,15 @@ def setup_display_config(display_size=None, no_input=False):
     # Detect actual screen size (with fallback for missing tkinter)
     try:
         import tkinter as tk
-        root = tk.Tk()
-        actual_width = root.winfo_screenwidth()
-        actual_height = root.winfo_screenheight()
-        root.destroy()
+        # Suppress tkinter theme debug output
+        import contextlib
+        import io
+        with contextlib.redirect_stderr(io.StringIO()):
+            root = tk.Tk()
+            root.withdraw()  # Hide the root window
+            actual_width = root.winfo_screenwidth()
+            actual_height = root.winfo_screenheight()
+            root.destroy()
     except ImportError:
         # tkinter not available in PsychoPy environment - use display_config.py fallback
         actual_width, actual_height = None, None
