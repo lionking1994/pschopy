@@ -649,7 +649,7 @@ class MoodSARTExperimentSimple:
     def get_participant_info(self):
         """Get participant information through keyboard input (no GUI)"""
         # Get email address using keyboard input (as per specification)
-        email = self.get_text_input("Enter the email address you provided when completing the consent form:")
+        email = self.get_text_input("Enter the email address you provided\nwhen completing the consent form:")
         
         # Get counterbalancing order selection from user
         condition = self.get_counterbalancing_order()
@@ -688,15 +688,55 @@ class MoodSARTExperimentSimple:
         """Get text input using keyboard - Normal typing for email addresses"""
         input_text = ""
         
-        # Store original wrap width to restore later
+        # Store original settings to restore later
         original_wrap_width = self.instruction_text.wrapWidth
+        original_pos = self.instruction_text.pos
+        original_align = self.instruction_text.alignText
+        original_anchor = self.instruction_text.anchorHoriz
+        original_height = self.instruction_text.height
+        
+        # DEBUG: Print current text configuration
+        print(f"🔍 DEBUG - Email Input Text Configuration:")
+        print(f"   Original wrapWidth: {original_wrap_width}")
+        print(f"   Original pos: {original_pos}")
+        print(f"   Original alignText: {original_align}")
+        print(f"   Original anchorHoriz: {original_anchor}")
+        print(f"   Original height: {original_height}")
+        print(f"   Window size: {self.win.size}")
+        
+        # Calculate appropriate wrap width based on screen size
+        screen_width = self.win.size[0] if hasattr(self.win, 'size') else 1920
+        screen_height = self.win.size[1] if hasattr(self.win, 'size') else 1080
+        
+        # Use 80% of screen width for wrap to ensure text doesn't go to edges
+        # For high-res displays like retina16, this prevents text cutoff
+        calculated_wrap_width = int(screen_width * 0.8)
+        
+        # Adjust text height for better readability on high-res displays
+        # Check if we have a high-res display (width > 2500)
+        text_height = original_height
+        if screen_width > 2500:
+            # For retina16 and similar high-res displays
+            calculated_wrap_width = int(screen_width * 0.6)  # Use less width for better centering
+            # Also reduce text size slightly for better fit
+            text_height = min(original_height, 50)  # Cap text height for email input
+            print(f"   High-res display detected, using 60% width and adjusted text height")
+        
+        print(f"   Screen dimensions: {screen_width}x{screen_height}")
+        print(f"   Calculated wrapWidth: {calculated_wrap_width}")
+        print(f"   Text height for email: {text_height}")
+        
+        # For email input, center the text and use center alignment for better display
+        self.instruction_text.pos = (0, 50)  # Slightly above center for better visibility
+        self.instruction_text.alignText = 'center'
+        self.instruction_text.anchorHoriz = 'center'
+        self.instruction_text.wrapWidth = calculated_wrap_width
+        self.instruction_text.height = text_height
         
         while True:
             # Display current input with normal instructions
             display_text = f"{prompt}\n\nInput: {input_text}_\n\nPress ENTER when done, BACKSPACE to delete\nType normally - Shift+2 for @, period key for ."
             self.instruction_text.text = display_text
-            # Temporarily increase wrap width to prevent wrapping of long prompts
-            self.instruction_text.wrapWidth = 2000
             self.instruction_text.draw()
             self.win.flip()
             
@@ -712,12 +752,21 @@ class MoodSARTExperimentSimple:
                 
                 if key == 'return':
                     if input_text.strip():
-                        # Restore original wrap width before returning
+                        # Restore original settings before returning
                         self.instruction_text.wrapWidth = original_wrap_width
+                        self.instruction_text.pos = original_pos
+                        self.instruction_text.alignText = original_align
+                        self.instruction_text.anchorHoriz = original_anchor
+                        self.instruction_text.height = original_height
+                        print(f"✅ Email input completed: {input_text.strip()}")
                         return input_text.strip()
                 elif key == 'escape':
-                    # Restore original wrap width before quitting
+                    # Restore original settings before quitting
                     self.instruction_text.wrapWidth = original_wrap_width
+                    self.instruction_text.pos = original_pos
+                    self.instruction_text.alignText = original_align
+                    self.instruction_text.anchorHoriz = original_anchor
+                    self.instruction_text.height = original_height
                     core.quit()
                 elif key == 'backspace':
                     input_text = input_text[:-1]
