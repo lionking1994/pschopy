@@ -112,18 +112,31 @@ def calculate_responsive_layout(screen_width, screen_height, is_retina=False):
     
     # Calculate SART cue position (top-left corner, but fully visible)
     # Use conservative positioning to ensure visibility on all displays
-    cue_radius_temp = max(30, min(60, int(min(screen_width, screen_height) * 0.04)))
+    cue_radius_temp = max(20, min(50, int(min(screen_width, screen_height) * 0.03)))  # Smaller radius for small screens
     
     # Position cue in top-left with generous margins
-    # For 3456x2234: x from -1728 to +1728, y from -1117 to +1117
-    margin_from_edge = max(100, int(min(screen_width, screen_height) * 0.1))  # 10% margin or 100px minimum
+    # Calculate margins as percentage of screen size, with minimum values
+    margin_x = max(50, int(screen_width * 0.08))   # 8% of screen width, min 50px
+    margin_y = max(50, int(screen_height * 0.08))  # 8% of screen height, min 50px
     
-    cue_x = -(screen_width//2) + margin_from_edge + cue_radius_temp
-    cue_y = (screen_height//2) - margin_from_edge - cue_radius_temp
+    # Ensure cue is fully visible within screen bounds
+    # Screen bounds: x from -screen_width/2 to +screen_width/2, y from -screen_height/2 to +screen_height/2
+    cue_x = -(screen_width//2) + margin_x + cue_radius_temp
+    cue_y = (screen_height//2) - margin_y - cue_radius_temp
+    
+    # Double-check bounds to ensure visibility
+    min_x = -(screen_width//2) + cue_radius_temp + 10  # 10px from left edge
+    max_x = (screen_width//2) - cue_radius_temp - 10   # 10px from right edge
+    min_y = -(screen_height//2) + cue_radius_temp + 10 # 10px from bottom edge
+    max_y = (screen_height//2) - cue_radius_temp - 10  # 10px from top edge
+    
+    cue_x = max(min_x, min(max_x, cue_x))
+    cue_y = max(min_y, min(max_y, cue_y))
+    
     cue_pos = [cue_x, cue_y]
     
-    # Calculate cue radius based on screen size
-    cue_radius = max(30, min(60, int(min(screen_width, screen_height) * 0.04)))
+    # Calculate cue radius based on screen size (use the same as calculated above)
+    cue_radius = cue_radius_temp
     
     # Calculate responsive element sizes based on screen resolution
     # Base sizes are for 1920x1080, scale proportionally
