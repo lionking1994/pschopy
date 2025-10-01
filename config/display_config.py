@@ -65,13 +65,17 @@ DISPLAY_CONFIGS = {
     },
     'retina': {
         'name': 'Retina Display (2880x1800)',
-        'size': [2880, 1800],
-        'description': 'MacBook Pro Retina display'
+        'size': [1440, 900],  # Use logical resolution for Retina displays (half of physical)
+        'description': 'MacBook Pro Retina display',
+        'is_retina': True,
+        'physical_size': [2880, 1800]
     },
     'retina16': {
         'name': 'MacBook Pro 16" (3456x2234)',
-        'size': [3456, 2234],
-        'description': 'MacBook Pro 16-inch Retina display'
+        'size': [1728, 1117],  # Use logical resolution for Retina displays (half of physical)
+        'description': 'MacBook Pro 16-inch Retina display',
+        'is_retina': True,
+        'physical_size': [3456, 2234]
     },
     'auto': {
         'name': 'Auto-detect Display Size',
@@ -88,8 +92,12 @@ def get_display_config(config_name='auto'):
     
     return DISPLAY_CONFIGS[config_name]
 
-def calculate_responsive_layout(screen_width, screen_height):
-    """Calculate responsive layout parameters based on screen dimensions"""
+def calculate_responsive_layout(screen_width, screen_height, is_retina=False):
+    """Calculate responsive layout parameters based on screen dimensions
+    
+    For Retina displays, screen_width and screen_height should be the logical resolution,
+    not the physical pixel resolution.
+    """
     
     # Calculate text position (left-aligned but centered in screen)
     # Text should be left-aligned but the text block should be centered
@@ -288,6 +296,9 @@ def get_layout_for_config(config_name):
     """Get complete layout configuration with automatic windowed/fullscreen detection"""
     config = get_display_config(config_name)
     
+    # Check if this is a Retina display configuration
+    is_retina = config.get('is_retina', False)
+    
     # Get actual screen size for comparison
     try:
         import tkinter as tk
@@ -302,16 +313,31 @@ def get_layout_for_config(config_name):
     
     if config_name == 'auto':
         # Auto-detect screen and calculate responsive layout
-        layout = calculate_responsive_layout(actual_width, actual_height)
+        # Check if this might be a Retina display (Mac with high resolution)
+        import sys
+        if sys.platform == 'darwin' and actual_width > 2500:
+            # Likely a Retina display, use half resolution for logical pixels
+            logical_width = actual_width // 2
+            logical_height = actual_height // 2
+            print(f"🍎 Retina display detected, using logical resolution: {logical_width}x{logical_height}")
+            layout = calculate_responsive_layout(logical_width, logical_height, is_retina=True)
+            config['size'] = [logical_width, logical_height]
+        else:
+            layout = calculate_responsive_layout(actual_width, actual_height)
+            config['size'] = [actual_width, actual_height]
+        
         config.update(layout)
-        config['size'] = [actual_width, actual_height]
         config['fullscr'] = True  # Auto mode uses fullscreen
         
     else:
-        # Check if selected size is smaller than actual screen
+        # For configured displays
         selected_width, selected_height = config['size']
         
-        if selected_width < actual_width or selected_height < actual_height:
+        # For Retina displays, the size is already in logical pixels
+        if is_retina:
+            print(f"🍎 Using Retina display configuration with logical resolution: {selected_width}x{selected_height}")
+            config['fullscr'] = True  # Retina displays should use fullscreen
+        elif selected_width < actual_width or selected_height < actual_height:
             # Use windowed mode for smaller sizes
             config['fullscr'] = False
             print(f"📱 Using windowed mode: {selected_width}x{selected_height} < {actual_width}x{actual_height}")
@@ -321,7 +347,7 @@ def get_layout_for_config(config_name):
             print(f"🖥️  Using fullscreen mode: {selected_width}x{selected_height} >= {actual_width}x{actual_height}")
         
         # Calculate responsive sizes for preset configurations
-        layout = calculate_responsive_layout(selected_width, selected_height)
+        layout = calculate_responsive_layout(selected_width, selected_height, is_retina=is_retina)
         config.update(layout)
     
     return config
