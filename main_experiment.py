@@ -2088,7 +2088,7 @@ A = decrease rating, D = increase rating
         return
     
     def run_sart_trial(self, trial, condition, block_number, cue_circle):
-        """Run a single SART trial"""
+        """Run a single SART trial with improved stability"""
         # Set digit position
         if trial['position'] == 'left':
             digit_pos = (-150, 0)
@@ -2132,29 +2132,46 @@ A = decrease rating, D = increase rating
         stimulus_shown = True
         first_key_time = None  # Track when the first key was pressed
         
-        while self.trial_clock.getTime() - start_time < max_response_time:
-            current_time = self.trial_clock.getTime() - start_time
-            
-            # Hide stimulus after stimulus_duration, show fixation + cue for remainder
-            if stimulus_shown and current_time >= config.SART_PARAMS['stimulus_duration']:
-                self.fixation.draw()
-                cue_circle.draw()
-                self.win.flip()
-                stimulus_shown = False
-            
-            # Check for key presses throughout the entire trial duration
-            keys = self.kb.getKeys(keyList=['left', 'right', 'escape'], waitRelease=False)
-            if keys:
-                # Record the first key press (if multiple keys pressed)
-                if not keys_pressed:
-                    keys_pressed = keys
-                    first_key_time = self.trial_clock.getTime()  # Record when key was pressed
-                # Handle escape immediately
-                if keys[0].name == 'escape':
-                    self.cleanup_and_quit()
-            
-            # Small wait to prevent excessive CPU usage
-            core.wait(0.001)
+        # Frame rate limiting for SART trials
+        frame_duration = 1.0 / 60.0  # Target 60 FPS
+        last_frame_time = self.trial_clock.getTime()
+        
+        try:
+            while self.trial_clock.getTime() - start_time < max_response_time:
+                current_time = self.trial_clock.getTime() - start_time
+                current_frame_time = self.trial_clock.getTime()
+                
+                # Only update display at 60 FPS to prevent excessive rendering
+                if current_frame_time - last_frame_time >= frame_duration:
+                    # Hide stimulus after stimulus_duration, show fixation + cue for remainder
+                    if stimulus_shown and current_time >= config.SART_PARAMS['stimulus_duration']:
+                        self.fixation.draw()
+                        cue_circle.draw()
+                        self.win.flip()
+                        stimulus_shown = False
+                    
+                    last_frame_time = current_frame_time
+                
+                # Check for key presses throughout the entire trial duration
+                keys = self.kb.getKeys(keyList=['left', 'right', 'escape'], waitRelease=False)
+                if keys:
+                    # Record the first key press (if multiple keys pressed)
+                    if not keys_pressed:
+                        keys_pressed = keys
+                        first_key_time = self.trial_clock.getTime()  # Record when key was pressed
+                    # Handle escape immediately
+                    if keys[0].name == 'escape':
+                        self.cleanup_and_quit()
+                
+                # Small wait to prevent excessive CPU usage
+                core.wait(0.01)  # Increased from 0.001 to 0.01 (10ms)
+                
+        except Exception as e:
+            print(f"⚠️  SART trial error: {e}")
+            print("🔄 Continuing with next trial...")
+            # Set default values to prevent crash
+            response = None
+            rt = None
         
         # Process the first key press if any occurred
         if keys_pressed:

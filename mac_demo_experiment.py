@@ -20,6 +20,9 @@ warnings.filterwarnings("ignore", message=".*t of last frame was.*")
 warnings.filterwarnings("ignore", message=".*Multiple dropped frames.*")
 warnings.filterwarnings("ignore", message=".*Font Manager failed to load.*")
 warnings.filterwarnings("ignore", message=".*Boolean HIDBuildMultiDeviceList.*")
+warnings.filterwarnings("ignore", message=".*PsychHID-ERROR.*")
+warnings.filterwarnings("ignore", message=".*PsychHID-INFO.*")
+warnings.filterwarnings("ignore", message=".*PsychHID-WARNING.*")
 
 # Suppress Tkinter theme debug output
 warnings.filterwarnings("ignore", message=".*ThemeChanged.*")
