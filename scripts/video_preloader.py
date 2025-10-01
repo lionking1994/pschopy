@@ -28,21 +28,40 @@ class VideoPreloader:
         """Preload a single video"""
         try:
             if video_path.exists():
-                # Get responsive video size from layout config or window size
+                # Get window size for aspect ratio calculation
                 import config
                 if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG and 'screen_size' in config.LAYOUT_CONFIG:
-                    video_size = tuple(config.LAYOUT_CONFIG['screen_size'])
-                    print(f"📺 Preloader using responsive video size: {video_size[0]}x{video_size[1]}")
+                    window_size = tuple(config.LAYOUT_CONFIG['screen_size'])
+                    print(f"📺 Preloader window size: {window_size[0]}x{window_size[1]}")
                 else:
-                    video_size = self.win.size if hasattr(self.win, 'size') else (1920, 1080)
-                    print(f"📺 Preloader using window video size: {video_size[0]}x{video_size[1]}")
+                    window_size = self.win.size if hasattr(self.win, 'size') else (1920, 1080)
+                    print(f"📺 Preloader window size: {window_size[0]}x{window_size[1]}")
+                
+                # Calculate video size to maintain aspect ratio
+                # Use 90% of window size to ensure video fits with letterboxing
+                video_width = int(window_size[0] * 0.9)
+                video_height = int(window_size[1] * 0.9)
+                
+                # Maintain 16:9 aspect ratio (most common for videos)
+                aspect_ratio = 16.0 / 9.0
+                current_ratio = video_width / video_height
+                
+                if current_ratio > aspect_ratio:
+                    # Window is wider than 16:9, fit to height
+                    video_width = int(video_height * aspect_ratio)
+                else:
+                    # Window is taller than 16:9, fit to width
+                    video_height = int(video_width / aspect_ratio)
+                
+                video_size = (video_width, video_height)
+                print(f"📺 Video size with aspect ratio: {video_width}x{video_height}")
                 
                 # Try different video components based on availability
                 try:
                     video = visual.MovieStim3(
                         win=self.win,
                         filename=str(video_path),
-                        size=video_size,  # RESPONSIVE: Use calculated video size
+                        size=video_size,  # Use aspect-ratio-corrected size
                         pos=(0, 0),
                         noAudio=False,
                         loop=False,
@@ -54,7 +73,7 @@ class VideoPreloader:
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=video_size,  # RESPONSIVE: Use same calculated video size
+                            size=video_size,  # Use aspect-ratio-corrected size
                             pos=(0, 0),
                             noAudio=False,
                             loop=False,

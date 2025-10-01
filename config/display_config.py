@@ -146,8 +146,8 @@ def calculate_responsive_layout(screen_width, screen_height, is_retina=False):
     scale_factor = min(width_scale, height_scale)  # Use smaller scale to maintain proportions
     
     # Text sizes (increased for better readability)
-    text_height = max(30, int(46 * scale_factor))  # Min 30, scaled from base 46 (increased)
-    velten_text_height = max(28, int(42 * scale_factor))  # Min 28, scaled from base 42 (increased)
+    text_height = max(36, int(52 * scale_factor))  # Min 36, scaled from base 52 (increased for better readability)
+    velten_text_height = max(32, int(48 * scale_factor))  # Min 32, scaled from base 48 (increased for better readability)
     
     # Button sizes and positions
     button_width = max(200, int(260 * scale_factor))  # Min 200, scaled from base 260
