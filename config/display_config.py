@@ -322,20 +322,38 @@ def get_layout_for_config(config_name):
         print(f"🖥️  Actual screen size detected: {actual_width}x{actual_height}")
     except Exception as e:
         print(f"⚠️  Could not detect actual screen size: {e}")
-        actual_width, actual_height = 1920, 1080  # Safe fallback
+        # Use a more conservative default for Mac when detection fails
+        import sys
+        if sys.platform == 'darwin':
+            # Mac systems - use smaller default to avoid zooming
+            actual_width, actual_height = 1440, 900
+            print(f"🍎 Using conservative Mac default: {actual_width}x{actual_height}")
+        else:
+            actual_width, actual_height = 1920, 1080  # Windows/Linux default
     
     if config_name == 'auto':
         # Auto-detect screen and calculate responsive layout
         # Check if this might be a Retina display (Mac with high resolution)
         import sys
-        if sys.platform == 'darwin' and actual_width > 2500:
-            # Likely a Retina display, use half resolution for logical pixels
-            logical_width = actual_width // 2
-            logical_height = actual_height // 2
-            print(f"🍎 Retina display detected, using logical resolution: {logical_width}x{logical_height}")
-            layout = calculate_responsive_layout(logical_width, logical_height, is_retina=True)
-            config['size'] = [logical_width, logical_height]
+        
+        # For Mac, be more conservative with resolution detection
+        if sys.platform == 'darwin':
+            # Check if this is likely a Retina display
+            if actual_width > 2500:
+                # Likely a physical Retina resolution, use half for logical
+                logical_width = actual_width // 2
+                logical_height = actual_height // 2
+                print(f"🍎 Retina display detected, using logical resolution: {logical_width}x{logical_height}")
+                layout = calculate_responsive_layout(logical_width, logical_height, is_retina=True)
+                config['size'] = [logical_width, logical_height]
+            else:
+                # Standard Mac display or already logical resolution
+                # Use the actual detected size
+                print(f"🍎 Mac display using resolution: {actual_width}x{actual_height}")
+                layout = calculate_responsive_layout(actual_width, actual_height)
+                config['size'] = [actual_width, actual_height]
         else:
+            # Windows/Linux - use actual resolution
             layout = calculate_responsive_layout(actual_width, actual_height)
             config['size'] = [actual_width, actual_height]
         
