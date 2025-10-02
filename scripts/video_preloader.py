@@ -28,34 +28,53 @@ class VideoPreloader:
         """Preload a single video"""
         try:
             if video_path.exists():
-                # Get configured display size for video scaling
+                # Get window size for video scaling
                 import config
-                if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG and 'size' in config.LAYOUT_CONFIG:
-                    # Use the configured display size, NOT the actual window size
-                    display_size = config.LAYOUT_CONFIG['size']
-                    print(f"🔍 DEBUG - Video Preloader Sizing:")
-                    print(f"   Configured display size: {display_size[0]}x{display_size[1]}")
-                    print(f"   Actual window size: {self.win.size if hasattr(self.win, 'size') else 'unknown'}")
+                import sys
+                
+                # Get the raw window size
+                raw_window_size = self.win.size if hasattr(self.win, 'size') else [1920, 1080]
+                
+                # Check if window size is suspiciously large (likely Retina reporting physical pixels)
+                if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG and 'screen_size' in config.LAYOUT_CONFIG:
+                    config_size = config.LAYOUT_CONFIG['screen_size']
+                    # If window reports ~2x the configured size, it's likely Retina
+                    if (raw_window_size[0] > config_size[0] * 1.8 and 
+                        raw_window_size[1] > config_size[1] * 1.8):
+                        # Use the configured size instead of the reported size
+                        window_size = config_size
+                        print(f"🔍 DEBUG - Retina Display Detected (auto-corrected):")
+                        print(f"   Reported size: {raw_window_size[0]}x{raw_window_size[1]} (physical pixels)")
+                        print(f"   Using logical size: {window_size[0]}x{window_size[1]}")
+                    else:
+                        window_size = config_size
+                        print(f"🔍 DEBUG - Video Preloader Sizing:")
+                        print(f"   Using configured size: {window_size[0]}x{window_size[1]}")
                 else:
-                    # Fallback to window size if no layout config
-                    display_size = self.win.size if hasattr(self.win, 'size') else [1920, 1080]
-                    print(f"🔍 DEBUG - Video Preloader Sizing (fallback):")
-                    print(f"   Using window size: {display_size[0]}x{display_size[1]}")
+                    # No config, check if this looks like Retina
+                    if sys.platform == 'darwin' and raw_window_size[0] > 2500:
+                        # Likely Retina, use half size
+                        window_size = [raw_window_size[0] // 2, raw_window_size[1] // 2]
+                        print(f"🔍 DEBUG - Retina Display Detected (halved):")
+                        print(f"   Reported size: {raw_window_size[0]}x{raw_window_size[1]}")
+                        print(f"   Using logical size: {window_size[0]}x{window_size[1]}")
+                    else:
+                        window_size = raw_window_size
+                        print(f"🔍 DEBUG - Video Preloader Sizing:")
+                        print(f"   Window size: {window_size[0]}x{window_size[1]}")
                 
-                print(f"   Display aspect ratio: {display_size[0]/display_size[1]:.2f}")
+                print(f"   Window aspect ratio: {window_size[0]/window_size[1]:.2f}")
                 
-                # Use None for size to maintain aspect ratio and fit within display
-                # This prevents zooming/cropping and shows full video content
-                video_size = None  # Let PsychoPy auto-scale to fit
-                print(f"📺 Setting video to auto-scale within display: {display_size[0]}x{display_size[1]}")
-                print(f"   Note: Video will maintain aspect ratio and fit within display")
+                # Use corrected window size to ensure video fills screen completely
+                video_size = window_size  # Use corrected window size
+                print(f"📺 Setting video to fill entire window: {video_size[0]}x{video_size[1]}")
                 
                 # Try different video components based on availability
                 try:
                     video = visual.MovieStim3(
                         win=self.win,
                         filename=str(video_path),
-                        size=video_size,  # None = auto-scale to fit, maintain aspect ratio
+                        size=video_size,  # Full window size for complete screen fill
                         pos=(0, 0),
                         noAudio=False,
                         loop=False,
@@ -67,7 +86,7 @@ class VideoPreloader:
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=video_size,  # None = auto-scale to fit, maintain aspect ratio
+                            size=video_size,  # Full window size for complete screen fill
                             pos=(0, 0),
                             noAudio=False,
                             loop=False,
