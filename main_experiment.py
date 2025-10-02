@@ -726,10 +726,18 @@ class MoodSARTExperimentSimple:
         print(f"   Calculated wrapWidth: {calculated_wrap_width}")
         print(f"   Text height for email: {text_height}")
         
-        # For email input, center the text and use center alignment for better display
-        self.instruction_text.pos = (0, 50)  # Slightly above center for better visibility
-        self.instruction_text.alignText = 'center'
-        self.instruction_text.anchorHoriz = 'center'
+        # For email input, keep left alignment but center the text block
+        # Calculate position to center the text block while keeping text left-aligned
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            # Use the responsive text position from layout config
+            text_pos_x = config.LAYOUT_CONFIG.get('text_pos', [-500, 0])[0]
+        else:
+            # Fallback: Calculate position for centered text block with left alignment
+            text_pos_x = -(calculated_wrap_width / 2)
+        
+        self.instruction_text.pos = (text_pos_x, 50)  # Slightly above center for better visibility
+        self.instruction_text.alignText = 'left'  # Keep text left-aligned
+        self.instruction_text.anchorHoriz = 'left'  # Anchor on left
         self.instruction_text.wrapWidth = calculated_wrap_width
         self.instruction_text.height = text_height
         
@@ -1086,39 +1094,27 @@ Click on the slider to set your rating, then click the Continue button to procee
                 video = None
                 video_errors = []
                 
-                # Get window size for aspect ratio calculation
+                # Get window size for video scaling
                 if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG and 'screen_size' in config.LAYOUT_CONFIG:
-                    window_size = tuple(config.LAYOUT_CONFIG['screen_size'])
-                    print(f"📺 Window size: {window_size[0]}x{window_size[1]}")
+                    window_size = config.LAYOUT_CONFIG['screen_size']
                 else:
-                    window_size = self.win.size if hasattr(self.win, 'size') else (1920, 1080)
-                    print(f"📺 Window size: {window_size[0]}x{window_size[1]}")
+                    window_size = self.win.size if hasattr(self.win, 'size') else [1920, 1080]
                 
-                # Calculate video size to maintain aspect ratio
-                # Use 90% of window size to ensure video fits with letterboxing
-                video_width = int(window_size[0] * 0.9)
-                video_height = int(window_size[1] * 0.9)
+                # DEBUG: Print window and video information
+                print(f"🔍 DEBUG - Video Playback Sizing:")
+                print(f"   Window size: {window_size[0]}x{window_size[1]}")
+                print(f"   Window aspect ratio: {window_size[0]/window_size[1]:.2f}")
                 
-                # Maintain 16:9 aspect ratio (most common for videos)
-                aspect_ratio = 16.0 / 9.0
-                current_ratio = video_width / video_height
-                
-                if current_ratio > aspect_ratio:
-                    # Window is wider than 16:9, fit to height
-                    video_width = int(video_height * aspect_ratio)
-                else:
-                    # Window is taller than 16:9, fit to width
-                    video_height = int(video_width / aspect_ratio)
-                
-                video_size = (video_width, video_height)
-                print(f"📺 Video size with aspect ratio: {video_width}x{video_height}")
+                # Use window size to ensure video fills screen completely
+                video_size = window_size  # Use full window size
+                print(f"📺 Setting video to fill entire window: {video_size[0]}x{video_size[1]}")
                 
                 # Try MovieStim3 first
                 try:
                     video = visual.MovieStim3(
                         win=self.win,
                         filename=str(video_path),
-                        size=video_size,  # RESPONSIVE: Use calculated video size
+                        size=video_size,  # Full window size for complete screen fill
                         pos=(0, 0),
                         loop=False,
                         autoStart=False
@@ -1131,7 +1127,7 @@ Click on the slider to set your rating, then click the Continue button to procee
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=video_size,  # RESPONSIVE: Use same calculated video size
+                            size=video_size,  # Full window size for complete screen fill
                             pos=(0, 0),
                             loop=False,
                             autoStart=False
@@ -1234,6 +1230,19 @@ Click on the slider to set your rating, then click the Continue button to procee
             # CRITICAL: Explicitly start video playback
             video.play()
             print("▶️ Video.play() called - starting playback")
+            
+            # DEBUG: Print actual video information during playback
+            try:
+                print(f"🔍 DEBUG - Video Playback Info:")
+                print(f"   Video size: {video.size}")
+                print(f"   Video position: {video.pos}")
+                print(f"   Window size: {self.win.size}")
+                if hasattr(video, 'movieSize'):
+                    print(f"   Original video dimensions: {video.movieSize}")
+                if hasattr(video, 'aspectRatio'):
+                    print(f"   Video aspect ratio: {video.aspectRatio:.2f}")
+            except Exception as e:
+                print(f"   Could not get video info: {e}")
             
             # Record actual start time for accurate timing
             playback_start_time = core.getTime()
@@ -2159,10 +2168,10 @@ A = decrease rating, D = increase rating
             while self.trial_clock.getTime() - start_time < max_response_time:
                 current_time = self.trial_clock.getTime() - start_time
                 current_frame_time = self.trial_clock.getTime()
-                
+            
                 # Only update display at 60 FPS to prevent excessive rendering
                 if current_frame_time - last_frame_time >= frame_duration:
-                    # Hide stimulus after stimulus_duration, show fixation + cue for remainder
+            # Hide stimulus after stimulus_duration, show fixation + cue for remainder
                     if stimulus_shown and current_time >= config.SART_PARAMS['stimulus_duration']:
                         self.fixation.draw()
                         cue_circle.draw()
@@ -2170,7 +2179,7 @@ A = decrease rating, D = increase rating
                         stimulus_shown = False
                     
                     last_frame_time = current_frame_time
-                
+            
                 # Check for key presses throughout the entire trial duration
                 keys = self.kb.getKeys(keyList=['left', 'right', 'escape'], waitRelease=False)
                 if keys:

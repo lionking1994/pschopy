@@ -28,40 +28,30 @@ class VideoPreloader:
         """Preload a single video"""
         try:
             if video_path.exists():
-                # Get window size for aspect ratio calculation
+                # Get window size for video scaling
                 import config
                 if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG and 'screen_size' in config.LAYOUT_CONFIG:
-                    window_size = tuple(config.LAYOUT_CONFIG['screen_size'])
-                    print(f"📺 Preloader window size: {window_size[0]}x{window_size[1]}")
+                    window_size = config.LAYOUT_CONFIG['screen_size']
                 else:
-                    window_size = self.win.size if hasattr(self.win, 'size') else (1920, 1080)
-                    print(f"📺 Preloader window size: {window_size[0]}x{window_size[1]}")
+                    window_size = self.win.size if hasattr(self.win, 'size') else [1920, 1080]
                 
-                # Calculate video size to maintain aspect ratio
-                # Use 90% of window size to ensure video fits with letterboxing
-                video_width = int(window_size[0] * 0.9)
-                video_height = int(window_size[1] * 0.9)
+                # DEBUG: Print window and video information
+                print(f"🔍 DEBUG - Video Preloader Sizing:")
+                print(f"   Window size: {window_size[0]}x{window_size[1]}")
+                print(f"   Window aspect ratio: {window_size[0]/window_size[1]:.2f}")
                 
-                # Maintain 16:9 aspect ratio (most common for videos)
-                aspect_ratio = 16.0 / 9.0
-                current_ratio = video_width / video_height
-                
-                if current_ratio > aspect_ratio:
-                    # Window is wider than 16:9, fit to height
-                    video_width = int(video_height * aspect_ratio)
-                else:
-                    # Window is taller than 16:9, fit to width
-                    video_height = int(video_width / aspect_ratio)
-                
-                video_size = (video_width, video_height)
-                print(f"📺 Video size with aspect ratio: {video_width}x{video_height}")
+                # Use window size to ensure video fills screen completely
+                # Videos will be scaled to fill the entire window
+                video_size = window_size  # Use full window size
+                print(f"📺 Setting video to fill entire window: {video_size[0]}x{video_size[1]}")
+                print(f"   Note: Video will fill screen completely (may crop edges if aspect ratio differs)")
                 
                 # Try different video components based on availability
                 try:
                     video = visual.MovieStim3(
                         win=self.win,
                         filename=str(video_path),
-                        size=video_size,  # Use aspect-ratio-corrected size
+                        size=video_size,  # Full window size for complete screen fill
                         pos=(0, 0),
                         noAudio=False,
                         loop=False,
@@ -73,7 +63,7 @@ class VideoPreloader:
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=video_size,  # Use aspect-ratio-corrected size
+                            size=video_size,  # Full window size for complete screen fill
                             pos=(0, 0),
                             noAudio=False,
                             loop=False,
@@ -84,7 +74,15 @@ class VideoPreloader:
                         print(f"⚠️ Could not preload {video_key} - will load on-demand")
                         video = None
                 self.preloaded_videos[video_key] = video
-                print(f"✓ {video_key}")
+                
+                # DEBUG: Print actual video dimensions after loading
+                if video:
+                    try:
+                        print(f"✓ {video_key}")
+                        print(f"   Actual video dimensions: {video.size}")
+                        print(f"   Video position: {video.pos}")
+                    except:
+                        print(f"✓ {video_key} (dimensions not available)")
             else:
                 print(f"❌ Video not found: {video_key}")
                 self.preloaded_videos[video_key] = None
