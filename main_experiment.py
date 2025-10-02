@@ -251,6 +251,13 @@ class MoodSARTExperimentSimple:
             print(f"📐 Using default mood slider position: {mood_slider_pos}")
             
         # MODERN: Mood rating slider (replaces RatingScale) - Responsive sizing and positioning
+        # Calculate responsive label height for mood slider
+        if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
+            # Make labels proportional to slider size - about 40% of slider height
+            mood_label_height = max(20, int(mood_slider_height * 0.4))
+        else:
+            mood_label_height = 28  # Fallback
+            
         self.mood_slider = visual.Slider(
             win=self.win,
             ticks=config.MOOD_SCALE['tick_positions'],
@@ -262,7 +269,8 @@ class MoodSARTExperimentSimple:
             color=[0.5, 0.5, 0.5],     # Neutral gray color
             markerColor=[0.7, 0.7, 0.7],  # Light gray marker for neutral appearance
             lineColor=[0.5, 0.5, 0.5],    # Neutral gray line
-            labelColor='white'
+            labelColor='white',
+            labelHeight=mood_label_height  # RESPONSIVE: Larger labels for better visibility
             # Note: showValue parameter not supported in this PsychoPy version
         )
         

@@ -159,8 +159,8 @@ def calculate_responsive_layout(screen_width, screen_height, is_retina=False):
     mw_button_pos = max(-300, int(-200 * (screen_height / base_height)))    # Scale with screen height
     
     # Slider sizes (mood slider increased for better visibility)
-    mood_slider_width = max(450, int(650 * scale_factor))  # Min 450, scaled from base 650 (increased)
-    mood_slider_height = max(35, int(55 * scale_factor))   # Min 35, scaled from base 55 (increased)
+    mood_slider_width = max(600, int(800 * scale_factor))  # Min 600, scaled from base 800 (much larger for client)
+    mood_slider_height = max(50, int(70 * scale_factor))   # Min 50, scaled from base 70 (much larger for client)
     
     velten_slider_width = max(450, int(650 * scale_factor))  # Min 450, scaled from base 650 (reduced)
     velten_slider_height = max(40, int(60 * scale_factor))   # Min 40, scaled from base 60 (reduced)
