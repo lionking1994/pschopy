@@ -1094,27 +1094,31 @@ Click on the slider to set your rating, then click the Continue button to procee
                 video = None
                 video_errors = []
                 
-                # Get window size for video scaling
-                if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG and 'screen_size' in config.LAYOUT_CONFIG:
-                    window_size = config.LAYOUT_CONFIG['screen_size']
+                # Get configured display size for video scaling
+                if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG and 'size' in config.LAYOUT_CONFIG:
+                    # Use the configured display size, NOT the actual window size
+                    display_size = config.LAYOUT_CONFIG['size']
+                    print(f"🔍 DEBUG - Video Playback Sizing:")
+                    print(f"   Configured display size: {display_size[0]}x{display_size[1]}")
+                    print(f"   Actual window size: {self.win.size if hasattr(self.win, 'size') else 'unknown'}")
                 else:
-                    window_size = self.win.size if hasattr(self.win, 'size') else [1920, 1080]
+                    # Fallback to window size if no layout config
+                    display_size = self.win.size if hasattr(self.win, 'size') else [1920, 1080]
+                    print(f"🔍 DEBUG - Video Playback Sizing (fallback):")
+                    print(f"   Using window size: {display_size[0]}x{display_size[1]}")
                 
-                # DEBUG: Print window and video information
-                print(f"🔍 DEBUG - Video Playback Sizing:")
-                print(f"   Window size: {window_size[0]}x{window_size[1]}")
-                print(f"   Window aspect ratio: {window_size[0]/window_size[1]:.2f}")
+                print(f"   Display aspect ratio: {display_size[0]/display_size[1]:.2f}")
                 
-                # Use window size to ensure video fills screen completely
-                video_size = window_size  # Use full window size
-                print(f"📺 Setting video to fill entire window: {video_size[0]}x{video_size[1]}")
+                # Use None for size to maintain aspect ratio and fit within display
+                video_size = None  # Let PsychoPy auto-scale to fit
+                print(f"📺 Setting video to auto-scale within display: {display_size[0]}x{display_size[1]}")
                 
                 # Try MovieStim3 first
                 try:
                     video = visual.MovieStim3(
                         win=self.win,
                         filename=str(video_path),
-                        size=video_size,  # Full window size for complete screen fill
+                        size=video_size,  # None = auto-scale to fit, maintain aspect ratio
                         pos=(0, 0),
                         loop=False,
                         autoStart=False
@@ -1127,7 +1131,7 @@ Click on the slider to set your rating, then click the Continue button to procee
                         video = visual.MovieStim(
                             win=self.win,
                             filename=str(video_path),
-                            size=video_size,  # Full window size for complete screen fill
+                            size=video_size,  # None = auto-scale to fit, maintain aspect ratio
                             pos=(0, 0),
                             loop=False,
                             autoStart=False
