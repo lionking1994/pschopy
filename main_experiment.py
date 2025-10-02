@@ -253,10 +253,11 @@ class MoodSARTExperimentSimple:
         # MODERN: Mood rating slider (replaces RatingScale) - Responsive sizing and positioning
         # Calculate responsive label height for mood slider
         if hasattr(config, 'LAYOUT_CONFIG') and config.LAYOUT_CONFIG:
-            # Make labels proportional to slider size - about 40% of slider height
-            mood_label_height = max(20, int(mood_slider_height * 0.4))
+            # Make labels larger - about 50% of slider height for better visibility
+            mood_label_height = max(30, int(mood_slider_height * 0.5))
+            print(f"📐 Using mood slider label height: {mood_label_height}px")
         else:
-            mood_label_height = 28  # Fallback
+            mood_label_height = 35  # Fallback (increased)
             
         self.mood_slider = visual.Slider(
             win=self.win,
