@@ -1618,14 +1618,14 @@ Click on the slider to set your rating, then click the Continue button to procee
             
             print(f"🔄 Keyboard events cleared during statement {i+1} display")
             
-            # UPDATED: Get rating using numbered Likert scale
-            rating = self.get_velten_rating_slider()
+            # REMOVED: Mood congruency rating after each statement (per user request)
+            # rating = self.get_velten_rating_slider()
             
-            # Save Velten data
+            # Save Velten data (without rating)
             self.save_trial_data({
                 'phase': 'velten_statements',
                 'velten_statement': statement,
-                'velten_rating': rating,
+                'velten_rating': None,  # No rating collected
                 'audio_file': str(audio_file) if audio_loaded else None,
                 'block_type': None, 'block_number': None, 'trial_number': i + 1,
                 'stimulus': None, 'stimulus_position': None, 'response': None,
