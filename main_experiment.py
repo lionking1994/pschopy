@@ -1536,15 +1536,40 @@ Click on the slider to set your rating, then click the Continue button to procee
             print(f"   Audio key '{audio_key}' in preloaded: {audio_key in self.preloaded_audio}")
             if audio_key in self.preloaded_audio:
                 print(f"   Audio object is not None: {self.preloaded_audio[audio_key] is not None}")
+                if self.preloaded_audio[audio_key] is not None:
+                    audio_obj = self.preloaded_audio[audio_key]
+                    print(f"   Audio object type: {type(audio_obj).__name__}")
+                    print(f"   Has set_volume: {hasattr(audio_obj, 'set_volume')}")
+                    print(f"   Has setVolume: {hasattr(audio_obj, 'setVolume')}")
+                    print(f"   Has play: {hasattr(audio_obj, 'play')}")
+                    print(f"   Has setLoops: {hasattr(audio_obj, 'setLoops')}")
         
         # Try preloaded audio first (instant playback)
         if hasattr(self, 'preloaded_audio') and audio_key in self.preloaded_audio and self.preloaded_audio[audio_key] is not None:
             try:
                 self.current_audio = self.preloaded_audio[audio_key]
-                self.current_audio.set_volume(0.7)
-                self.current_audio.play(loops=-1)
+                
+                # Check if it's pygame or PsychoPy sound and use appropriate methods
+                if hasattr(self.current_audio, 'set_volume'):
+                    # pygame.mixer.Sound
+                    self.current_audio.set_volume(0.7)
+                    self.current_audio.play(loops=-1)
+                    print(f"🎵 Audio started instantly (pygame): {audio_file.name}")
+                elif hasattr(self.current_audio, 'setVolume'):
+                    # PsychoPy Sound
+                    self.current_audio.setVolume(0.7)
+                    # Try to set looping if supported
+                    if hasattr(self.current_audio, 'setLoops'):
+                        self.current_audio.setLoops(-1)  # Set infinite looping
+                        print(f"🎵 Audio started instantly (PsychoPy with looping): {audio_file.name}")
+                    else:
+                        print(f"🎵 Audio started instantly (PsychoPy, single play): {audio_file.name}")
+                        print(f"   ⚠️ Note: Looping not supported, music will play once")
+                    self.current_audio.play()
+                else:
+                    raise AttributeError("Unknown audio object type")
+                
                 audio_loaded = True
-                print(f"🎵 Audio started instantly: {audio_file.name}")
                 
                 # Wait a brief moment to ensure audio starts
                 core.wait(0.1)
@@ -1552,7 +1577,8 @@ Click on the slider to set your rating, then click the Continue button to procee
                 
             except Exception as e:
                 # If preloaded fails, fall back to loading
-                print(f"Preloaded audio failed ({str(e)[:30]}...), loading fresh...")
+                print(f"Preloaded audio failed: {str(e)}")
+                print(f"   Will attempt to load fresh audio file...")
                 
         # Fallback to regular loading if preload unavailable
         if not audio_loaded:
@@ -1587,9 +1613,15 @@ Click on the slider to set your rating, then click the Continue button to procee
                 try:
                     self.current_audio = sound.Sound(str(audio_file))
                     self.current_audio.setVolume(0.7)
+                    # Try to set looping if supported
+                    if hasattr(self.current_audio, 'setLoops'):
+                        self.current_audio.setLoops(-1)  # Set infinite looping
+                        print(f"🎵 Audio loaded and playing (PsychoPy with looping): {audio_file.name}")
+                    else:
+                        print(f"🎵 Audio loaded and playing (PsychoPy, single play): {audio_file.name}")
+                        print(f"   ⚠️ Note: Looping not supported, music will play once")
                     self.current_audio.play()
                     audio_loaded = True
-                    print(f"🎵 Audio loaded and playing (PsychoPy): {audio_file.name}")
                     
                     # Wait a brief moment to ensure audio starts
                     core.wait(0.1)
@@ -1637,6 +1669,7 @@ Click on the slider to set your rating, then click the Continue button to procee
         # FIXED: Properly stop music after all statements
         if self.current_audio and audio_loaded:
             try:
+                # Both pygame and PsychoPy sounds have stop() method
                 self.current_audio.stop()
                 print("Stopped background music")
             except Exception as e:
