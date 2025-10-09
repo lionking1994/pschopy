@@ -42,7 +42,7 @@ class MoodSARTExperimentSimple:
         if config.DEMO_MODE:
             print("🎯 DEMO MODE ACTIVE:")
             print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials total in 8 steps (shortened)")
-            print(f"   📝 Velten statements: 3 per phase (shortened from 12)")
+            print(f"   📝 Velten statements: 3 per phase (shortened from 25)")
             print(f"   ⏱️  Velten duration: {config.TIMING['velten_statement_duration']}s per statement (same as main)")
             print(f"   🧠 MW probes: After each of 8 steps ({config.SART_PARAMS['trials_per_step_min']}-{config.SART_PARAMS['trials_per_step_max']} trials per step)")
             print(f"   🎬 Videos and other phases: Same as main experiment")
@@ -1632,7 +1632,7 @@ Click on the slider to set your rating, then click the Continue button to procee
         
         # Demo mode reduction already applied in load_velten_statements() method
         
-        # Present statements
+        # Present statements with ratings every 4 statements
         for i, statement in enumerate(statements):
             # Show statement for specified duration using centered text
             self.velten_text.text = statement
@@ -1650,14 +1650,19 @@ Click on the slider to set your rating, then click the Continue button to procee
             
             print(f"🔄 Keyboard events cleared during statement {i+1} display")
             
-            # REMOVED: Mood congruency rating after each statement (per user request)
-            # rating = self.get_velten_rating_slider()
+            # UPDATED: Collect mood congruency rating every 4 statements
+            # In demo mode (3 statements), no ratings will be collected
+            # In full mode (25 statements), ratings after statements 4, 8, 12, 16, 20, 24
+            rating = None
+            if (i + 1) % 4 == 0:  # After every 4th statement (i+1 because i is 0-based)
+                print(f"📊 Collecting mood congruency rating after statement {i+1}")
+                rating = self.get_velten_rating_slider_safe()  # Use safe version that doesn't interfere with audio
             
-            # Save Velten data (without rating)
+            # Save Velten data (with rating when collected)
             self.save_trial_data({
                 'phase': 'velten_statements',
                 'velten_statement': statement,
-                'velten_rating': None,  # No rating collected
+                'velten_rating': rating,  # Rating collected every 4 statements
                 'audio_file': str(audio_file) if audio_loaded else None,
                 'block_type': None, 'block_number': None, 'trial_number': i + 1,
                 'stimulus': None, 'stimulus_position': None, 'response': None,
@@ -1692,6 +1697,164 @@ Click on the slider to set your rating, then click the Continue button to procee
                 elif key.isdigit() and 1 <= int(key) <= 7:
                     return int(key)
     
+    def get_velten_rating_slider_safe(self):
+        """SAFE VERSION: Get Velten rating without interfering with audio playback
+        This version doesn't stop or restart audio, allowing music to continue seamlessly"""
+        print(f"📝 COLLECTING VELTEN RATING (Safe Interactive Slider - Music Continues)")
+        
+        # Check if audio is currently playing
+        audio_playing = False
+        if hasattr(self, 'current_audio') and self.current_audio:
+            audio_playing = True
+            print(f"   🎵 Music continues playing during rating...")
+        
+        # Start at middle of scale (4)
+        current_value = 4
+        self.velten_slider.reset()
+        self.velten_slider.rating = current_value
+        
+        # Updated instruction text for interactive slider
+        instruction_text = """To what extent were you able to bring your mood in line with the previous statements?
+
+Move the slider or use A/D keys to adjust your rating, then press ENTER to confirm.
+
+A = decrease rating, D = increase rating
+1 = Not at all ... 7 = Completely"""
+        
+        # Get scale labels for current value
+        scale_labels = config.VELTEN_RATING_SCALE['scale_labels']
+        # Mouse for wheel scrolling support over the slider
+        mouse = event.Mouse(win=self.win)
+        tolerance_px = 10  # extra vertical band around slider for easier targeting
+        
+        # Keyboard for continuous A/D hold support and single press debounce
+        kb = keyboard.Keyboard()
+        key_repeat_interval = 0.16  # seconds between repeats when holding key
+        hold_start_delay = 0.3  # delay before hold behavior starts (300ms)
+        _last_repeat_time = core.getTime()
+        _key_press_start_time = {'a': None, 'd': None}  # Track when keys were first pressed
+        _key_processed_as_single = {'a': False, 'd': False}  # Track if key was processed as single press
+        
+        while True:
+            # Handle mouse wheel scrolling when cursor is over the slider
+            wheel_y = mouse.getWheelRel()[1]
+            if wheel_y != 0:
+                # Cursor position
+                mouse_x, mouse_y = mouse.getPos()
+                # Slider geometry (in pix)
+                slider_center_x, slider_center_y = self.velten_slider.pos
+                slider_width, slider_height = self.velten_slider.size
+                left_x = slider_center_x - (slider_width / 2.0)
+                right_x = slider_center_x + (slider_width / 2.0)
+                top_y = slider_center_y + (slider_height / 2.0) + tolerance_px
+                bottom_y = slider_center_y - (slider_height / 2.0) - tolerance_px
+                # Only apply wheel change if cursor is within slider band
+                if (bottom_y <= mouse_y <= top_y) and (left_x <= mouse_x <= right_x):
+                    delta = 1 if wheel_y > 0 else -1
+                    new_value = max(1, min(7, current_value + delta))
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.velten_slider.rating = current_value
+            
+            # Handle keyboard input with proper single press vs hold distinction
+            now = core.getTime()
+            
+            # Check for currently held keys
+            held_a = kb.getKeys(keyList=['a'], waitRelease=False, clear=False)
+            held_d = kb.getKeys(keyList=['d'], waitRelease=False, clear=False)
+            
+            # Track key press start times
+            if held_a and _key_press_start_time['a'] is None:
+                _key_press_start_time['a'] = now
+                _key_processed_as_single['a'] = False
+            elif not held_a:
+                _key_press_start_time['a'] = None
+                _key_processed_as_single['a'] = False
+                
+            if held_d and _key_press_start_time['d'] is None:
+                _key_press_start_time['d'] = now
+                _key_processed_as_single['d'] = False
+            elif not held_d:
+                _key_press_start_time['d'] = None
+                _key_processed_as_single['d'] = False
+            
+            # Handle 'A' key (decrease)
+            key_handled_by_hold = False
+            if held_a and _key_press_start_time['a'] is not None:
+                key_hold_duration = now - _key_press_start_time['a']
+                
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['a']:
+                    # Process as single press (only once)
+                    new_value = max(1, current_value - 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.velten_slider.rating = current_value
+                        _key_processed_as_single['a'] = True
+                elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
+                    # Process as continuous hold
+                    new_value = max(1, current_value - 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.velten_slider.rating = current_value
+                        _last_repeat_time = now
+                        key_handled_by_hold = True
+            
+            # Handle 'D' key (increase)
+            if held_d and _key_press_start_time['d'] is not None:
+                key_hold_duration = now - _key_press_start_time['d']
+                
+                if key_hold_duration < hold_start_delay and not _key_processed_as_single['d']:
+                    # Process as single press (only once)
+                    new_value = min(7, current_value + 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.velten_slider.rating = current_value
+                        _key_processed_as_single['d'] = True
+                elif key_hold_duration >= hold_start_delay and now - _last_repeat_time >= key_repeat_interval:
+                    # Process as continuous hold
+                    new_value = min(7, current_value + 1)
+                    if new_value != current_value:
+                        current_value = new_value
+                        self.velten_slider.rating = current_value
+                        _last_repeat_time = now
+                        key_handled_by_hold = True
+            
+            # Also update based on direct slider movement (drag/click)
+            slider_val = self.velten_slider.getRating()
+            if slider_val is not None:
+                current_value = int(slider_val)
+            
+            # Update instruction text
+            self.instruction_text.text = instruction_text
+            self.instruction_text.draw()
+            # Don't draw the invisible built-in slider - using custom tick marks instead
+            # Draw horizontal line
+            self.velten_horizontal_line.draw()
+            # Draw custom tick marks with different heights
+            for tick_mark in self.velten_tick_marks:
+                tick_mark.draw()
+            # Draw text labels at start and end
+            self.velten_start_label.draw()
+            self.velten_end_label.draw()
+            # Draw red marker at current position
+            self.draw_velten_marker(current_value)
+            self.win.flip()
+            
+            # Handle ENTER and ESCAPE keys
+            if not key_handled_by_hold:
+                keys = event.getKeys()
+                
+                for key in keys:
+                    if key == 'escape':
+                        print("ESCAPE key detected, quitting...")
+                        core.quit()
+                    elif key == 'return':
+                        # Confirm selection
+                        print(f"📝 Velten Statement Rating: {current_value}/7 (mood alignment)")
+                        if audio_playing:
+                            print(f"   🎵 Music continues playing...")
+                        return current_value
+
     def get_velten_rating_slider(self):
         """UPDATED: Get Velten rating using interactive slider (7-point scale as specified in PDF)"""
         print(f"📝 COLLECTING VELTEN RATING (Interactive Slider)")
