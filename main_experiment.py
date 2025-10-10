@@ -899,6 +899,10 @@ class MoodSARTExperimentSimple:
     def collect_mood_rating(self, phase):
         """MODERN: Collect mood rating using Slider component with button and keyboard advance"""
         print(f"📊 COLLECTING MOOD RATING: {phase}")
+        
+        # IMPORTANT: Make mouse visible for mood rating
+        self.win.mouseVisible = True
+        
         self.instruction_text.text = config.INSTRUCTIONS['mood_rating']['text'] + "\n\nMake your selection, then click the Continue button or press SPACEBAR/ENTER."
         self.mood_slider.reset()
         
@@ -950,6 +954,9 @@ class MoodSARTExperimentSimple:
                     break
         
         rating = self.mood_slider.getRating()
+        
+        # Hide mouse cursor after rating is complete
+        self.win.mouseVisible = False
         
         # Print mood rating to console
         print(f"😊 Mood Rating ({phase}): {rating}/100")
