@@ -3030,8 +3030,12 @@ Current rating: {}"""
             print(f"\n📍 STEP 2 - Mood Induction 1")
             induction_1 = order['mood_inductions'][0]
             self.run_mood_induction(induction_1[0], induction_1[1], 1)
-            print(f"\n📍 STEP 3 - Post-Induction Mood Scale")
-            self.collect_mood_rating_arrow_keys('post_induction_1')
+            # Only collect mood scale if not Velten (Velten collects it at the end of procedure)
+            if induction_1[0] != 'V':
+                print(f"\n📍 STEP 3 - Post-Induction Mood Scale")
+                self.collect_mood_rating_arrow_keys('post_induction_1')
+            else:
+                print(f"📍 STEP 3 - Mood scale already collected at end of Velten procedure")
             
             # Step 4: SART 1
             print(f"\n📍 STEP 4 - SART Block 1 ({order['sart_conditions'][0]})")
@@ -3042,8 +3046,12 @@ Current rating: {}"""
             print(f"\n📍 STEP 5 - Mood Induction 2 (Re-induction)")
             induction_2 = order['mood_inductions'][1]
             self.run_mood_induction(induction_2[0], induction_2[1], 2)
-            print(f"\n📍 STEP 6 - Post-Induction Mood Scale")
-            self.collect_mood_rating_arrow_keys('post_induction_2')
+            # Only collect mood scale if not Velten (Velten collects it at the end of procedure)
+            if induction_2[0] != 'V':
+                print(f"\n📍 STEP 6 - Post-Induction Mood Scale")
+                self.collect_mood_rating_arrow_keys('post_induction_2')
+            else:
+                print(f"📍 STEP 6 - Mood scale already collected at end of Velten procedure")
             
             # Step 7: SART 2
             print(f"\n📍 STEP 7 - SART Block 2 ({order['sart_conditions'][1]})")
@@ -3060,8 +3068,12 @@ Current rating: {}"""
             print(f"\n📍 STEP 10 - Mood Induction 3")
             induction_3 = order['mood_inductions'][2]
             self.run_mood_induction(induction_3[0], induction_3[1], 3)
-            print(f"\n📍 STEP 11 - Post-Induction Mood Scale")
-            self.collect_mood_rating_arrow_keys('post_induction_3')
+            # Only collect mood scale if not Velten (Velten collects it at the end of procedure)
+            if induction_3[0] != 'V':
+                print(f"\n📍 STEP 11 - Post-Induction Mood Scale")
+                self.collect_mood_rating_arrow_keys('post_induction_3')
+            else:
+                print(f"📍 STEP 11 - Mood scale already collected at end of Velten procedure")
             
             # Step 12: SART 3
             print(f"\n📍 STEP 12 - SART Block 3 ({order['sart_conditions'][2]})")
@@ -3072,8 +3084,12 @@ Current rating: {}"""
             print(f"\n📍 STEP 13 - Mood Induction 4")
             induction_4 = order['mood_inductions'][3]
             self.run_mood_induction(induction_4[0], induction_4[1], 4)
-            print(f"\n📍 STEP 14 - Post-Induction Mood Scale")
-            self.collect_mood_rating_arrow_keys('post_induction_4')
+            # Only collect mood scale if not Velten (Velten collects it at the end of procedure)
+            if induction_4[0] != 'V':
+                print(f"\n📍 STEP 14 - Post-Induction Mood Scale")
+                self.collect_mood_rating_arrow_keys('post_induction_4')
+            else:
+                print(f"📍 STEP 14 - Mood scale already collected at end of Velten procedure")
             
             # Step 15: SART 4
             print(f"\n📍 STEP 15 - SART Block 4 ({order['sart_conditions'][3]})")
