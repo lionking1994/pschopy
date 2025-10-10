@@ -241,7 +241,7 @@ else:
 
 print("🎯 FULL EXPERIMENT MODE ENABLED")
 print(f"   📊 SART trials total: {config.SART_PARAMS['total_trials']} in {config.SART_PARAMS['steps_per_block']} steps")
-print(f"   📝 Velten statements: 25 per phase (full set)")
+print(f"   📝 Velten statements: 12 per phase (full set)")
 print(f"   ⏱️  Velten duration: {config.TIMING['velten_statement_duration']}s per statement")
 print(f"   🧠 MW probes: After each of {config.SART_PARAMS['steps_per_block']} steps")
 print(f"   ⏱️  Total estimated time: ~45-60 minutes")
@@ -312,7 +312,7 @@ def main():
             with suppress_all_warnings():
                 print("\n🎯 FULL EXPERIMENT MODE ACTIVE:")
                 print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials total in {config.SART_PARAMS['steps_per_block']} steps")
-                print(f"   📝 Velten statements: 25 per phase (full set)")
+                print(f"   📝 Velten statements: 12 per phase (full set)")
                 print(f"   ⏱️  Velten duration: {config.TIMING['velten_statement_duration']}s per statement")
                 print(f"   🧠 MW probes: After each of {config.SART_PARAMS['steps_per_block']} steps ({config.SART_PARAMS['trials_per_step_min']}-{config.SART_PARAMS['trials_per_step_max']} trials per step)")
                 print(f"   📊 Mood ratings: Every 4 Velten statements")

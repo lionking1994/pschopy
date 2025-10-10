@@ -42,7 +42,7 @@ class MoodSARTExperimentSimple:
         if config.DEMO_MODE:
             print("🎯 DEMO MODE ACTIVE:")
             print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials total in 8 steps (shortened)")
-            print(f"   📝 Velten statements: 3 per phase (shortened from 25)")
+            print(f"   📝 Velten statements: 3 per phase (shortened from 12)")
             print(f"   ⏱️  Velten duration: {config.TIMING['velten_statement_duration']}s per statement (same as main)")
             print(f"   🧠 MW probes: After each of 8 steps ({config.SART_PARAMS['trials_per_step_min']}-{config.SART_PARAMS['trials_per_step_max']} trials per step)")
             print(f"   🎬 Videos and other phases: Same as main experiment")
@@ -1467,8 +1467,7 @@ Click on the slider to set your rating, then click the Continue button to procee
         if set_key in config.VELTEN_STATEMENTS:
             statements = config.VELTEN_STATEMENTS[set_key].copy()  # Copy to avoid modifying original
             
-            # Randomize order within set as specified in PDF
-            random.shuffle(statements)
+            # IMPORTANT: Do NOT randomize - statements must be presented in exact order
             
             # Apply demo mode reduction BEFORE printing the count
             if config.DEMO_MODE:
@@ -1651,10 +1650,10 @@ Click on the slider to set your rating, then click the Continue button to procee
             print(f"🔄 Keyboard events cleared during statement {i+1} display")
             
             # UPDATED: Collect mood congruency rating every 4 statements
-            # In demo mode (3 statements), no ratings will be collected
-            # In full mode (25 statements), ratings after statements 4, 8, 12, 16, 20, 24
+            # Each set has 12 statements, so ratings after statements 4 and 8
+            # No rating after statement 12 (mood scale will be collected instead)
             rating = None
-            if (i + 1) % 4 == 0:  # After every 4th statement (i+1 because i is 0-based)
+            if (i + 1) == 4 or (i + 1) == 8:  # After statements 4 and 8 only
                 print(f"📊 Collecting mood congruency rating after statement {i+1}")
                 rating = self.get_velten_rating_slider_safe()  # Use safe version that doesn't interfere with audio
             
@@ -1662,7 +1661,7 @@ Click on the slider to set your rating, then click the Continue button to procee
             self.save_trial_data({
                 'phase': 'velten_statements',
                 'velten_statement': statement,
-                'velten_rating': rating,  # Rating collected every 4 statements
+                'velten_rating': rating,  # Rating collected after statements 4 and 8
                 'audio_file': str(audio_file) if audio_loaded else None,
                 'block_type': None, 'block_number': None, 'trial_number': i + 1,
                 'stimulus': None, 'stimulus_position': None, 'response': None,
@@ -1670,6 +1669,24 @@ Click on the slider to set your rating, then click the Continue button to procee
                 'mood_rating': None, 'mw_tut_rating': None, 'mw_fmt_rating': None,
                 'video_file': None
             })
+        
+        # UPDATED: Collect mood scale rating at the end of each Velten set
+        print(f"📊 Collecting mood scale rating at end of Velten {valence} set")
+        mood_rating = self.get_mood_rating()
+        
+        # Save mood rating data
+        self.save_trial_data({
+            'phase': 'mood_rating_post_velten',
+            'velten_statement': None,
+            'velten_rating': None,
+            'audio_file': str(audio_file) if audio_loaded else None,
+            'block_type': None, 'block_number': None, 'trial_number': None,
+            'stimulus': None, 'stimulus_position': None, 'response': None,
+            'correct_response': None, 'accuracy': None, 'reaction_time': None,
+            'mood_rating': mood_rating, 
+            'mw_tut_rating': None, 'mw_fmt_rating': None,
+            'video_file': None
+        })
         
         # FIXED: Properly stop music after all statements
         if self.current_audio and audio_loaded:
