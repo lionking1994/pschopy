@@ -1672,7 +1672,7 @@ Click on the slider to set your rating, then click the Continue button to procee
         
         # UPDATED: Collect mood scale rating at the end of each Velten set
         print(f"📊 Collecting mood scale rating at end of Velten {valence} set")
-        mood_rating = self.get_mood_rating()
+        mood_rating = self.collect_mood_rating(f'post_velten_{valence}')
         
         # Save mood rating data
         self.save_trial_data({
