@@ -403,7 +403,7 @@ MW_PROBES = {
 
 # Timing parameters
 TIMING = {
-    'velten_statement_duration': 8.0,  # 8 seconds per statement
+    'velten_statement_duration': 11.0,  # 11 seconds per statement
     'fixation_duration': 0.5,
     'feedback_duration': 1.0,
     'inter_trial_interval': 0.5,

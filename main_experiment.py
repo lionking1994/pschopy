@@ -1088,7 +1088,7 @@ Click on the slider to set your rating, then click the Continue button to procee
                     
                     return rating
     
-    def play_video(self, video_key, instruction_key=None):
+    def play_video(self, video_key, instruction_key=None, collect_rating=False):
         """Play video stimulus using preloaded videos"""
         # Show instruction if provided
         if instruction_key:
@@ -1435,16 +1435,33 @@ Click on the slider to set your rating, then click the Continue button to procee
             print(f"Error playing video: {e}")
             self.show_video_placeholder(video_key)
         
-        # Save video data
-        self.save_trial_data({
-            'phase': 'video_stimulus',
-            'video_file': str(config.VIDEO_FILES[video_key]),
-            'block_type': None, 'block_number': None, 'trial_number': None,
-            'stimulus': None, 'stimulus_position': None, 'response': None,
-            'correct_response': None, 'accuracy': None, 'reaction_time': None,
-            'mood_rating': None, 'mw_tut_rating': None, 'mw_fmt_rating': None,
-            'velten_rating': None, 'audio_file': None, 'velten_statement': None
-        })
+        # Collect mood congruency rating if requested (for mood induction videos)
+        if collect_rating:
+            print(f"📊 Collecting mood congruency rating after video")
+            rating = self.get_velten_rating_slider_safe()  # Use the same rating scale as Velten
+            
+            # Save video data with rating
+            self.save_trial_data({
+                'phase': 'video_stimulus_with_rating',
+                'video_file': str(config.VIDEO_FILES[video_key]),
+                'velten_rating': rating,  # Using velten_rating field for consistency
+                'block_type': None, 'block_number': None, 'trial_number': None,
+                'stimulus': None, 'stimulus_position': None, 'response': None,
+                'correct_response': None, 'accuracy': None, 'reaction_time': None,
+                'mood_rating': None, 'mw_tut_rating': None, 'mw_fmt_rating': None,
+                'audio_file': None, 'velten_statement': None
+            })
+        else:
+            # Save video data without rating
+            self.save_trial_data({
+                'phase': 'video_stimulus',
+                'video_file': str(config.VIDEO_FILES[video_key]),
+                'block_type': None, 'block_number': None, 'trial_number': None,
+                'stimulus': None, 'stimulus_position': None, 'response': None,
+                'correct_response': None, 'accuracy': None, 'reaction_time': None,
+                'mood_rating': None, 'mw_tut_rating': None, 'mw_fmt_rating': None,
+                'velten_rating': None, 'audio_file': None, 'velten_statement': None
+            })
     
     def show_video_placeholder(self, video_key):
         """Show placeholder when video file is missing"""
@@ -1640,6 +1657,12 @@ Click on the slider to set your rating, then click the Continue button to procee
         
         # Present statements with ratings every 4 statements
         for i, statement in enumerate(statements):
+            # Add 5-second black screen between statements (not before the first one)
+            if i > 0:
+                self.win.flip()  # Show black screen
+                print(f"⬛ 5-second black screen between statements {i} and {i+1}")
+                core.wait(5.0)  # Wait 5 seconds with black screen
+            
             # Show statement for specified duration using centered text
             self.velten_text.text = statement
             self.velten_text.draw()
@@ -1692,8 +1715,8 @@ Click on the slider to set your rating, then click the Continue button to procee
             'correct_response': None, 'accuracy': None, 'reaction_time': None,
             'mood_rating': mood_rating, 
             'mw_tut_rating': None, 'mw_fmt_rating': None,
-            'video_file': None
-        })
+                'video_file': None
+            })
         
         # FIXED: Properly stop music after all statements
         if self.current_audio and audio_loaded:
@@ -1737,8 +1760,8 @@ Click on the slider to set your rating, then click the Continue button to procee
         self.velten_slider.reset()
         self.velten_slider.rating = current_value
         
-        # Updated instruction text for interactive slider
-        instruction_text = """To what extent were you able to bring your mood in line with the previous statements?
+        # Updated instruction text for interactive slider (adaptive for video or statements)
+        instruction_text = """To what extent were you able to bring your mood in line with what you just experienced?
 
 Move the slider or use A/D keys to adjust your rating, then press ENTER to confirm.
 
@@ -1878,7 +1901,7 @@ A = decrease rating, D = increase rating
                         if audio_playing:
                             print(f"   🎵 Music continues playing...")
                         return current_value
-
+    
     def get_velten_rating_slider(self):
         """UPDATED: Get Velten rating using interactive slider (7-point scale as specified in PDF)"""
         print(f"📝 COLLECTING VELTEN RATING (Interactive Slider)")
@@ -2897,15 +2920,15 @@ Current rating: {}"""
             print(f"   📽️ Movie induction ({'Positive' if valence == '+' else 'Negative'})")
             if valence == '+':
                 if phase_number == 1:
-                    self.play_video('positive_clip1', 'film_positive_clip1')
+                    self.play_video('positive_clip1', 'film_positive_clip1', collect_rating=True)
                 else:
-                    self.play_video('positive_clip2', 'film_positive_clip2')
+                    self.play_video('positive_clip2', 'film_positive_clip2', collect_rating=True)
             else:  # negative
                 # Use specific negative clips based on phase
                 if phase_number == 1 or phase_number == 3:
-                    self.play_video('negative_clip', 'film_general')  # Phase 1 and 3 use negative_clip
+                    self.play_video('negative_clip', 'film_general', collect_rating=True)  # Phase 1 and 3 use negative_clip
                 else:
-                    self.play_video('negative_clip2', 'film_general')  # Phase 2 and 4 use negative_clip2
+                    self.play_video('negative_clip2', 'film_general', collect_rating=True)  # Phase 2 and 4 use negative_clip2
         
         elif induction_type == 'V':  # Velten + music
             valence_word = 'positive' if valence == '+' else 'negative'
