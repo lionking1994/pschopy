@@ -1657,8 +1657,9 @@ Click on the slider to set your rating, then click the Continue button to procee
         
         # Present statements with ratings every 4 statements
         for i, statement in enumerate(statements):
-            # Add 5-second black screen between statements (not before the first one)
-            if i > 0:
+            # Add 5-second black screen between statements (not before the first one, and not after ratings)
+            # Skip black screen after statements 4 and 8 (where ratings occur)
+            if i > 0 and i != 4 and i != 8:
                 self.win.flip()  # Show black screen
                 print(f"⬛ 5-second black screen between statements {i} and {i+1}")
                 core.wait(5.0)  # Wait 5 seconds with black screen
