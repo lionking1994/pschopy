@@ -1767,7 +1767,8 @@ Click on the slider to set your rating, then click the Continue button to procee
 Move the slider or use A/D keys to adjust your rating, then press ENTER to confirm.
 
 A = decrease rating, D = increase rating
-1 = Not at all ... 7 = Completely"""
+
+Current rating: {}"""
         
         # Get scale labels for current value
         scale_labels = config.VELTEN_RATING_SCALE['scale_labels']
@@ -1872,8 +1873,9 @@ A = decrease rating, D = increase rating
             if slider_val is not None:
                 current_value = int(slider_val)
             
-            # Update instruction text
-            self.instruction_text.text = instruction_text
+            # Update instruction text with current label
+            current_label = scale_labels[current_value - 1]  # Convert to 0-based index
+            self.instruction_text.text = instruction_text.format(current_label)
             self.instruction_text.draw()
             # Don't draw the invisible built-in slider - using custom tick marks instead
             # Draw horizontal line
@@ -1912,13 +1914,14 @@ A = decrease rating, D = increase rating
         self.velten_slider.reset()
         self.velten_slider.rating = current_value
         
-        # Updated instruction text for interactive slider (removed current rating display)
+        # Updated instruction text for interactive slider with current rating display
         instruction_text = """To what extent were you able to bring your mood in line with this statement?
 
 Move the slider or use A/D keys to adjust your rating, then press ENTER to confirm.
 
 A = decrease rating, D = increase rating
-1 = Not at all ... 7 = Completely"""
+
+Current rating: {}"""
         
         # Get scale labels for current value
         scale_labels = config.VELTEN_RATING_SCALE['scale_labels']
@@ -2027,8 +2030,9 @@ A = decrease rating, D = increase rating
             if slider_val is not None:
                 current_value = int(slider_val)
             
-            # Update instruction text (no current value display)
-            self.instruction_text.text = instruction_text
+            # Update instruction text with current label
+            current_label = scale_labels[current_value - 1]  # Convert to 0-based index
+            self.instruction_text.text = instruction_text.format(current_label)
             self.instruction_text.draw()
             # Don't draw the invisible built-in slider - using custom tick marks instead
             # Draw horizontal line
