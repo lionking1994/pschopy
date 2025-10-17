@@ -131,7 +131,7 @@ VELTEN_STATEMENTS = {
         "I can make any situation turn out right.",
         "I feel completely aware.",
         "I'm in charge of my life and I like it that way.",
-        "Life feels amazing — I can't remember when I felt so good.",
+        "Life feels amazing - I can't remember when I felt so good.",
         "Everything's falling into place for me.",
         "I'm proud of who I am.",
         "I know I can do it; I'm going to seize the day!",
