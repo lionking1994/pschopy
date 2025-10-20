@@ -752,7 +752,7 @@ class MoodSARTExperimentSimple:
         
         while True:
             # Display current input with normal instructions
-            display_text = f"{prompt}\n\nInput: {input_text}_\n\nPress ENTER when done, BACKSPACE to delete\nType normally - Shift+2 for @, period key for ."
+            display_text = f"{prompt}\n\nInput: {input_text}_\n\nPress ENTER when done"
             self.instruction_text.text = display_text
             self.instruction_text.draw()
             self.win.flip()
