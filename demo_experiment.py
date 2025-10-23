@@ -2,14 +2,36 @@
 """
 Demo mode launcher for the PsychoPy experiment
 Automatically detects display configuration and runs in demo mode
+Cross-platform: Windows, macOS, and Linux
 """
 
 import sys
 import os
+import platform
 from pathlib import Path
 
 # Add config to path
 sys.path.append(str(Path(__file__).parent / 'config'))
+
+# Platform-specific setup
+system = platform.system()
+if system == 'Linux':
+    # Linux-specific optimizations
+    os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '1'  # Better Qt scaling
+    # Set SDL audio driver for better compatibility
+    os.environ['SDL_AUDIODRIVER'] = 'pulse'  # Use PulseAudio on Linux
+    # Disable some warnings that are common on Linux
+    import warnings
+    warnings.filterwarnings('ignore', category=DeprecationWarning)
+    warnings.filterwarnings('ignore', message='.*ALSA.*')
+    print(f"🐧 Linux detected - applying Linux-specific optimizations...")
+    print(f"   Audio backend: PulseAudio")
+elif system == 'Darwin':
+    print(f"🍎 macOS detected - for Mac-specific optimizations use mac_demo_experiment.py")
+elif system == 'Windows':
+    print(f"🪟 Windows detected")
+else:
+    print(f"⚠️ Unknown platform: {system}")
 
 def setup_display_config():
     """Setup display configuration using automatic detection"""
@@ -65,6 +87,7 @@ def main():
     try:
         print("\n" + "="*60)
         print("🎯 STARTING DEMO EXPERIMENT")
+        print(f"   Platform: {platform.system()} {platform.release()}")
         print("="*60)
         
         # Setup display configuration with auto-detection
@@ -96,8 +119,15 @@ def main():
         print("="*60)
         
         # Create and run the experiment
-        experiment = MoodSARTExperimentSimple()
-        print("✅ Experiment initialized")
+        try:
+            experiment = MoodSARTExperimentSimple()
+            print("✅ Experiment initialized")
+        except Exception as init_error:
+            if system == 'Linux' and 'audio' in str(init_error).lower():
+                print("\n⚠️ Audio initialization issue detected on Linux")
+                print("   Try: sudo apt-get install pulseaudio python3-pyaudio")
+                print("   Or run with: SDL_AUDIODRIVER=alsa python3 demo_experiment.py")
+            raise init_error
         
         print("\n🚀 Starting experiment...")
         experiment.run_experiment()

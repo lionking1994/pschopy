@@ -1756,6 +1756,16 @@ Click on the slider to set your rating, then click the Continue button to procee
             audio_playing = True
             print(f"   🎵 Music continues playing during rating...")
         
+        # Store original text position and alignment to restore later
+        original_pos = self.instruction_text.pos
+        original_align = self.instruction_text.alignText
+        original_anchor = self.instruction_text.anchorHoriz
+        
+        # Center text like mind wandering probes
+        self.instruction_text.pos = (0, 150)  # Move to top center of screen
+        self.instruction_text.alignText = 'center'
+        self.instruction_text.anchorHoriz = 'center'
+        
         # Start at middle of scale (4)
         current_value = 4
         self.velten_slider.reset()
@@ -1897,17 +1907,35 @@ Current rating: {}"""
                 for key in keys:
                     if key == 'escape':
                         print("ESCAPE key detected, quitting...")
+                        # Restore original text position and alignment before quitting
+                        self.instruction_text.pos = original_pos
+                        self.instruction_text.alignText = original_align
+                        self.instruction_text.anchorHoriz = original_anchor
                         core.quit()
                     elif key == 'return':
                         # Confirm selection
                         print(f"📝 Velten Statement Rating: {current_value}/7 (mood alignment)")
                         if audio_playing:
                             print(f"   🎵 Music continues playing...")
+                        # Restore original text position and alignment
+                        self.instruction_text.pos = original_pos
+                        self.instruction_text.alignText = original_align
+                        self.instruction_text.anchorHoriz = original_anchor
                         return current_value
     
     def get_velten_rating_slider(self):
         """UPDATED: Get Velten rating using interactive slider (7-point scale as specified in PDF)"""
         print(f"📝 COLLECTING VELTEN RATING (Interactive Slider)")
+        
+        # Store original text position and alignment to restore later
+        original_pos = self.instruction_text.pos
+        original_align = self.instruction_text.alignText
+        original_anchor = self.instruction_text.anchorHoriz
+        
+        # Center text like mind wandering probes
+        self.instruction_text.pos = (0, 150)  # Move to top center of screen
+        self.instruction_text.alignText = 'center'
+        self.instruction_text.anchorHoriz = 'center'
         
         # Start at middle of scale (4)
         current_value = 4
@@ -2054,11 +2082,19 @@ Current rating: {}"""
                 for key in keys:
                     if key == 'escape':
                         print("🔍 DEBUG - ESCAPE key detected, quitting...")
+                        # Restore original text position and alignment before quitting
+                        self.instruction_text.pos = original_pos
+                        self.instruction_text.alignText = original_align
+                        self.instruction_text.anchorHoriz = original_anchor
                         core.quit()
                     elif key == 'return':
                         print(f"🔍 DEBUG - ENTER key pressed, confirming rating: {current_value}")
                         # Confirm selection
                         print(f"📝 Velten Statement Rating: {current_value}/7 (mood alignment)")
+                        # Restore original text position and alignment
+                        self.instruction_text.pos = original_pos
+                        self.instruction_text.alignText = original_align
+                        self.instruction_text.anchorHoriz = original_anchor
                         return current_value
     
     def get_velten_rating_likert(self):
