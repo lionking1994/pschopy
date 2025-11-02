@@ -9,6 +9,17 @@ Date: 2024
 """
 
 import os
+import warnings
+import logging
+
+# Suppress specific PsychoPy deprecation warnings
+warnings.filterwarnings('ignore', message='.*RGB parameter is deprecated.*')
+warnings.filterwarnings('ignore', message='.*lineRGB.*deprecated.*')
+warnings.filterwarnings('ignore', message='.*fillRGB.*deprecated.*')
+
+# Also suppress via logging for PsychoPy's internal logging
+logging.getLogger('psychopy').setLevel(logging.ERROR)
+
 # Configure audio environment for proper audio support
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 # Allow audio backends to work properly
@@ -832,7 +843,8 @@ class MoodSARTExperimentSimple:
             'stimulus', 'stimulus_position', 'response', 'correct_response',
             'accuracy', 'reaction_time', 'timestamp',
             'mood_rating', 'mw_tut_rating', 'mw_fmt_rating', 'velten_rating',
-            'video_file', 'audio_file', 'velten_statement'
+            'video_file', 'audio_file', 'velten_statement',
+            'mood_repair_type', 'mood_repair_choice'
         ]
         
         with open(self.data_filename, 'w', newline='') as f:
@@ -852,7 +864,8 @@ class MoodSARTExperimentSimple:
             'stimulus', 'stimulus_position', 'response', 'correct_response',
             'accuracy', 'reaction_time', 'timestamp',
             'mood_rating', 'mw_tut_rating', 'mw_fmt_rating', 'velten_rating',
-            'video_file', 'audio_file', 'velten_statement'
+            'video_file', 'audio_file', 'velten_statement',
+            'mood_repair_type', 'mood_repair_choice'
         ]
             
         # Add participant info to trial data
@@ -862,12 +875,16 @@ class MoodSARTExperimentSimple:
             'condition': self.participant_data['condition'],
             'session_start': self.participant_data['start_time'],
             'timestamp': datetime.datetime.now().isoformat(),
-            **trial_data
         }
+        
+        # Add all fields from headers with None as default if not provided in trial_data
+        for header in headers:
+            if header not in full_data:
+                full_data[header] = trial_data.get(header, None)
         
         # Write to CSV using consistent headers
         with open(self.data_filename, 'a', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=headers)
+            writer = csv.DictWriter(f, fieldnames=headers, extrasaction='ignore')
             writer.writerow(full_data)
     
     def show_instruction(self, instruction_key, wait_for_key=True, condition_cue=None):
@@ -3106,65 +3123,73 @@ Current rating: {}"""
             self.run_sart_block(order['sart_conditions'][0], 1)
             print(f"✅ SART Block 1 completed - moving to next phase")
             
-            # Step 5: Mood Induction 2 (re-induction)
-            print(f"\n📍 STEP 5 - Mood Induction 2 (Re-induction)")
+            # Step 5: Pre-induction mood scale for re-induction
+            print(f"\n📍 STEP 5 - Pre-Induction Mood Scale (before re-induction)")
+            self.collect_mood_rating_arrow_keys('pre_induction_2')
+            
+            # Step 6: Mood Induction 2 (re-induction)
+            print(f"\n📍 STEP 6 - Mood Induction 2 (Re-induction)")
             induction_2 = order['mood_inductions'][1]
             self.run_mood_induction(induction_2[0], induction_2[1], 2)
             # Only collect mood scale if not Velten (Velten collects it at the end of procedure)
             if induction_2[0] != 'V':
-                print(f"\n📍 STEP 6 - Post-Induction Mood Scale")
+                print(f"\n📍 STEP 7 - Post-Induction Mood Scale")
                 self.collect_mood_rating_arrow_keys('post_induction_2')
             else:
-                print(f"📍 STEP 6 - Mood scale already collected at end of Velten procedure")
+                print(f"📍 STEP 7 - Mood scale already collected at end of Velten procedure")
             
-            # Step 7: SART 2
-            print(f"\n📍 STEP 7 - SART Block 2 ({order['sart_conditions'][1]})")
+            # Step 8: SART 2
+            print(f"\n📍 STEP 8 - SART Block 2 ({order['sart_conditions'][1]})")
             self.run_sart_block(order['sart_conditions'][1], 2)
             print(f"✅ SART Block 2 completed - moving to neutral washout")
             
-            # Step 8: Neutral Washout
-            print(f"\n📍 STEP 8 - Neutral Washout")
+            # Step 9: Neutral Washout
+            print(f"\n📍 STEP 9 - Neutral Washout")
             self.run_neutral_washout()
-            print(f"\n📍 STEP 9 - Post-Washout Mood Scale")
+            print(f"\n📍 STEP 10 - Post-Washout Mood Scale")
             self.collect_mood_rating_arrow_keys('post_washout')
             
-            # Step 10: Mood Induction 3
-            print(f"\n📍 STEP 10 - Mood Induction 3")
+            # Step 11: Mood Induction 3
+            print(f"\n📍 STEP 11 - Mood Induction 3")
             induction_3 = order['mood_inductions'][2]
             self.run_mood_induction(induction_3[0], induction_3[1], 3)
             # Only collect mood scale if not Velten (Velten collects it at the end of procedure)
             if induction_3[0] != 'V':
-                print(f"\n📍 STEP 11 - Post-Induction Mood Scale")
+                print(f"\n📍 STEP 12 - Post-Induction Mood Scale")
                 self.collect_mood_rating_arrow_keys('post_induction_3')
             else:
-                print(f"📍 STEP 11 - Mood scale already collected at end of Velten procedure")
+                print(f"📍 STEP 12 - Mood scale already collected at end of Velten procedure")
             
-            # Step 12: SART 3
-            print(f"\n📍 STEP 12 - SART Block 3 ({order['sart_conditions'][2]})")
+            # Step 13: SART 3
+            print(f"\n📍 STEP 13 - SART Block 3 ({order['sart_conditions'][2]})")
             self.run_sart_block(order['sart_conditions'][2], 3)
             print(f"✅ SART Block 3 completed - moving to final phase")
             
-            # Step 13: Mood Induction 4
-            print(f"\n📍 STEP 13 - Mood Induction 4")
+            # Step 14: Pre-induction mood scale for second re-induction
+            print(f"\n📍 STEP 14 - Pre-Induction Mood Scale (before second re-induction)")
+            self.collect_mood_rating_arrow_keys('pre_induction_4')
+            
+            # Step 15: Mood Induction 4
+            print(f"\n📍 STEP 15 - Mood Induction 4")
             induction_4 = order['mood_inductions'][3]
             self.run_mood_induction(induction_4[0], induction_4[1], 4)
             # Only collect mood scale if not Velten (Velten collects it at the end of procedure)
             if induction_4[0] != 'V':
-                print(f"\n📍 STEP 14 - Post-Induction Mood Scale")
+                print(f"\n📍 STEP 16 - Post-Induction Mood Scale")
                 self.collect_mood_rating_arrow_keys('post_induction_4')
             else:
-                print(f"📍 STEP 14 - Mood scale already collected at end of Velten procedure")
+                print(f"📍 STEP 16 - Mood scale already collected at end of Velten procedure")
             
-            # Step 15: SART 4
-            print(f"\n📍 STEP 15 - SART Block 4 ({order['sart_conditions'][3]})")
+            # Step 17: SART 4
+            print(f"\n📍 STEP 17 - SART Block 4 ({order['sart_conditions'][3]})")
             self.run_sart_block(order['sart_conditions'][3], 4)
             print(f"✅ SART Block 4 completed")
             
-            # Step 16: Mood Repair (if applicable)
+            # Step 18: Mood Repair (if applicable)
             if order['mood_repair']:
-                print(f"\n📍 STEP 16 - Mood Repair (Required for Order {condition})")
+                print(f"\n📍 STEP 18 - Mood Repair (Required for Order {condition})")
                 self.run_mood_repair()
-                print(f"\n📍 STEP 17 - Final Mood Scale")
+                print(f"\n📍 STEP 19 - Final Mood Scale")
                 self.collect_mood_rating_arrow_keys('post_repair')
             else:
                 print(f"\n📍 No Mood Repair needed for Order {condition} (ends with positive induction)")
@@ -3173,7 +3198,7 @@ Current rating: {}"""
             print(f"\n📍 FINAL STEP - Debrief")
             self.show_instruction('debrief')
             
-            total_steps = 17 if order['mood_repair'] else 15
+            total_steps = 19 if order['mood_repair'] else 17
             print(f"\n🎉 Complete experiment finished! All {total_steps} steps completed.")
             print(f"Data saved to: {self.data_filename}")
             print(f"Order: {condition} | Mood repair: {'Yes' if order['mood_repair'] else 'No'}")
