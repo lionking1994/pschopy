@@ -2595,6 +2595,12 @@ Current rating: {}"""
         """Present mind-wandering probes using slider with A/D key control"""
         print(f"Presenting mind-wandering probe at trial {trial_number}")
         
+        # Determine which cue circle to show based on condition
+        if condition == 'RI':
+            cue_circle = self.inhibition_cue
+        else:
+            cue_circle = self.non_inhibition_cue
+        
         # TUT probe with A/D key control
         tut_value = 4  # Start at middle (4 out of 7)
         self.mw_tut_slider.reset()
@@ -2746,6 +2752,8 @@ Current rating: {}"""
             # Draw text labels at start and end
             self.mw_start_label.draw()
             self.mw_end_label.draw()
+            # Draw condition cue circle for consistency with SART
+            cue_circle.draw()
             self.win.flip()
             
             # Restore original text position and alignment for other parts of experiment
@@ -2893,6 +2901,8 @@ Current rating: {}"""
             # Draw text labels at start and end
             self.mw_start_label.draw()
             self.mw_end_label.draw()
+            # Draw condition cue circle for consistency with SART
+            cue_circle.draw()
             self.win.flip()
             
             # Restore original text position and alignment for other parts of experiment
@@ -3212,9 +3222,11 @@ Current rating: {}"""
             
             # Step 19: Mood Repair (if applicable)
             if order['mood_repair']:
-                print(f"\n📍 STEP 19 - Mood Repair (Required for Order {condition})")
+                print(f"\n📍 STEP 19 - Pre-Repair Mood Scale")
+                self.collect_mood_rating_arrow_keys('pre_repair')
+                print(f"\n📍 STEP 20 - Mood Repair (Required for Order {condition})")
                 self.run_mood_repair()
-                print(f"\n📍 STEP 20 - Final Mood Scale")
+                print(f"\n📍 STEP 21 - Post-Repair Mood Scale")
                 self.collect_mood_rating_arrow_keys('post_repair')
             else:
                 print(f"\n📍 No Mood Repair needed for Order {condition} (ends with positive induction)")
@@ -3223,7 +3235,7 @@ Current rating: {}"""
             print(f"\n📍 FINAL STEP - Debrief")
             self.show_instruction('debrief')
             
-            total_steps = 20 if order['mood_repair'] else 18
+            total_steps = 21 if order['mood_repair'] else 18
             print(f"\n🎉 Complete experiment finished! All {total_steps} steps completed.")
             print(f"Data saved to: {self.data_filename}")
             print(f"Order: {condition} | Mood repair: {'Yes' if order['mood_repair'] else 'No'}")

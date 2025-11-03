@@ -70,9 +70,12 @@ import config.experiment_config as config
 # Force demo mode
 print("🔧 Configuring DEMO mode...")
 config.DEMO_MODE = True
-config.SART_PARAMS['total_trials'] = 40  # Reduced for demo
+config.SART_PARAMS['total_trials'] = 2  # Only 2 trials for ultra-quick demo
+config.SART_PARAMS['steps_per_block'] = 1  # Only 1 step (2 trials + MW probe)
+config.SART_PARAMS['trials_per_step_min'] = 2  # 2 trials per step
+config.SART_PARAMS['trials_per_step_max'] = 2  # 2 trials per step
 print(f"✅ DEMO_MODE = {config.DEMO_MODE}")
-print(f"✅ SART trials = {config.SART_PARAMS['total_trials']}")
+print(f"✅ SART trials = {config.SART_PARAMS['total_trials']} (2 trials + MW probe per block)")
 
 # Now import the main experiment
 try:
@@ -113,9 +116,9 @@ def main():
         config.CONDITION_CUES['non_inhibition']['radius'] = layout_config['cue_radius']
         
         print("\n📊 DEMO Mode Configuration:")
-        print(f"   • SART trials: {config.SART_PARAMS['total_trials']} (reduced from 120)")
+        print(f"   • SART trials: {config.SART_PARAMS['total_trials']} per block (2 trials + MW probe)")
         print(f"   • Velten statements: 3 per phase (reduced from 12)")
-        print(f"   • Estimated duration: ~15-20 minutes")
+        print(f"   • Estimated duration: ~5-10 minutes")
         print("="*60)
         
         # Create and run the experiment

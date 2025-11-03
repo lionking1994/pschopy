@@ -104,9 +104,10 @@ print(f"   Before: SART trials = {config.SART_PARAMS.get('total_trials', 'NOT_SE
 
 # FORCE demo mode settings with absolute certainty
 config.DEMO_MODE = True
-config.SART_PARAMS['total_trials'] = 40  # 8 steps x 5 trials each
-config.SART_PARAMS['trials_per_step_min'] = 5
-config.SART_PARAMS['trials_per_step_max'] = 5
+config.SART_PARAMS['total_trials'] = 2  # Ultra-short: 2 trials + MW probe
+config.SART_PARAMS['steps_per_block'] = 1  # Only 1 step per block
+config.SART_PARAMS['trials_per_step_min'] = 2  # 2 trials per step
+config.SART_PARAMS['trials_per_step_max'] = 2  # 2 trials per step
 
 # Double-check the assignment worked
 print(f"   After: DEMO_MODE = {config.DEMO_MODE}")
@@ -115,16 +116,16 @@ print(f"   After: SART trials = {config.SART_PARAMS['total_trials']}")
 # Verify settings with assertions
 try:
     assert config.DEMO_MODE == True, f"DEMO_MODE is {config.DEMO_MODE}, should be True"
-    assert config.SART_PARAMS['total_trials'] == 40, f"SART trials is {config.SART_PARAMS['total_trials']}, should be 40"
+    assert config.SART_PARAMS['total_trials'] == 2, f"SART trials is {config.SART_PARAMS['total_trials']}, should be 2"
     print("✅ Configuration verification PASSED")
 except AssertionError as e:
     print(f"❌ Configuration verification FAILED: {e}")
     sys.exit(1)
 
 print("🎯 DEMO MODE ENABLED (FORCED)")
-print(f"   📊 SART trials total: {config.SART_PARAMS['total_trials']} in {config.SART_PARAMS['steps_per_block']} steps (reduced from 120)")
+print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials + MW probe per block")
 print(f"   📝 Velten statements: 3 per phase (reduced from 12)")
-print(f"   ⏱️  Total estimated time: ~15-20 minutes")
+print(f"   ⏱️  Total estimated time: ~5-10 minutes")
 print("=" * 60)
 
 # Force the config module in sys.modules so main_experiment gets our modified version

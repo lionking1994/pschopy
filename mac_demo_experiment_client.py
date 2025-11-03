@@ -221,13 +221,16 @@ print(f"   Before: DEMO_MODE = {config.DEMO_MODE}")
 print(f"   Before: SART trials = {config.SART_PARAMS['total_trials']}")
 
 config.DEMO_MODE = True
-config.SART_PARAMS['total_trials'] = 40  # Reduced for demo
+config.SART_PARAMS['total_trials'] = 2  # Ultra-short: 2 trials + MW probe
+config.SART_PARAMS['steps_per_block'] = 1  # Only 1 step per block
+config.SART_PARAMS['trials_per_step_min'] = 2  # 2 trials per step
+config.SART_PARAMS['trials_per_step_max'] = 2  # 2 trials per step
 
 print(f"   After: DEMO_MODE = {config.DEMO_MODE}")
 print(f"   After: SART trials = {config.SART_PARAMS['total_trials']}")
 
 # Verify the configuration
-if config.DEMO_MODE and config.SART_PARAMS['total_trials'] == 40:
+if config.DEMO_MODE and config.SART_PARAMS['total_trials'] == 2:
     print("✅ Configuration verification PASSED")
 else:
     print("❌ Configuration verification FAILED")
@@ -236,9 +239,9 @@ else:
     sys.exit(1)
 
 print("🎯 DEMO MODE ENABLED (FORCED)")
-print(f"   📊 SART trials total: {config.SART_PARAMS['total_trials']} in 8 steps (reduced from 120)")
+print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials + MW probe per block")
 print(f"   📝 Velten statements: 3 per phase (reduced from 12)")
-print(f"   ⏱️  Total estimated time: ~15-20 minutes")
+print(f"   ⏱️  Total estimated time: ~5-10 minutes")
 print("=" * 60)
 
 # Import main experiment

@@ -8,9 +8,10 @@ from . import experiment_config as config
 
 # Override settings for demo mode (only SART shortened)
 config.DEMO_MODE = True
-config.SART_PARAMS['total_trials'] = 40  # Shortened total (5 trials per step x 8 steps)
-config.SART_PARAMS['trials_per_step_min'] = 5  # Shortened steps
-config.SART_PARAMS['trials_per_step_max'] = 5  # Fixed size for demo
+config.SART_PARAMS['total_trials'] = 2  # Ultra-short: 2 trials + MW probe
+config.SART_PARAMS['steps_per_block'] = 1  # Only 1 step per block
+config.SART_PARAMS['trials_per_step_min'] = 2  # 2 trials per step
+config.SART_PARAMS['trials_per_step_max'] = 2  # 2 trials per step
 
 print("🎯 DEMO MODE ENABLED")
 print(f"   📊 SART: {config.SART_PARAMS['total_trials']} trials total in {config.SART_PARAMS['steps_per_block']} steps (shortened)")
