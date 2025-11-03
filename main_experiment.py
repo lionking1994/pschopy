@@ -2977,16 +2977,17 @@ Current rating: {}"""
         if induction_type == 'M':  # Movie/Video
             print(f"   📽️ Movie induction ({'Positive' if valence == '+' else 'Negative'})")
             if valence == '+':
-                if phase_number == 1:
+                # Alternate between clips: phases 1&3 use clip1, phases 2&4 use clip2
+                if phase_number == 1 or phase_number == 3:
                     self.play_video('positive_clip1', 'film_positive_clip1', collect_rating=True)
-                else:
+                else:  # phase_number == 2 or phase_number == 4
                     self.play_video('positive_clip2', 'film_positive_clip2', collect_rating=True)
             else:  # negative
-                # Use specific negative clips based on phase
+                # Alternate between clips: phases 1&3 use clip1, phases 2&4 use clip2
                 if phase_number == 1 or phase_number == 3:
-                    self.play_video('negative_clip', 'film_general', collect_rating=True)  # Phase 1 and 3 use negative_clip
-                else:
-                    self.play_video('negative_clip2', 'film_general', collect_rating=True)  # Phase 2 and 4 use negative_clip2
+                    self.play_video('negative_clip', 'film_general', collect_rating=True)
+                else:  # phase_number == 2 or phase_number == 4
+                    self.play_video('negative_clip2', 'film_general', collect_rating=True)
         
         elif induction_type == 'V':  # Velten + music
             valence_word = 'positive' if valence == '+' else 'negative'
@@ -2996,9 +2997,27 @@ Current rating: {}"""
         print(f"✅ {induction_type}({valence}) mood induction completed")
     
     def run_neutral_washout(self):
-        """Run neutral washout procedure using actual neutral video"""
+        """Run neutral washout procedure using actual neutral video or fallback"""
         self.show_instruction('neutral_washout')
-        self.play_video('neutral_clip')
+        
+        # Check if neutral video exists
+        video_path = config.VIDEO_FILES.get('neutral_clip')
+        if video_path and video_path.exists():
+            self.play_video('neutral_clip')
+        else:
+            # Fallback: Show a neutral fixation cross for 60 seconds
+            print("⚠️ Neutral video not found - using 60-second fixation cross as washout")
+            self.instruction_text.text = "Please focus on the cross and allow your mood to return to neutral.\n\nThis will take about 1 minute."
+            self.instruction_text.draw()
+            self.fixation.draw()
+            self.win.flip()
+            core.wait(60.0)  # 60-second neutral period
+            
+            # Show completion message
+            self.instruction_text.text = "Neutral period completed.\n\nPress any key to continue..."
+            self.instruction_text.draw()
+            self.win.flip()
+            event.waitKeys()
     
     def run_mood_repair(self):
         """Run mood repair procedure with participant choice for animal preference"""
@@ -3143,53 +3162,59 @@ Current rating: {}"""
             self.run_sart_block(order['sart_conditions'][1], 2)
             print(f"✅ SART Block 2 completed - moving to neutral washout")
             
-            # Step 9: Neutral Washout
-            print(f"\n📍 STEP 9 - Neutral Washout")
+            # Step 9: Pre-Washout Mood Scale
+            print(f"\n📍 STEP 9 - Pre-Washout Mood Scale")
+            self.collect_mood_rating_arrow_keys('pre_washout')
+            
+            # Step 10: Neutral Washout
+            print(f"\n📍 STEP 10 - Neutral Washout")
             self.run_neutral_washout()
-            print(f"\n📍 STEP 10 - Post-Washout Mood Scale")
+            
+            # Step 11: Post-Washout Mood Scale
+            print(f"\n📍 STEP 11 - Post-Washout Mood Scale")
             self.collect_mood_rating_arrow_keys('post_washout')
             
-            # Step 11: Mood Induction 3
-            print(f"\n📍 STEP 11 - Mood Induction 3")
+            # Step 12: Mood Induction 3
+            print(f"\n📍 STEP 12 - Mood Induction 3")
             induction_3 = order['mood_inductions'][2]
             self.run_mood_induction(induction_3[0], induction_3[1], 3)
             # Only collect mood scale if not Velten (Velten collects it at the end of procedure)
             if induction_3[0] != 'V':
-                print(f"\n📍 STEP 12 - Post-Induction Mood Scale")
+                print(f"\n📍 STEP 13 - Post-Induction Mood Scale")
                 self.collect_mood_rating_arrow_keys('post_induction_3')
             else:
-                print(f"📍 STEP 12 - Mood scale already collected at end of Velten procedure")
+                print(f"📍 STEP 13 - Mood scale already collected at end of Velten procedure")
             
-            # Step 13: SART 3
-            print(f"\n📍 STEP 13 - SART Block 3 ({order['sart_conditions'][2]})")
+            # Step 14: SART 3
+            print(f"\n📍 STEP 14 - SART Block 3 ({order['sart_conditions'][2]})")
             self.run_sart_block(order['sart_conditions'][2], 3)
             print(f"✅ SART Block 3 completed - moving to final phase")
             
-            # Step 14: Pre-induction mood scale for second re-induction
-            print(f"\n📍 STEP 14 - Pre-Induction Mood Scale (before second re-induction)")
+            # Step 15: Pre-induction mood scale for second re-induction
+            print(f"\n📍 STEP 15 - Pre-Induction Mood Scale (before second re-induction)")
             self.collect_mood_rating_arrow_keys('pre_induction_4')
             
-            # Step 15: Mood Induction 4
-            print(f"\n📍 STEP 15 - Mood Induction 4")
+            # Step 16: Mood Induction 4
+            print(f"\n📍 STEP 16 - Mood Induction 4")
             induction_4 = order['mood_inductions'][3]
             self.run_mood_induction(induction_4[0], induction_4[1], 4)
             # Only collect mood scale if not Velten (Velten collects it at the end of procedure)
             if induction_4[0] != 'V':
-                print(f"\n📍 STEP 16 - Post-Induction Mood Scale")
+                print(f"\n📍 STEP 17 - Post-Induction Mood Scale")
                 self.collect_mood_rating_arrow_keys('post_induction_4')
             else:
-                print(f"📍 STEP 16 - Mood scale already collected at end of Velten procedure")
+                print(f"📍 STEP 17 - Mood scale already collected at end of Velten procedure")
             
-            # Step 17: SART 4
-            print(f"\n📍 STEP 17 - SART Block 4 ({order['sart_conditions'][3]})")
+            # Step 18: SART 4
+            print(f"\n📍 STEP 18 - SART Block 4 ({order['sart_conditions'][3]})")
             self.run_sart_block(order['sart_conditions'][3], 4)
             print(f"✅ SART Block 4 completed")
             
-            # Step 18: Mood Repair (if applicable)
+            # Step 19: Mood Repair (if applicable)
             if order['mood_repair']:
-                print(f"\n📍 STEP 18 - Mood Repair (Required for Order {condition})")
+                print(f"\n📍 STEP 19 - Mood Repair (Required for Order {condition})")
                 self.run_mood_repair()
-                print(f"\n📍 STEP 19 - Final Mood Scale")
+                print(f"\n📍 STEP 20 - Final Mood Scale")
                 self.collect_mood_rating_arrow_keys('post_repair')
             else:
                 print(f"\n📍 No Mood Repair needed for Order {condition} (ends with positive induction)")
@@ -3198,7 +3223,7 @@ Current rating: {}"""
             print(f"\n📍 FINAL STEP - Debrief")
             self.show_instruction('debrief')
             
-            total_steps = 19 if order['mood_repair'] else 17
+            total_steps = 20 if order['mood_repair'] else 18
             print(f"\n🎉 Complete experiment finished! All {total_steps} steps completed.")
             print(f"Data saved to: {self.data_filename}")
             print(f"Order: {condition} | Mood repair: {'Yes' if order['mood_repair'] else 'No'}")

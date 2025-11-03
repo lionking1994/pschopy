@@ -7,8 +7,8 @@ import sys
 from pathlib import Path
 
 # ===== DEMO MODE SETTINGS =====
-# Set to True for shortened experiment (10 trials per SART block, 3 Velten statements)
-DEMO_MODE = False
+# Set to True for shortened experiment (2 trials per SART block + MW probe, 3 Velten statements)
+DEMO_MODE = True
 
 # ===== PLATFORM-SPECIFIC SETTINGS =====
 IS_MAC = sys.platform == 'darwin'
@@ -185,10 +185,10 @@ VELTEN_SET_MAPPING = {
 SART_PARAMS = {
     'digits': list(range(10)),  # 0-9
     'target_digit': 3,  # No-go stimulus for inhibition condition
-    'total_trials': 120,  # Total trials across all steps
-    'steps_per_block': 8,  # 8 steps per SART block
-    'trials_per_step_min': 13,  # Minimum trials per step
-    'trials_per_step_max': 17,  # Maximum trials per step
+    'total_trials': 2 if DEMO_MODE else 120,  # Demo: 2 trials, Full: 120 trials
+    'steps_per_block': 1 if DEMO_MODE else 8,  # Demo: 1 step (2 trials + MW probe), Full: 8 steps
+    'trials_per_step_min': 2 if DEMO_MODE else 13,  # Demo: 2 trials, Full: 13-17 trials
+    'trials_per_step_max': 2 if DEMO_MODE else 17,  # Demo: 2 trials, Full: 13-17 trials
     'stimulus_duration': 0.5,  # 500ms
     'isi_duration': 2.0,  # 2000ms inter-stimulus interval
     'max_response_time': 2.5,  # 2500ms - Response window covers full trial duration
