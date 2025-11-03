@@ -117,7 +117,7 @@ def main():
         
         print("\n📊 DEMO Mode Configuration:")
         print(f"   • SART trials: {config.SART_PARAMS['total_trials']} per block (2 trials + MW probe)")
-        print(f"   • Velten statements: 3 per phase (reduced from 12)")
+        print(f"   • Velten statements: 2 per phase (reduced from 12)")
         print(f"   • Estimated duration: ~5-10 minutes")
         print("="*60)
         

@@ -53,7 +53,7 @@ class MoodSARTExperimentSimple:
         if config.DEMO_MODE:
             print("🎯 DEMO MODE ACTIVE:")
             print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials total in 8 steps (shortened)")
-            print(f"   📝 Velten statements: 3 per phase (shortened from 12)")
+            print(f"   📝 Velten statements: 2 per phase (shortened from 12)")
             print(f"   ⏱️  Velten duration: {config.TIMING['velten_statement_duration']}s per statement (same as main)")
             print(f"   🧠 MW probes: After each of 8 steps ({config.SART_PARAMS['trials_per_step_min']}-{config.SART_PARAMS['trials_per_step_max']} trials per step)")
             print(f"   🎬 Videos and other phases: Same as main experiment")
@@ -1513,7 +1513,7 @@ Click on the slider to set your rating, then click the Continue button to procee
             # Apply demo mode reduction BEFORE printing the count
             if config.DEMO_MODE:
                 original_count = len(statements)
-                statements = statements[:3]  # Only use first 3 statements in demo
+                statements = statements[:2]  # Only use first 2 statements in demo
                 print(f"Loaded {len(statements)} {valence} statements from {set_key} ({phase_type}) - Demo mode (reduced from {original_count})")
             else:
                 print(f"Loaded {len(statements)} {valence} statements from {set_key} ({phase_type})")
@@ -1535,12 +1535,21 @@ Click on the slider to set your rating, then click the Continue button to procee
                         "I feel a bit depressed and downhearted.",
                         "I don't feel very confident about myself."
                     ]
-                print(f"Using fallback {valence} statements (file not found)")
+                # Apply demo mode reduction to fallback statements too
+                if config.DEMO_MODE:
+                    statements = statements[:2]  # Only use first 2 statements in demo
+                print(f"Using fallback {valence} statements (file not found) - {'Demo mode: 2 statements' if config.DEMO_MODE else 'Full: 3 statements'}")
             else:
                 # Load statements from file
                 with open(statements_file, 'r') as f:
                     statements = [line.strip() for line in f if line.strip()]
-                print(f"Loaded {len(statements)} {valence} statements from file")
+                # Apply demo mode reduction to file-loaded statements too
+                if config.DEMO_MODE:
+                    original_count = len(statements)
+                    statements = statements[:2]  # Only use first 2 statements in demo
+                    print(f"Loaded {len(statements)} {valence} statements from file - Demo mode (reduced from {original_count})")
+                else:
+                    print(f"Loaded {len(statements)} {valence} statements from file")
         
         # Increment phase counter for next use
         self.velten_phase_counter[valence] += 1

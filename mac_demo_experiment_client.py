@@ -240,7 +240,7 @@ else:
 
 print("🎯 DEMO MODE ENABLED (FORCED)")
 print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials + MW probe per block")
-print(f"   📝 Velten statements: 3 per phase (reduced from 12)")
+print(f"   📝 Velten statements: 2 per phase (reduced from 12)")
 print(f"   ⏱️  Total estimated time: ~5-10 minutes")
 print("=" * 60)
 
@@ -309,7 +309,7 @@ def main():
             with suppress_all_warnings():
                 print("\n🎯 DEMO MODE ACTIVE:")
                 print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials total in 8 steps (shortened)")
-                print(f"   📝 Velten statements: 3 per phase (shortened from 12)")
+                print(f"   📝 Velten statements: 2 per phase (shortened from 12)")
                 print(f"   ⏱️  Velten duration: {config.TIMING['velten_statement_duration']}s per statement (same as main)")
                 print(f"   🧠 MW probes: After each of 8 steps (5-5 trials per step)")
                 print(f"   🎬 Videos and other phases: Same as main experiment")

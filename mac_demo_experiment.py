@@ -124,7 +124,7 @@ except AssertionError as e:
 
 print("🎯 DEMO MODE ENABLED (FORCED)")
 print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials + MW probe per block")
-print(f"   📝 Velten statements: 3 per phase (reduced from 12)")
+print(f"   📝 Velten statements: 2 per phase (reduced from 12)")
 print(f"   ⏱️  Total estimated time: ~5-10 minutes")
 print("=" * 60)
 
