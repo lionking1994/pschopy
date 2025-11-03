@@ -1727,6 +1727,17 @@ Click on the slider to set your rating, then click the Continue button to procee
                 'video_file': None
             })
         
+        # FIXED: Stop music BEFORE collecting mood scale to avoid overlap
+        if self.current_audio and audio_loaded:
+            try:
+                # Both pygame and PsychoPy sounds have stop() method
+                self.current_audio.stop()
+                print("Stopped background music before mood scale")
+            except Exception as e:
+                print(f"Error stopping audio: {e}")
+            finally:
+                self.current_audio = None
+        
         # UPDATED: Collect mood scale rating at the end of each Velten set
         print(f"📊 Collecting mood scale rating at end of Velten {valence} set")
         mood_rating = self.collect_mood_rating(f'post_velten_{valence}')
@@ -1744,17 +1755,6 @@ Click on the slider to set your rating, then click the Continue button to procee
             'mw_tut_rating': None, 'mw_fmt_rating': None,
                 'video_file': None
             })
-        
-        # FIXED: Properly stop music after all statements
-        if self.current_audio and audio_loaded:
-            try:
-                # Both pygame and PsychoPy sounds have stop() method
-                self.current_audio.stop()
-                print("Stopped background music")
-            except Exception as e:
-                print(f"Error stopping audio: {e}")
-            finally:
-                self.current_audio = None
     
     def get_velten_rating_keyboard(self):
         """Get Velten rating using keyboard (1-7) - LEGACY FALLBACK"""

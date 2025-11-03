@@ -140,31 +140,32 @@ VELTEN_STATEMENTS = {
     ],
     'negative_set_a': [
         "I feel a little down today.",
-        "Things are harder than I expected.",
-        "Everyone else seems to be having more fun.",
         "Sometimes I feel so guilty that I can't sleep.",
         "I wish I could be myself, but nobody likes me when I am.",
-        "Today is one of those days when everything I do is wrong.",
         "I doubt that I'll ever make a contribution in the world.",
-        "I feel like my life's in a rut that I'm never going to get out of.",
-        "My mistakes haunt me, I've made too many.",
-        "Life is such a heavy burden.",
-        "I'm tired of trying.",
-        "Even when I give my best effort, it just doesn't seem to be good enough."
+        "My mistakes haunt me; I've made too many.",
+        "Even when I give my best effort, it just doesn't seem to be good enough.",
+        "I don't think things are ever going to get better.",
+        "My parents don't know who I am.",
+        "I feel cheated by life.",
+        "Sometimes I feel really guilty about the way I've treated my parents.",
+        "I'm completely alone.",
+        "I feel I am being suffocated by the weight of my past mistakes."
     ],
     'negative_set_b': [
-        "I don't think things are ever going to get better.",
+        "Everyone else seems to be having more fun.",
+        "I wish I could be myself, but nobody likes me when I am.",
+        "Today is one of those days when everything I do is wrong.",
+        "I feel like my life's in a rut that I'm never going to get out of.",
+        "Life is such a heavy burden.",
+        "I'm tired of trying.",
+        "Nobody understands me or even tries to.",
         "I feel worthless.",
         "What's the point of trying?",
-        "The people close to me don't really understand me.",
         "When I talk no one really listens.",
-        "I feel cheated by life.",
         "Why should I try when I can't make a difference anyway?",
-        "Sometimes I feel really guilty about the way I've treated people close to me.",
         "Every time I turn around, something else has gone wrong.",
-        "I'm completely alone.",
-        "There is no hope.",
-        "I feel I am being suffocated by the weight of my past mistakes."
+        "There is no hope."
     ]
 }
 
@@ -320,6 +321,7 @@ Press any key to continue."""
     'overview': {
         'title': "Study Overview", 
         'text': """In this session, you will:
+
 • read short statements while music plays,
 • watch brief video clips designed to influence mood, and
 • complete simple response tasks.
@@ -343,28 +345,52 @@ Press any key to begin the video."""
 Throughout the film, the father has been protecting his son by pretending their situation is part of a game.
 Here, he volunteers to "translate" the guard's words, turning them into playful rules to keep up the illusion.
 
-Please watch the clip carefully and allow your mood to align with the emotions portrayed.
 Press any key to begin the video."""
     },
     'film_positive_clip2': {
-        'text': """In the next scene, Forrest learns for the first time that he has a son with Jenny. 
-Please watch the clip carefully and allow your mood to align with the emotions portrayed.
+        'text': """You will now watch a short video of cats doing funny and playful things.
 
-Press any key to begin the video"""
+Press any key to begin the video."""
     },
     'velten_intro': {
-        'text': """You will now read a series of statements while listening to music. Each statement will appear on the screen for a short time. While it is displayed, focus on the words and try to bring your mood in line with what the statement says.
+        'text': """You will now read a series of statements while listening to music.
 
-Press any key to begin"""
+Please read each statement aloud as it appears on the screen.
+As you read, focus on the meaning of the words and try to bring your mood into line with what the statement says.
+Each statement will stay on the screen for a short time before moving to the next one.
+
+Please remain as focused and cooperative as possible in following this task—try to genuinely enter into the mood described by the statements and music.
+
+When you are ready to begin, press any key."""
     },
     'velten_rating': {
-        'text': """To what extent were you able to bring your mood in line with this statement? 1 = Not at all ... 7 = Completely"""
+        'text': """Take a moment to look inward. To what extent did you feel your mood shift to match the material? 1 = Not at all ... 7 = Completely"""
     },
     'sart_inhibition': {
-        'text': """In this block, a number will appear to the LEFT or RIGHT of the + sign. Press the ARROW KEY that matches the side of the number. BUT: if the number is 3, do not press any key. The yellow circle in the top-left corner is a reminder of this rule."""
+        'text': """In this part of the experiment, a number will appear to the LEFT or RIGHT of the + sign.
+
+Press the ARROW KEY that matches the side of the number.
+
+BUT: if the number is 3, do not press any key.
+
+The yellow circle in the top-left corner is a reminder of this rule.
+
+Respond quickly but carefully — aim for both speed and accuracy.
+
+Press any key to begin."""
     },
     'sart_non_inhibition': {
-        'text': """In this block, a number will appear to the LEFT or RIGHT of the + sign. Press the ARROW KEY that matches the side of the number. Respond to ALL digits, including 3. The blue circle in the top-left corner is a reminder of this rule."""
+        'text': """In this part of the experiment, a number will appear to the LEFT or RIGHT of the + sign.
+
+Press the ARROW KEY that matches the side of the number.
+
+Respond to ALL digits, including 3.
+
+The blue circle in the top-left corner is a reminder of this rule.
+
+Respond quickly but carefully — aim for both speed and accuracy.
+
+Press any key to begin."""
     },
     'neutral_washout': {
         'text': """In the next part, you will watch a neutral video clip. Please allow your mood to return to a neutral state as you watch. Afterward, the experiment will continue.
