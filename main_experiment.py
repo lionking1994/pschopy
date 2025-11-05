@@ -2391,7 +2391,7 @@ Current rating: {}"""
         step_sizes = []
         remaining_trials = total_trials
         
-        for i in range(steps - 1):  # First 7 steps
+        for i in range(steps - 1):  # All steps except the last
             # Calculate constraints for this step
             remaining_steps = steps - i
             max_possible = min(max_per_step, remaining_trials - min_per_step * (remaining_steps - 1))
@@ -2411,10 +2411,10 @@ Current rating: {}"""
         total_correct = 0
         total_rts = []
         
-        print(f"\n🎯 Starting SART Block {block_number} ({condition}) - 8 steps with probes")
+        print(f"\n🎯 Starting SART Block {block_number} ({condition}) - {steps} step{'s' if steps > 1 else ''} with probe{'s' if steps > 1 else ''}")
         print("=" * 60)
         
-        # Run 8 steps with probes
+        # Run steps with probes
         trial_index = 0
         
         for step_num in range(1, steps + 1):
