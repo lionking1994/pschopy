@@ -187,7 +187,7 @@ SART_PARAMS = {
     'digits': list(range(10)),  # 0-9
     'target_digit': 3,  # No-go stimulus for inhibition condition
     'total_trials': 2 if DEMO_MODE else 120,  # Demo: 2 trials, Full: 120 trials
-    'steps_per_block': 1 if DEMO_MODE else 8,  # Demo: 1 step (2 trials + MW probe), Full: 8 steps
+    'steps_per_block': 1 if DEMO_MODE else 8,  # Demo: 1 step (2 trials), Full: 8 steps
     'trials_per_step_min': 2 if DEMO_MODE else 13,  # Demo: 2 trials, Full: 13-17 trials
     'trials_per_step_max': 2 if DEMO_MODE else 17,  # Demo: 2 trials, Full: 13-17 trials
     'stimulus_duration': 0.5,  # 500ms

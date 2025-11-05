@@ -104,7 +104,7 @@ print(f"   Before: SART trials = {config.SART_PARAMS.get('total_trials', 'NOT_SE
 
 # FORCE demo mode settings with absolute certainty
 config.DEMO_MODE = True
-config.SART_PARAMS['total_trials'] = 2  # Ultra-short: 2 trials + MW probe
+config.SART_PARAMS['total_trials'] = 2  # Ultra-short: 2 trials, then 1 MW probe at end
 config.SART_PARAMS['steps_per_block'] = 1  # Only 1 step per block
 config.SART_PARAMS['trials_per_step_min'] = 2  # 2 trials per step
 config.SART_PARAMS['trials_per_step_max'] = 2  # 2 trials per step
@@ -123,7 +123,7 @@ except AssertionError as e:
     sys.exit(1)
 
 print("🎯 DEMO MODE ENABLED (FORCED)")
-print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials + MW probe per block")
+print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials, then 1 MW probe at end")
 print(f"   📝 Velten statements: 2 per phase (reduced from 12)")
 print(f"   ⏱️  Total estimated time: ~5-10 minutes")
 print("=" * 60)

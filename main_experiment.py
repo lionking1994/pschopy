@@ -2411,7 +2411,7 @@ Current rating: {}"""
         total_correct = 0
         total_rts = []
         
-        print(f"\n🎯 Starting SART Block {block_number} ({condition}) - {steps} step{'s' if steps > 1 else ''} with probe{'s' if steps > 1 else ''}")
+        print(f"\n🎯 Starting SART Block {block_number} ({condition}) - {total_trials} trials with 1 probe at the end")
         print("=" * 60)
         
         # Run steps with probes
@@ -2435,18 +2435,18 @@ Current rating: {}"""
                 
                 trial_index += 1
             
-            # Mind-wandering probe after each step
-            print(f"📝 Mind-wandering probe after step {step_num}")
-            self.run_mind_wandering_probe_slider_ad_keys(condition, block_number, step_num)
-            
             print(f"✅ Step {step_num} completed: {step_correct}/{step_size} correct")
+        
+        # Single mind-wandering probe at the END of the entire SART block
+        print(f"\n📝 Mind-wandering probe after completing all {total_trials} trials")
+        self.run_mind_wandering_probe_slider_ad_keys(condition, block_number, trial_index)
         
         # Final summary
         print("=" * 60)
         print(f"📊 SART Block {block_number} Summary:")
         print(f"   Total Steps: {steps}")
         print(f"   Total Trials: {trial_index}")
-        print(f"   Total Probes: {steps}")
+        print(f"   Total Probes: 1")
         print(f"   Overall Accuracy: {total_correct}/{total_trials} ({100*total_correct/total_trials:.1f}%)")
         
         if total_rts:
