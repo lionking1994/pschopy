@@ -9,9 +9,42 @@ import os
 import warnings
 from pathlib import Path
 
+# Create a custom stream that filters out RGB warnings
+class FilteredStream:
+    def __init__(self, stream):
+        self.stream = stream
+        
+    def write(self, text):
+        # Filter out RGB-related warnings and other repetitive warnings
+        if any(x in str(text) for x in ['RGB parameter is deprecated', 'fillRGB', 'lineRGB',
+                                         'Font b\'Helvetica Bold\' was requested']):
+            return
+        self.stream.write(text)
+    
+    def flush(self):
+        self.stream.flush()
+        
+    def __getattr__(self, name):
+        return getattr(self.stream, name)
+
+# Replace stderr to filter warnings
+sys.stderr = FilteredStream(sys.stderr)
+
 # Suppress Mac-specific warnings that don't affect functionality
 warnings.filterwarnings("ignore", message=".*Monitor specification not found.*")
 warnings.filterwarnings("ignore", message=".*Couldn't measure a consistent frame rate.*")
+warnings.filterwarnings("ignore", message=".*fillRGB parameter is deprecated.*")
+warnings.filterwarnings("ignore", message=".*lineRGB parameter is deprecated.*")
+warnings.filterwarnings("ignore", message=".*RGB parameter is deprecated.*")
+
+# Override warning handler to completely suppress RGB warnings
+original_showwarning = warnings.showwarning
+def filtered_showwarning(message, category, filename, lineno, file=None, line=None):
+    msg_str = str(message)
+    if 'RGB parameter is deprecated' in msg_str or 'fillRGB' in msg_str or 'lineRGB' in msg_str:
+        return  # Skip RGB warnings entirely
+    original_showwarning(message, category, filename, lineno, file, line)
+warnings.showwarning = filtered_showwarning
 warnings.filterwarnings("ignore", message=".*fillRGB parameter is deprecated.*")
 warnings.filterwarnings("ignore", message=".*lineRGB parameter is deprecated.*")
 warnings.filterwarnings("ignore", message=".*Font.*was requested. No similar font found.*")

@@ -10,11 +10,43 @@ import os
 import warnings
 from pathlib import Path
 
+# Create a custom stream that filters out RGB warnings
+class FilteredStream:
+    def __init__(self, stream):
+        self.stream = stream
+        
+    def write(self, text):
+        # Filter out RGB-related warnings and other repetitive warnings
+        if any(x in str(text) for x in ['RGB parameter is deprecated', 'fillRGB', 'lineRGB', 
+                                         'Font b\'Helvetica Bold\' was requested']):
+            return
+        self.stream.write(text)
+    
+    def flush(self):
+        self.stream.flush()
+        
+    def __getattr__(self, name):
+        return getattr(self.stream, name)
+
+# Replace stderr to filter warnings
+sys.stderr = FilteredStream(sys.stderr)
+
 # Suppress Mac-specific warnings that don't affect functionality
 warnings.filterwarnings("ignore", message=".*Monitor specification not found.*")
 warnings.filterwarnings("ignore", message=".*Couldn't measure a consistent frame rate.*")
 warnings.filterwarnings("ignore", message=".*fillRGB parameter is deprecated.*")
 warnings.filterwarnings("ignore", message=".*lineRGB parameter is deprecated.*")
+
+# Override the default warning handler to completely suppress RGB warnings
+original_showwarning = warnings.showwarning
+def filtered_showwarning(message, category, filename, lineno, file=None, line=None):
+    msg_str = str(message)
+    if 'RGB parameter is deprecated' in msg_str or 'fillRGB' in msg_str or 'lineRGB' in msg_str:
+        # Skip RGB-related warnings entirely
+        return
+    # Show other warnings normally
+    original_showwarning(message, category, filename, lineno, file, line)
+warnings.showwarning = filtered_showwarning
 warnings.filterwarnings("ignore", message=".*Font.*was requested. No similar font found.*")
 warnings.filterwarnings("ignore", message=".*t of last frame was.*")
 warnings.filterwarnings("ignore", message=".*Multiple dropped frames.*")
@@ -122,7 +154,7 @@ except AssertionError as e:
     sys.exit(1)
 
 print("🎯 FULL EXPERIMENT MODE ENABLED")
-print(f"   📊 SART trials total: {config.SART_PARAMS['total_trials']} in {config.SART_PARAMS['steps_per_block']} steps")
+print(f"   📊 SART trials total: {config.SART_PARAMS['total_trials']} per block")
 print(f"   📝 Velten statements: 12 per phase (full set)")
 print(f"   ⏱️  Total estimated time: ~45-60 minutes")
 print("=" * 60)
@@ -197,10 +229,10 @@ def main():
             # Suppress HID output during initialization and experiment
             with suppress_all_warnings():
                 print("\n🎯 FULL EXPERIMENT MODE ACTIVE:")
-                print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials total in {config.SART_PARAMS['steps_per_block']} steps")
+                print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials per block")
                 print(f"   📝 Velten statements: 12 per phase (full set)")
                 print(f"   ⏱️  Velten duration: {config.TIMING['velten_statement_duration']}s per statement")
-                print(f"   🧠 MW probes: After each of {config.SART_PARAMS['steps_per_block']} steps ({config.SART_PARAMS['trials_per_step_min']}-{config.SART_PARAMS['trials_per_step_max']} trials per step)")
+                print(f"   🧠 MW probes: 1 at the end of each SART block (after all {config.SART_PARAMS['total_trials']} trials)")
                 print(f"   📊 Mood ratings: Every 4 Velten statements")
                 print(f"   🎬 Videos and mood induction phases: Full duration")
                 print()

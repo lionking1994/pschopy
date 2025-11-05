@@ -9,6 +9,33 @@ import sys
 import os
 import platform
 from pathlib import Path
+import warnings
+
+# Create a custom stream that filters out RGB warnings
+class FilteredStream:
+    def __init__(self, stream):
+        self.stream = stream
+        
+    def write(self, text):
+        # Filter out RGB-related warnings
+        if any(x in str(text) for x in ['RGB parameter is deprecated', 'fillRGB', 'lineRGB',
+                                         'Font b\'Helvetica Bold\' was requested']):
+            return
+        self.stream.write(text)
+    
+    def flush(self):
+        self.stream.flush()
+        
+    def __getattr__(self, name):
+        return getattr(self.stream, name)
+
+# Replace stderr to filter warnings
+sys.stderr = FilteredStream(sys.stderr)
+
+# Suppress RGB deprecation warnings globally
+warnings.filterwarnings('ignore', message='.*RGB parameter is deprecated.*')
+warnings.filterwarnings('ignore', message='.*fillRGB.*deprecated.*')
+warnings.filterwarnings('ignore', message='.*lineRGB.*deprecated.*')
 
 # Add config to path
 sys.path.append(str(Path(__file__).parent / 'config'))
@@ -24,6 +51,10 @@ if system == 'Linux':
     import warnings
     warnings.filterwarnings('ignore', category=DeprecationWarning)
     warnings.filterwarnings('ignore', message='.*ALSA.*')
+    # Suppress RGB deprecation warnings
+    warnings.filterwarnings('ignore', message='.*RGB parameter is deprecated.*')
+    warnings.filterwarnings('ignore', message='.*fillRGB.*')
+    warnings.filterwarnings('ignore', message='.*lineRGB.*')
     print(f"🐧 Linux detected - applying Linux-specific optimizations...")
     print(f"   Audio backend: PulseAudio")
 elif system == 'Darwin':

@@ -11,14 +11,44 @@ Date: 2024
 import os
 import warnings
 import logging
+import sys
+
+# Create a custom stream that filters out RGB warnings
+class FilteredStream:
+    def __init__(self, stream):
+        self.stream = stream
+        self.suppress_next = False
+        
+    def write(self, text):
+        # Filter out RGB-related warnings
+        if any(x in str(text) for x in ['RGB parameter is deprecated', 'fillRGB', 'lineRGB']):
+            return
+        self.stream.write(text)
+    
+    def flush(self):
+        self.stream.flush()
+        
+    def __getattr__(self, name):
+        return getattr(self.stream, name)
+
+# Replace stderr to filter warnings
+sys.stderr = FilteredStream(sys.stderr)
 
 # Suppress specific PsychoPy deprecation warnings
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', message='.*RGB parameter is deprecated.*')
 warnings.filterwarnings('ignore', message='.*lineRGB.*deprecated.*')
 warnings.filterwarnings('ignore', message='.*fillRGB.*deprecated.*')
+warnings.filterwarnings('ignore', message='.*parameter is deprecated.*')
 
-# Also suppress via logging for PsychoPy's internal logging
+# Suppress all PsychoPy logging below ERROR level
 logging.getLogger('psychopy').setLevel(logging.ERROR)
+logging.getLogger('psychopy.visual').setLevel(logging.ERROR)
+logging.getLogger('psychopy.visual.shape').setLevel(logging.ERROR)
+logging.getLogger('psychopy.visual.line').setLevel(logging.ERROR)
+logging.getLogger('psychopy.visual.rect').setLevel(logging.ERROR)
+logging.getLogger('psychopy.visual.circle').setLevel(logging.ERROR)
+
 
 # Configure audio environment for proper audio support
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
@@ -52,10 +82,10 @@ class MoodSARTExperimentSimple:
         # Check if demo mode is enabled
         if config.DEMO_MODE:
             print("🎯 DEMO MODE ACTIVE:")
-            print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials total in 8 steps (shortened)")
+            print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials per block")
             print(f"   📝 Velten statements: 2 per phase (shortened from 12)")
             print(f"   ⏱️  Velten duration: {config.TIMING['velten_statement_duration']}s per statement (same as main)")
-            print(f"   🧠 MW probes: After each of 8 steps ({config.SART_PARAMS['trials_per_step_min']}-{config.SART_PARAMS['trials_per_step_max']} trials per step)")
+            print(f"   🧠 MW probes: 1 at the end of each SART block")
             print(f"   🎬 Videos and other phases: Same as main experiment")
             print()
         
@@ -2382,31 +2412,6 @@ Current rating: {}"""
                 'is_target': digit == config.SART_PARAMS['target_digit'] and condition == 'RI'
             })
         
-        # Generate step sizes that total exactly 120 trials
-        steps = config.SART_PARAMS['steps_per_block']  # 8 steps
-        min_per_step = config.SART_PARAMS['trials_per_step_min']  # 13
-        max_per_step = config.SART_PARAMS['trials_per_step_max']  # 17
-        
-        # Generate step sizes
-        step_sizes = []
-        remaining_trials = total_trials
-        
-        for i in range(steps - 1):  # All steps except the last
-            # Calculate constraints for this step
-            remaining_steps = steps - i
-            max_possible = min(max_per_step, remaining_trials - min_per_step * (remaining_steps - 1))
-            min_possible = max(min_per_step, remaining_trials - max_per_step * (remaining_steps - 1))
-            
-            # Choose random size within constraints
-            step_size = random.randint(min_possible, max_possible)
-            step_sizes.append(step_size)
-            remaining_trials -= step_size
-        
-        # Last step gets remaining trials
-        step_sizes.append(remaining_trials)
-        
-        print(f"📊 Step sizes: {step_sizes} (total: {sum(step_sizes)})")
-        
         # Initialize performance tracking
         total_correct = 0
         total_rts = []
@@ -2414,28 +2419,23 @@ Current rating: {}"""
         print(f"\n🎯 Starting SART Block {block_number} ({condition}) - {total_trials} trials with 1 probe at the end")
         print("=" * 60)
         
-        # Run steps with probes
+        # Run all trials as one continuous block
         trial_index = 0
         
-        for step_num in range(1, steps + 1):
-            step_size = step_sizes[step_num - 1]
-            print(f"\n📍 Step {step_num}/{steps}: {step_size} trials")
+        print(f"\n📍 Running {total_trials} trials")
+        
+        for i in range(total_trials):
+            trial = trials[i]
+            response, rt, accuracy = self.run_sart_trial(trial, condition, block_number, cue_circle)
             
-            # Run trials for this step
-            step_correct = 0
-            for i in range(step_size):
-                trial = trials[trial_index]
-                response, rt, accuracy = self.run_sart_trial(trial, condition, block_number, cue_circle)
-                
-                if accuracy == 1:
-                    step_correct += 1
-                    total_correct += 1
-                if rt is not None:
-                    total_rts.append(rt)
-                
-                trial_index += 1
+            if accuracy == 1:
+                total_correct += 1
+            if rt is not None:
+                total_rts.append(rt)
             
-            print(f"✅ Step {step_num} completed: {step_correct}/{step_size} correct")
+            trial_index += 1
+        
+        print(f"✅ All {total_trials} trials completed: {total_correct}/{total_trials} correct")
         
         # Single mind-wandering probe at the END of the entire SART block
         print(f"\n📝 Mind-wandering probe after completing all {total_trials} trials")
@@ -2444,7 +2444,6 @@ Current rating: {}"""
         # Final summary
         print("=" * 60)
         print(f"📊 SART Block {block_number} Summary:")
-        print(f"   Total Steps: {steps}")
         print(f"   Total Trials: {trial_index}")
         print(f"   Total Probes: 1")
         print(f"   Overall Accuracy: {total_correct}/{total_trials} ({100*total_correct/total_trials:.1f}%)")
