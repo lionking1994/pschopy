@@ -85,7 +85,7 @@ class MoodSARTExperimentSimple:
             print(f"   📊 SART blocks: {config.SART_PARAMS['total_trials']} trials per block")
             print(f"   📝 Velten statements: 2 per phase (shortened from 12)")
             print(f"   ⏱️  Velten duration: {config.TIMING['velten_statement_duration']}s per statement (same as main)")
-            print(f"   🧠 MW probes: 1 at the end of each SART block")
+            print(f"   🧠 MW probes: After each of {config.SART_PARAMS['steps_per_block']} steps ({config.SART_PARAMS['trials_per_step_min']}-{config.SART_PARAMS['trials_per_step_max']} trials per step)")
             print(f"   🎬 Videos and other phases: Same as main experiment")
             print()
         
@@ -2361,7 +2361,7 @@ Current rating: {}"""
         })
     
     def run_sart_block(self, condition, block_number):
-        """FIXED: Run a single SART block with probes DURING the block, not after"""
+        """Run a single SART block with probes after every 13-17 trials"""
         # Show instruction with condition cue - FIXED: Display indicator during instructions
         if condition == 'RI':  # Response Inhibition
             cue_circle = self.inhibition_cue
@@ -2416,36 +2416,103 @@ Current rating: {}"""
         total_correct = 0
         total_rts = []
         
-        print(f"\n🎯 Starting SART Block {block_number} ({condition}) - {total_trials} trials with 1 probe at the end")
+        # Generate step sizes (13-17 trials per step)
+        steps = config.SART_PARAMS['steps_per_block']
+        min_per_step = config.SART_PARAMS['trials_per_step_min']
+        max_per_step = config.SART_PARAMS['trials_per_step_max']
+        
+        # DEBUG: Print configuration values
+        print(f"🔍 DEBUG - Step generation config:")
+        print(f"   Total trials: {total_trials}")
+        print(f"   Steps per block: {steps}")
+        print(f"   Min trials per step: {min_per_step}")
+        print(f"   Max trials per step: {max_per_step}")
+        print(f"   Demo mode: {config.DEMO_MODE}")
+        
+        # Generate random step sizes that sum to total_trials
+        step_sizes = []
+        remaining_trials = total_trials
+        
+        # For demo mode with very few trials, just use one step
+        if total_trials < steps * min_per_step:
+            print(f"🔍 DEBUG - Using single step because {total_trials} < {steps} * {min_per_step}")
+            step_sizes = [total_trials]
+            steps = 1
+        else:
+            print(f"🔍 DEBUG - Generating {steps} steps normally")
+            # Generate steps normally
+            for i in range(steps - 1):
+                # For all but the last step, use random size between min and max
+                # Make sure we leave enough trials for remaining steps
+                min_remaining = (steps - i - 1) * min_per_step
+                max_this_step = min(max_per_step, remaining_trials - min_remaining)
+                
+                print(f"🔍 DEBUG - Step {i+1}/{steps}:")
+                print(f"   Remaining trials: {remaining_trials}")
+                print(f"   Min remaining for other steps: {min_remaining}")
+                print(f"   Max for this step: {max_this_step}")
+                
+                if max_this_step >= min_per_step:
+                    step_size = random.randint(min_per_step, max_this_step)
+                    print(f"   Generated step size: {step_size}")
+                else:
+                    # If we can't fit the minimum, just take what's left
+                    step_size = remaining_trials // (steps - i)
+                    print(f"   WARNING: Can't fit minimum, using {step_size}")
+                
+                step_sizes.append(step_size)
+                remaining_trials -= step_size
+            
+            # Last step gets all remaining trials
+            if remaining_trials > 0:
+                print(f"🔍 DEBUG - Last step gets remaining {remaining_trials} trials")
+                step_sizes.append(remaining_trials)
+            else:
+                print(f"🔍 DEBUG - WARNING: No trials left for last step!")
+        
+        print(f"📊 Step sizes: {step_sizes} (total: {sum(step_sizes)})")
+        
+        print(f"\n🎯 Starting SART Block {block_number} ({condition}) - {len(step_sizes)} steps with probes")
         print("=" * 60)
         
-        # Run all trials as one continuous block
+        # Run trials in steps with MW probes after each step
         trial_index = 0
         
-        print(f"\n📍 Running {total_trials} trials")
-        
-        for i in range(total_trials):
-            trial = trials[i]
-            response, rt, accuracy = self.run_sart_trial(trial, condition, block_number, cue_circle)
+        for step in range(len(step_sizes)):
+            step_size = step_sizes[step]
+            step_correct = 0
+            step_rts = []
             
-            if accuracy == 1:
-                total_correct += 1
-            if rt is not None:
-                total_rts.append(rt)
+            print(f"\n📍 Step {step + 1}/{len(step_sizes)}: {step_size} trials")
             
-            trial_index += 1
-        
-        print(f"✅ All {total_trials} trials completed: {total_correct}/{total_trials} correct")
-        
-        # Single mind-wandering probe at the END of the entire SART block
-        print(f"\n📝 Mind-wandering probe after completing all {total_trials} trials")
-        self.run_mind_wandering_probe_slider_ad_keys(condition, block_number, trial_index)
+            for i in range(step_size):
+                if trial_index >= len(trials):
+                    break
+                    
+                trial = trials[trial_index]
+                response, rt, accuracy = self.run_sart_trial(trial, condition, block_number, cue_circle)
+                
+                if accuracy == 1:
+                    step_correct += 1
+                    total_correct += 1
+                if rt is not None:
+                    step_rts.append(rt)
+                    total_rts.append(rt)
+                
+                trial_index += 1
+            
+            # Mind-wandering probe after each step
+            print(f"📝 Mind-wandering probe after step {step + 1}")
+            self.run_mind_wandering_probe_slider_ad_keys(condition, block_number, trial_index)
+            
+            print(f"✅ Step {step + 1} completed: {step_correct}/{step_size} correct")
         
         # Final summary
         print("=" * 60)
         print(f"📊 SART Block {block_number} Summary:")
+        print(f"   Total Steps: {len(step_sizes)}")
         print(f"   Total Trials: {trial_index}")
-        print(f"   Total Probes: 1")
+        print(f"   Total Probes: {len(step_sizes)}")
         print(f"   Overall Accuracy: {total_correct}/{total_trials} ({100*total_correct/total_trials:.1f}%)")
         
         if total_rts:

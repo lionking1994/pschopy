@@ -137,12 +137,15 @@ print(f"   Before: SART trials = {config.SART_PARAMS.get('total_trials', 'NOT_SE
 # FORCE full experiment mode settings with absolute certainty
 config.DEMO_MODE = False
 config.SART_PARAMS['total_trials'] = 120  # Full experiment
+config.SART_PARAMS['steps_per_block'] = 8  # 8 steps with MW probes
 config.SART_PARAMS['trials_per_step_min'] = 13
 config.SART_PARAMS['trials_per_step_max'] = 17
 
 # Double-check the assignment worked
 print(f"   After: DEMO_MODE = {config.DEMO_MODE}")
 print(f"   After: SART trials = {config.SART_PARAMS['total_trials']}")
+print(f"   After: Steps per block = {config.SART_PARAMS['steps_per_block']}")
+print(f"   After: Trials per step = {config.SART_PARAMS['trials_per_step_min']}-{config.SART_PARAMS['trials_per_step_max']}")
 
 # Verify settings with assertions
 try:
