@@ -3106,8 +3106,9 @@ Current rating: {}"""
     
     def run_mood_repair(self):
         """Run mood repair procedure with participant choice for animal preference"""
-        # Show mood repair instruction with choice options
-        self.show_instruction('mood_repair')
+        # Show mood repair instruction with choice options but DON'T wait for key
+        # since we'll handle the choice immediately below
+        self.show_instruction('mood_repair', wait_for_key=False)
         
         # Get participant's preference
         choice = None
@@ -3305,12 +3306,15 @@ Current rating: {}"""
                 self.collect_mood_rating_arrow_keys('post_repair')
             else:
                 print(f"\n📍 No Mood Repair needed for Order {condition} (ends with positive induction)")
+                # Still collect a final mood scale even without mood repair
+                print(f"\n📍 STEP 19 - Final Mood Scale")
+                self.collect_mood_rating_arrow_keys('final')
             
             # Final debrief
             print(f"\n📍 FINAL STEP - Debrief")
             self.show_instruction('debrief')
             
-            total_steps = 21 if order['mood_repair'] else 18
+            total_steps = 21 if order['mood_repair'] else 19
             print(f"\n🎉 Complete experiment finished! All {total_steps} steps completed.")
             print(f"Data saved to: {self.data_filename}")
             print(f"Order: {condition} | Mood repair: {'Yes' if order['mood_repair'] else 'No'}")
