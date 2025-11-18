@@ -69,10 +69,30 @@ import numpy as np
 sys.path.append(str(Path(__file__).parent / 'config'))
 sys.path.append(str(Path(__file__).parent / 'scripts'))
 
-from psychopy import visual, core, event, sound
+from psychopy import visual, core, event, sound, prefs
 from psychopy.hardware import keyboard
 import experiment_config as config
 from video_preloader import VideoPreloader, create_loading_screen
+
+# Set audio preferences to use the same backend as video
+# This should fix audio routing issues with headphones
+try:
+    # Check if on Mac and set appropriate audio driver
+    import platform
+    if platform.system() == 'Darwin':  # Mac
+        import os
+        os.environ['SDL_AUDIODRIVER'] = 'coreaudio'  # Use Core Audio for proper routing
+        print("🍎 Mac detected: Using Core Audio driver for proper headphone routing")
+    
+    # Try to use sounddevice first (better cross-platform support)
+    prefs.hardware['audioLib'] = ['sounddevice', 'PTB', 'pyo', 'pygame']
+    # Force reinitialization of the sound module with new preferences
+    sound.init(rate=44100, stereo=True, buffer=512)
+    print("🎵 Audio backend initialized with sounddevice priority")
+    print("🎧 Audio should now route to your active audio device (headphones if connected)")
+except Exception as e:
+    print(f"⚠️ Could not set audio preferences: {e}")
+    # Fallback to default
 
 class MoodSARTExperimentSimple:
     """SIMPLIFIED version of the Mood Induction + SART experiment avoiding GUI dialogs"""
@@ -655,10 +675,14 @@ class MoodSARTExperimentSimple:
                     if not pygame.mixer.get_init():
                         # Mac-specific audio configuration for better compatibility
                         if config.IS_MAC:
+                            # Force Core Audio driver on Mac for proper headphone routing
+                            import os
+                            os.environ['SDL_AUDIODRIVER'] = 'coreaudio'
                             pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=1024)
                         else:
                             pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
                         pygame.mixer.init()
+                        print(f"  🎧 Audio system initialized with {pygame.mixer.get_init()}")
                     
                     self.preloaded_audio[audio_key] = pygame.mixer.Sound(str(audio_path))
                     print(f"  ✓ {audio_key}")
@@ -1670,19 +1694,29 @@ Click on the slider to set your rating, then click the Continue button to procee
             print(f"🎵 Loading audio file: {audio_file}")
             try:
                 import pygame.mixer
-                if not pygame.mixer.get_init():
-                    # Mac-specific audio configuration
-                    if config.IS_MAC:
-                        pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=1024)
-                    else:
-                        pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
-                    pygame.mixer.init()
+                # Force pygame to reinitialize to pick up current audio device
+                if pygame.mixer.get_init():
+                    pygame.mixer.quit()
+                    print("🔄 Reinitializing pygame mixer for proper audio routing...")
+                
+                # Mac-specific audio configuration with explicit device selection
+                if config.IS_MAC:
+                    # Try to use SDL audio driver that respects system audio routing
+                    import os
+                    os.environ['SDL_AUDIODRIVER'] = 'coreaudio'  # Use Core Audio on Mac
+                    pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=1024)
+                else:
+                    # Windows/Linux - use default driver
+                    pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
+                
+                pygame.mixer.init()
+                print(f"🎵 Pygame mixer initialized with {pygame.mixer.get_init()}")
                 
                 self.current_audio = pygame.mixer.Sound(str(audio_file))
                 self.current_audio.set_volume(0.7)
                 self.current_audio.play(loops=-1)
                 audio_loaded = True
-                print(f"🎵 Audio loaded and playing: {audio_file.name}")
+                print(f"🎵 Audio loaded and playing via pygame: {audio_file.name}")
                 
                 # Wait a brief moment to ensure audio starts
                 core.wait(0.1)
