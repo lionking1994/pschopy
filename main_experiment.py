@@ -959,11 +959,10 @@ class MoodSARTExperimentSimple:
             print("🔍 DEBUG - Waiting for key press...")
             # Clear any pending keyboard events to ensure clean state
             event.clearEvents('keyboard')
-            keys = event.waitKeys()
+            keys = event.waitKeys(modifiers=True)
             print(f"🔍 DEBUG - Key pressed: {keys}")
-            if keys and 'escape' in keys:
-                print("🔍 DEBUG - Escape pressed, quitting...")
-                core.quit()
+            if self.check_for_quit_combo(keys):
+                self.cleanup_and_quit()
             else:
                 print("🔍 DEBUG - Continuing after key press")
     
@@ -1007,10 +1006,10 @@ class MoodSARTExperimentSimple:
             
             self.win.flip()
             
-            # Check for escape
-            keys = event.getKeys()
-            if 'escape' in keys:
-                core.quit()
+            # Check for quit combination (Shift+Q)
+            keys = event.getKeys(modifiers=True)
+            if self.check_for_quit_combo(keys):
+                self.cleanup_and_quit()
             
             # Only allow advancement if rating is selected
             if rating_selected:
@@ -1390,11 +1389,12 @@ Click on the slider to set your rating, then click the Continue button to procee
                     else:
                         print(f"🎞️ Video: {elapsed_time:.0f}s elapsed, frame {frame_count}")
                 
-                # Check for escape key during playback
-                keys = event.getKeys()
-                if 'escape' in keys:
+                # Check for quit combination during playback (Shift+Q)
+                keys = event.getKeys(modifiers=True)
+                if self.check_for_quit_combo(keys):
                     video_skipped = True
-                    print(f"🔄 Video skipped by user (ESC pressed) at frame {frame_count}")
+                    print(f"🔄 Video skipped by user (Shift+Q pressed) at frame {frame_count}")
+                    self.cleanup_and_quit()
                     break
                 
                 # Method 1: Check if status changed to FINISHED
@@ -1539,9 +1539,9 @@ Click on the slider to set your rating, then click the Continue button to procee
         self.instruction_text.text = f"[VIDEO PLACEHOLDER]\n\n{video_key.upper()}\n\nPress any key to continue..."
         self.instruction_text.draw()
         self.win.flip()
-        keys = event.waitKeys()
-        if keys and 'escape' in keys:
-            core.quit()
+        keys = event.waitKeys(modifiers=True)
+        if self.check_for_quit_combo(keys):
+            self.cleanup_and_quit()
     
     def load_velten_statements(self, valence):
         """UPDATED: Load Velten statements using new PDF-based structure with Set A/B counterbalancing"""
@@ -2312,9 +2312,9 @@ Current rating: {}"""
             self.mw_continue_button_text.draw()
             self.win.flip()
             
-            # Check for escape
-            if 'escape' in event.getKeys():
-                core.quit()
+            # Check for quit combination (Shift+Q)
+            if self.check_for_quit_combo(event.getKeys(modifiers=True)):
+                self.cleanup_and_quit()
             
             # Check for advancement (only if rating made)
             if rating_made:
@@ -2365,9 +2365,9 @@ Current rating: {}"""
             self.mw_continue_button_text.draw()
             self.win.flip()
             
-            # Check for escape
-            if 'escape' in event.getKeys():
-                core.quit()
+            # Check for quit combination (Shift+Q)
+            if self.check_for_quit_combo(event.getKeys(modifiers=True)):
+                self.cleanup_and_quit()
             
             # Check for advancement (only if rating made)
             if rating_made:
@@ -2631,9 +2631,12 @@ Current rating: {}"""
                     if not keys_pressed:
                         keys_pressed = keys
                         first_key_time = self.trial_clock.getTime()  # Record when key was pressed
-                    # Handle escape immediately
-                    if keys[0].name == 'escape':
-                        self.cleanup_and_quit()
+                    # Handle quit combination immediately (Shift+Q)
+                    # Check if Shift+Q was pressed
+                    for k in keys:
+                        if k.name.lower() == 'q' and 'shift' in k.modifiers:
+                            print("🔴 QUIT COMBINATION DETECTED (Shift+Q) - Exiting experiment...")
+                            self.cleanup_and_quit()
                 
                 # Small wait to prevent excessive CPU usage
                 core.wait(0.01)  # Increased from 0.001 to 0.01 (10ms)
@@ -3216,9 +3219,9 @@ Current rating: {}"""
         loading_screen.text = "Loading complete! Press any key to continue."
         loading_screen.draw()
         self.win.flip()
-        keys = event.waitKeys()
-        if keys and 'escape' in keys:
-            core.quit()
+        keys = event.waitKeys(modifiers=True)
+        if self.check_for_quit_combo(keys):
+            self.cleanup_and_quit()
     
     def run_experiment(self):
         """Run the complete experiment following the exact step sequence provided"""
@@ -3360,6 +3363,39 @@ Current rating: {}"""
             raise
         finally:
             self.cleanup_and_quit()
+    
+    def check_for_quit_combo(self, keys=None):
+        """Check if the quit key combination (Shift+Q) is pressed
+        
+        This replaces the default ESC-to-quit behavior with a harder-to-hit combination
+        to prevent accidental exits during the experiment.
+        
+        Args:
+            keys: List of keys from event.getKeys() or None to check current keys
+        
+        Returns:
+            bool: True if quit combo detected, False otherwise
+        """
+        if keys is None:
+            # Get current keys with modifiers
+            keys = event.getKeys(modifiers=True)
+        
+        # Check for Shift+Q combination
+        for key in keys:
+            if isinstance(key, tuple):
+                # Key with modifiers format: (key_name, modifiers_dict)
+                key_name = key[0] if len(key) > 0 else ''
+                modifiers = key[1] if len(key) > 1 else {}
+                if key_name.lower() == 'q' and modifiers.get('shift', False):
+                    print("🔴 QUIT COMBINATION DETECTED (Shift+Q) - Exiting experiment...")
+                    return True
+            elif isinstance(key, str):
+                # For simple string keys, check if it's uppercase Q (which implies Shift was held)
+                if key == 'Q':
+                    print("🔴 QUIT COMBINATION DETECTED (Shift+Q) - Exiting experiment...")
+                    return True
+        
+        return False
     
     def cleanup_and_quit(self):
         """Clean up resources and quit"""
