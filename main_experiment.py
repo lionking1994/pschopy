@@ -77,17 +77,34 @@ from video_preloader import VideoPreloader, create_loading_screen
 class MoodSARTExperimentSimple:
     """SIMPLIFIED version of the Mood Induction + SART experiment avoiding GUI dialogs"""
     
-    def check_quit_keys(self, keys):
-        """Check if the quit key combination (Shift+Q) was pressed
+    def check_quit_keys(self, keys, modifiers=None):
+        """Check if the quit key combination (Shift+q) was pressed
         Returns True if should quit, False otherwise"""
         if not keys:
             return False
         
-        # Check for Shift+Q combination
-        # In PsychoPy, when shift is held, 'Q' (capital) is registered
-        if 'Q' in keys:
-            print("🔴 QUIT KEY COMBINATION (Shift+Q) detected - Exiting experiment...")
-            return True
+        # Handle both formats: simple keys list and keys with modifiers
+        if modifiers is not None:
+            # When modifiers are provided separately
+            shift_pressed = modifiers.get('shift', False) or modifiers.get('lshift', False) or modifiers.get('rshift', False)
+            if 'q' in keys and shift_pressed:
+                print("🔴 QUIT KEY COMBINATION (Shift+q) detected - Exiting experiment...")
+                return True
+        else:
+            # Check if we have tuples with modifiers or just plain keys
+            for key_info in keys:
+                if isinstance(key_info, tuple):
+                    key, key_modifiers = key_info
+                    shift_pressed = key_modifiers.get('shift', False) or key_modifiers.get('lshift', False) or key_modifiers.get('rshift', False)
+                    if key == 'q' and shift_pressed:
+                        print("🔴 QUIT KEY COMBINATION (Shift+q) detected - Exiting experiment...")
+                        return True
+                else:
+                    # For backward compatibility, still check for capital Q
+                    # This handles cases where event.getKeys() is called without modifiers=True
+                    if key_info == 'Q':
+                        print("🔴 QUIT KEY COMBINATION (Shift+Q) detected - Exiting experiment...")
+                        return True
         
         # Also allow Ctrl+Alt+Q as an alternative emergency exit
         if 'lctrl' in keys and 'lalt' in keys and 'q' in keys:
@@ -837,7 +854,7 @@ class MoodSARTExperimentSimple:
                         self.instruction_text.height = original_height
                         print(f"✅ Email input completed: {input_text.strip()}")
                         return input_text.strip()
-                elif self.check_quit_keys([key]):
+                elif self.check_quit_keys([key], modifiers):
                     # Restore original settings before quitting
                     self.instruction_text.wrapWidth = original_wrap_width
                     self.instruction_text.pos = original_pos
@@ -875,7 +892,7 @@ class MoodSARTExperimentSimple:
         self.win.flip()
         
         while True:
-            keys = event.waitKeys()
+            keys = event.waitKeys(modifiers=True)
             if self.check_quit_keys(keys):
                 core.quit()
             for key in keys:
@@ -1002,7 +1019,7 @@ class MoodSARTExperimentSimple:
             self.win.flip()
             
             # Check for escape
-            keys = event.getKeys()
+            keys = event.getKeys(modifiers=True)
             if self.check_quit_keys(keys):
                 core.quit()
             
@@ -1090,7 +1107,7 @@ Click on the slider to set your rating, then click the Continue button to procee
             self.win.flip()
             
             # Check for keyboard input (ENTER disabled - button click only per client request)
-            keys = event.getKeys(['Q', 'q', 'lctrl', 'lalt'])  # Listen for quit key combo
+            keys = event.getKeys(['Q', 'q', 'lctrl', 'lalt'], modifiers=True)  # Listen for quit key combo
             if self.check_quit_keys(keys):
                 core.quit()
             
@@ -1132,7 +1149,7 @@ Click on the slider to set your rating, then click the Continue button to procee
         self.win.flip()
         
         while True:
-            keys = event.waitKeys()
+            keys = event.waitKeys(modifiers=True)
             if self.check_quit_keys(keys):
                 core.quit()
             for key in keys:
@@ -1384,7 +1401,7 @@ Click on the slider to set your rating, then click the Continue button to procee
                         print(f"🎞️ Video: {elapsed_time:.0f}s elapsed, frame {frame_count}")
                 
                 # Check for quit key combination during playback
-                keys = event.getKeys()
+                keys = event.getKeys(modifiers=True)
                 if self.check_quit_keys(keys):
                     video_skipped = True
                     print(f"🔄 Video skipped by user (ESC pressed) at frame {frame_count}")
@@ -1488,8 +1505,8 @@ Click on the slider to set your rating, then click the Continue button to procee
                 print("❌ Video did not complete properly - skipping completion screen")
                 return
             
-            # Wait for any key to continue (or Shift+Q to quit)
-            keys = event.waitKeys()
+            # Wait for any key to continue (or Shift+q to quit)
+            keys = event.waitKeys(modifiers=True)
             if self.check_quit_keys(keys):
                 core.quit()
             print("✅ Continuing experiment")
@@ -1534,7 +1551,7 @@ Click on the slider to set your rating, then click the Continue button to procee
         self.instruction_text.text = f"[VIDEO PLACEHOLDER]\n\n{video_key.upper()}\n\nPress any key to continue..."
         self.instruction_text.draw()
         self.win.flip()
-        keys = event.waitKeys()
+        keys = event.waitKeys(modifiers=True)
         if self.check_quit_keys(keys):
             core.quit()
     
@@ -1813,7 +1830,7 @@ Click on the slider to set your rating, then click the Continue button to procee
         self.win.flip()
         
         while True:
-            keys = event.waitKeys()
+            keys = event.waitKeys(modifiers=True)
             if self.check_quit_keys(keys):
                 core.quit()
             for key in keys:
@@ -1977,7 +1994,7 @@ Current rating: {}"""
             
             # Handle ENTER and ESCAPE keys
             if not key_handled_by_hold:
-                keys = event.getKeys()
+                keys = event.getKeys(modifiers=True)
                 
                 if self.check_quit_keys(keys):
                     # Restore original text position and alignment before quitting
@@ -2152,7 +2169,7 @@ Current rating: {}"""
             
             # Handle ENTER and ESCAPE keys (only process if not handled by hold logic)
             if not key_handled_by_hold:
-                keys = event.getKeys()
+                keys = event.getKeys(modifiers=True)
                 
                 if self.check_quit_keys(keys):
                     # Restore original text position and alignment before quitting
@@ -2185,7 +2202,7 @@ Current rating: {}"""
         
         # Wait for number key press
         while True:
-            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'Q', 'q', 'lctrl', 'lalt'])
+            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'Q', 'q', 'lctrl', 'lalt', 'lshift', 'rshift'], modifiers=True)
             if keys:
                 if self.check_quit_keys(keys):
                     core.quit()
@@ -2210,7 +2227,7 @@ Current rating: {}"""
         
         # Get TUT rating
         while True:
-            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'Q', 'q', 'lctrl', 'lalt'])
+            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'Q', 'q', 'lctrl', 'lalt', 'lshift', 'rshift'], modifiers=True)
             if keys:
                 if self.check_quit_keys(keys):
                     core.quit()
@@ -2229,7 +2246,7 @@ Current rating: {}"""
         
         # Get FMT rating
         while True:
-            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'Q', 'q', 'lctrl', 'lalt'])
+            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'Q', 'q', 'lctrl', 'lalt', 'lshift', 'rshift'], modifiers=True)
             if keys:
                 if self.check_quit_keys(keys):
                     core.quit()
@@ -2298,7 +2315,7 @@ Current rating: {}"""
             self.win.flip()
             
             # Check for quit key combination
-            keys = event.getKeys()
+            keys = event.getKeys(modifiers=True)
             if self.check_quit_keys(keys):
                 core.quit()
             
@@ -2352,7 +2369,7 @@ Current rating: {}"""
             self.win.flip()
             
             # Check for quit key combination
-            keys = event.getKeys()
+            keys = event.getKeys(modifiers=True)
             if self.check_quit_keys(keys):
                 core.quit()
             
@@ -2612,14 +2629,21 @@ Current rating: {}"""
                     last_frame_time = current_frame_time
             
                 # Check for key presses throughout the entire trial duration
-                keys = self.kb.getKeys(keyList=['left', 'right', 'Q', 'q', 'lctrl', 'lalt'], waitRelease=False)
+                keys = self.kb.getKeys(keyList=['left', 'right', 'Q', 'q', 'lctrl', 'lalt', 'lshift', 'rshift'], waitRelease=False)
                 if keys:
                     # Record the first key press (if multiple keys pressed)
                     if not keys_pressed:
                         keys_pressed = keys
                         first_key_time = self.trial_clock.getTime()  # Record when key was pressed
                     # Handle quit keys immediately
-                    if self.check_quit_keys([keys[0].name]):
+                    # Check if shift+q is pressed
+                    key_names = [k.name for k in keys]
+                    shift_pressed = 'lshift' in key_names or 'rshift' in key_names
+                    if 'q' in key_names and shift_pressed:
+                        print("🔴 QUIT KEY COMBINATION (Shift+q) detected - Exiting experiment...")
+                        self.cleanup_and_quit()
+                    elif 'Q' in key_names:  # Also check for capital Q for backward compatibility
+                        print("🔴 QUIT KEY COMBINATION (Shift+Q) detected - Exiting experiment...")
                         self.cleanup_and_quit()
                 
                 # Small wait to prevent excessive CPU usage
@@ -2805,7 +2829,7 @@ Current rating: {}"""
                         print(f"🔍 DEBUG TUT - D hold: value changed to {tut_value}")
             
             # Handle ENTER and ESCAPE keys
-            keys = event.getKeys()
+            keys = event.getKeys(modifiers=True)
             break_main_loop = False
             if keys:
                 print(f"🔍 DEBUG TUT - Keys pressed: {keys}")
@@ -2953,7 +2977,7 @@ Current rating: {}"""
                         print(f"🔍 DEBUG FMT - D hold: value changed to {fmt_value}")
             
             # Handle ENTER and ESCAPE keys
-            keys = event.getKeys()
+            keys = event.getKeys(modifiers=True)
             break_main_loop = False
             if keys:
                 print(f"🔍 DEBUG FMT - Keys pressed: {keys}")
@@ -3201,7 +3225,7 @@ Current rating: {}"""
         loading_screen.text = "Loading complete! Press any key to continue."
         loading_screen.draw()
         self.win.flip()
-        keys = event.waitKeys()
+        keys = event.waitKeys(modifiers=True)
         if self.check_quit_keys(keys):
             core.quit()
     
@@ -3210,9 +3234,9 @@ Current rating: {}"""
         try:
             # Step 1: Welcome screen with quit key info
             print("\n" + "="*60)
-            print("🔑 IMPORTANT: To quit the experiment, press Shift+Q")
-            print("   (ESC key has been disabled to prevent accidental exits)")
-            print("   Alternative emergency exit: Ctrl+Alt+Q")
+            print("🔑 IMPORTANT: To quit the experiment, press Shift+q")
+            print("   (Hold Shift and press lowercase 'q')")
+            print("   Alternative emergency exit: Ctrl+Alt+q")
             print("="*60 + "\n")
             self.show_instruction('welcome')
             
