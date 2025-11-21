@@ -1987,7 +1987,7 @@ Current rating: {}"""
                     core.quit()
                 
                 for key in keys:
-                    elif key == 'return':
+                    if key == 'return':
                         # Confirm selection
                         print(f"📝 Velten Statement Rating: {current_value}/7 (mood alignment)")
                         if audio_playing:
@@ -2162,7 +2162,7 @@ Current rating: {}"""
                     core.quit()
                 
                 for key in keys:
-                    elif key == 'return':
+                    if key == 'return':
                         print(f"🔍 DEBUG - ENTER key pressed, confirming rating: {current_value}")
                         # Confirm selection
                         print(f"📝 Velten Statement Rating: {current_value}/7 (mood alignment)")
@@ -2190,7 +2190,7 @@ Current rating: {}"""
                 if self.check_quit_keys(keys):
                     core.quit()
                 key = keys[0]
-                else:
+                if key in ['1', '2', '3', '4', '5', '6', '7']:
                     rating = int(key)
                     print(f"📝 Velten Statement Rating: {rating}/7 (mood alignment)")
                     return rating
@@ -2215,7 +2215,7 @@ Current rating: {}"""
                 if self.check_quit_keys(keys):
                     core.quit()
                 key = keys[0]
-                else:
+                if key in ['1', '2', '3', '4', '5', '6', '7']:
                     tut_rating = int(key)
                     break
         
@@ -2234,7 +2234,7 @@ Current rating: {}"""
                 if self.check_quit_keys(keys):
                     core.quit()
                 key = keys[0]
-                else:
+                if key in ['1', '2', '3', '4', '5', '6', '7']:
                     fmt_rating = int(key)
                     break
         
@@ -2812,7 +2812,7 @@ Current rating: {}"""
                 if self.check_quit_keys(keys):
                     core.quit()
                 for key in keys:
-                    elif key == 'return':
+                    if key == 'return':
                         print(f"🔍 DEBUG TUT - ENTER key pressed, confirming rating: {tut_value}")
                         print("🔍 DEBUG TUT - Breaking from TUT loop...")
                         break_main_loop = True
@@ -2960,7 +2960,7 @@ Current rating: {}"""
                 if self.check_quit_keys(keys):
                     core.quit()
                 for key in keys:
-                    elif key == 'return':
+                    if key == 'return':
                         print(f"🔍 DEBUG FMT - ENTER key pressed, confirming rating: {fmt_value}")
                         print("🔍 DEBUG FMT - Breaking from FMT loop...")
                         break_main_loop = True
