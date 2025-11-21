@@ -69,33 +69,32 @@ import numpy as np
 sys.path.append(str(Path(__file__).parent / 'config'))
 sys.path.append(str(Path(__file__).parent / 'scripts'))
 
-from psychopy import visual, core, event, sound, prefs
+from psychopy import visual, core, event, sound
 from psychopy.hardware import keyboard
 import experiment_config as config
 from video_preloader import VideoPreloader, create_loading_screen
 
-# Set audio preferences to use the same backend as video
-# This should fix audio routing issues with headphones
-try:
-    # Check if on Mac and set appropriate audio driver
-    import platform
-    if platform.system() == 'Darwin':  # Mac
-        import os
-        os.environ['SDL_AUDIODRIVER'] = 'coreaudio'  # Use Core Audio for proper routing
-        print("🍎 Mac detected: Using Core Audio driver for proper headphone routing")
-    
-    # Try to use sounddevice first (better cross-platform support)
-    prefs.hardware['audioLib'] = ['sounddevice', 'PTB', 'pyo', 'pygame']
-    # Force reinitialization of the sound module with new preferences
-    sound.init(rate=44100, stereo=True, buffer=512)
-    print("🎵 Audio backend initialized with sounddevice priority")
-    print("🎧 Audio should now route to your active audio device (headphones if connected)")
-except Exception as e:
-    print(f"⚠️ Could not set audio preferences: {e}")
-    # Fallback to default
-
 class MoodSARTExperimentSimple:
     """SIMPLIFIED version of the Mood Induction + SART experiment avoiding GUI dialogs"""
+    
+    def check_quit_keys(self, keys):
+        """Check if the quit key combination (Shift+Q) was pressed
+        Returns True if should quit, False otherwise"""
+        if not keys:
+            return False
+        
+        # Check for Shift+Q combination
+        # In PsychoPy, when shift is held, 'Q' (capital) is registered
+        if 'Q' in keys:
+            print("🔴 QUIT KEY COMBINATION (Shift+Q) detected - Exiting experiment...")
+            return True
+        
+        # Also allow Ctrl+Alt+Q as an alternative emergency exit
+        if 'lctrl' in keys and 'lalt' in keys and 'q' in keys:
+            print("🔴 EMERGENCY QUIT (Ctrl+Alt+Q) detected - Exiting experiment...")
+            return True
+            
+        return False
     
     def __init__(self):
         """Initialize the experiment"""
@@ -675,14 +674,10 @@ class MoodSARTExperimentSimple:
                     if not pygame.mixer.get_init():
                         # Mac-specific audio configuration for better compatibility
                         if config.IS_MAC:
-                            # Force Core Audio driver on Mac for proper headphone routing
-                            import os
-                            os.environ['SDL_AUDIODRIVER'] = 'coreaudio'
                             pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=1024)
                         else:
                             pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
                         pygame.mixer.init()
-                        print(f"  🎧 Audio system initialized with {pygame.mixer.get_init()}")
                     
                     self.preloaded_audio[audio_key] = pygame.mixer.Sound(str(audio_path))
                     print(f"  ✓ {audio_key}")
@@ -842,7 +837,7 @@ class MoodSARTExperimentSimple:
                         self.instruction_text.height = original_height
                         print(f"✅ Email input completed: {input_text.strip()}")
                         return input_text.strip()
-                elif key == 'escape':
+                elif self.check_quit_keys([key]):
                     # Restore original settings before quitting
                     self.instruction_text.wrapWidth = original_wrap_width
                     self.instruction_text.pos = original_pos
@@ -881,10 +876,10 @@ class MoodSARTExperimentSimple:
         
         while True:
             keys = event.waitKeys()
+            if self.check_quit_keys(keys):
+                core.quit()
             for key in keys:
-                if key == 'escape':
-                    core.quit()
-                elif key.isdigit():
+                if key.isdigit():
                     num = int(key)
                     if min_val <= num <= max_val:
                         return num
@@ -959,10 +954,10 @@ class MoodSARTExperimentSimple:
             print("🔍 DEBUG - Waiting for key press...")
             # Clear any pending keyboard events to ensure clean state
             event.clearEvents('keyboard')
-            keys = event.waitKeys(modifiers=True)
+            keys = event.waitKeys()
             print(f"🔍 DEBUG - Key pressed: {keys}")
-            if self.check_for_quit_combo(keys):
-                self.cleanup_and_quit()
+            if self.check_quit_keys(keys):
+                core.quit()
             else:
                 print("🔍 DEBUG - Continuing after key press")
     
@@ -1006,10 +1001,10 @@ class MoodSARTExperimentSimple:
             
             self.win.flip()
             
-            # Check for quit combination (Shift+Q)
-            keys = event.getKeys(modifiers=True)
-            if self.check_for_quit_combo(keys):
-                self.cleanup_and_quit()
+            # Check for escape
+            keys = event.getKeys()
+            if self.check_quit_keys(keys):
+                core.quit()
             
             # Only allow advancement if rating is selected
             if rating_selected:
@@ -1095,10 +1090,9 @@ Click on the slider to set your rating, then click the Continue button to procee
             self.win.flip()
             
             # Check for keyboard input (ENTER disabled - button click only per client request)
-            keys = event.getKeys(['escape'])  # Only listen for escape key
-            for key in keys:
-                if key == 'escape':
-                    core.quit()
+            keys = event.getKeys(['Q', 'q', 'lctrl', 'lalt'])  # Listen for quit key combo
+            if self.check_quit_keys(keys):
+                core.quit()
             
             # Check for button click (only if rating made)
             if rating_made and mouse.getPressed()[0]:
@@ -1139,10 +1133,10 @@ Click on the slider to set your rating, then click the Continue button to procee
         
         while True:
             keys = event.waitKeys()
+            if self.check_quit_keys(keys):
+                core.quit()
             for key in keys:
-                if key == 'escape':
-                    core.quit()
-                elif key.isdigit() and 1 <= int(key) <= 9:
+                if key.isdigit() and 1 <= int(key) <= 9:
                     rating = int(key)
                     
                     # Save mood rating data
@@ -1389,12 +1383,11 @@ Click on the slider to set your rating, then click the Continue button to procee
                     else:
                         print(f"🎞️ Video: {elapsed_time:.0f}s elapsed, frame {frame_count}")
                 
-                # Check for quit combination during playback (Shift+Q)
-                keys = event.getKeys(modifiers=True)
-                if self.check_for_quit_combo(keys):
+                # Check for quit key combination during playback
+                keys = event.getKeys()
+                if self.check_quit_keys(keys):
                     video_skipped = True
-                    print(f"🔄 Video skipped by user (Shift+Q pressed) at frame {frame_count}")
-                    self.cleanup_and_quit()
+                    print(f"🔄 Video skipped by user (ESC pressed) at frame {frame_count}")
                     break
                 
                 # Method 1: Check if status changed to FINISHED
@@ -1495,8 +1488,10 @@ Click on the slider to set your rating, then click the Continue button to procee
                 print("❌ Video did not complete properly - skipping completion screen")
                 return
             
-            # Wait for escape key to continue
-            event.waitKeys(keyList=['escape'])
+            # Wait for any key to continue (or Shift+Q to quit)
+            keys = event.waitKeys()
+            if self.check_quit_keys(keys):
+                core.quit()
             print("✅ Continuing experiment")
             
             # Reset text position to better left positioning for equal margins
@@ -1539,9 +1534,9 @@ Click on the slider to set your rating, then click the Continue button to procee
         self.instruction_text.text = f"[VIDEO PLACEHOLDER]\n\n{video_key.upper()}\n\nPress any key to continue..."
         self.instruction_text.draw()
         self.win.flip()
-        keys = event.waitKeys(modifiers=True)
-        if self.check_for_quit_combo(keys):
-            self.cleanup_and_quit()
+        keys = event.waitKeys()
+        if self.check_quit_keys(keys):
+            core.quit()
     
     def load_velten_statements(self, valence):
         """UPDATED: Load Velten statements using new PDF-based structure with Set A/B counterbalancing"""
@@ -1694,29 +1689,19 @@ Click on the slider to set your rating, then click the Continue button to procee
             print(f"🎵 Loading audio file: {audio_file}")
             try:
                 import pygame.mixer
-                # Force pygame to reinitialize to pick up current audio device
-                if pygame.mixer.get_init():
-                    pygame.mixer.quit()
-                    print("🔄 Reinitializing pygame mixer for proper audio routing...")
-                
-                # Mac-specific audio configuration with explicit device selection
-                if config.IS_MAC:
-                    # Try to use SDL audio driver that respects system audio routing
-                    import os
-                    os.environ['SDL_AUDIODRIVER'] = 'coreaudio'  # Use Core Audio on Mac
-                    pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=1024)
-                else:
-                    # Windows/Linux - use default driver
-                    pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
-                
-                pygame.mixer.init()
-                print(f"🎵 Pygame mixer initialized with {pygame.mixer.get_init()}")
+                if not pygame.mixer.get_init():
+                    # Mac-specific audio configuration
+                    if config.IS_MAC:
+                        pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=1024)
+                    else:
+                        pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
+                    pygame.mixer.init()
                 
                 self.current_audio = pygame.mixer.Sound(str(audio_file))
                 self.current_audio.set_volume(0.7)
                 self.current_audio.play(loops=-1)
                 audio_loaded = True
-                print(f"🎵 Audio loaded and playing via pygame: {audio_file.name}")
+                print(f"🎵 Audio loaded and playing: {audio_file.name}")
                 
                 # Wait a brief moment to ensure audio starts
                 core.wait(0.1)
@@ -1829,10 +1814,10 @@ Click on the slider to set your rating, then click the Continue button to procee
         
         while True:
             keys = event.waitKeys()
+            if self.check_quit_keys(keys):
+                core.quit()
             for key in keys:
-                if key == 'escape':
-                    core.quit()
-                elif key.isdigit() and 1 <= int(key) <= 7:
+                if key.isdigit() and 1 <= int(key) <= 7:
                     return int(key)
     
     def get_velten_rating_slider_safe(self):
@@ -1994,14 +1979,14 @@ Current rating: {}"""
             if not key_handled_by_hold:
                 keys = event.getKeys()
                 
+                if self.check_quit_keys(keys):
+                    # Restore original text position and alignment before quitting
+                    self.instruction_text.pos = original_pos
+                    self.instruction_text.alignText = original_align
+                    self.instruction_text.anchorHoriz = original_anchor
+                    core.quit()
+                
                 for key in keys:
-                    if key == 'escape':
-                        print("ESCAPE key detected, quitting...")
-                        # Restore original text position and alignment before quitting
-                        self.instruction_text.pos = original_pos
-                        self.instruction_text.alignText = original_align
-                        self.instruction_text.anchorHoriz = original_anchor
-                        core.quit()
                     elif key == 'return':
                         # Confirm selection
                         print(f"📝 Velten Statement Rating: {current_value}/7 (mood alignment)")
@@ -2169,14 +2154,14 @@ Current rating: {}"""
             if not key_handled_by_hold:
                 keys = event.getKeys()
                 
+                if self.check_quit_keys(keys):
+                    # Restore original text position and alignment before quitting
+                    self.instruction_text.pos = original_pos
+                    self.instruction_text.alignText = original_align
+                    self.instruction_text.anchorHoriz = original_anchor
+                    core.quit()
+                
                 for key in keys:
-                    if key == 'escape':
-                        print("🔍 DEBUG - ESCAPE key detected, quitting...")
-                        # Restore original text position and alignment before quitting
-                        self.instruction_text.pos = original_pos
-                        self.instruction_text.alignText = original_align
-                        self.instruction_text.anchorHoriz = original_anchor
-                        core.quit()
                     elif key == 'return':
                         print(f"🔍 DEBUG - ENTER key pressed, confirming rating: {current_value}")
                         # Confirm selection
@@ -2200,11 +2185,11 @@ Current rating: {}"""
         
         # Wait for number key press
         while True:
-            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'escape'])
+            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'Q', 'q', 'lctrl', 'lalt'])
             if keys:
-                key = keys[0]
-                if key == 'escape':
+                if self.check_quit_keys(keys):
                     core.quit()
+                key = keys[0]
                 else:
                     rating = int(key)
                     print(f"📝 Velten Statement Rating: {rating}/7 (mood alignment)")
@@ -2225,11 +2210,11 @@ Current rating: {}"""
         
         # Get TUT rating
         while True:
-            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'escape'])
+            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'Q', 'q', 'lctrl', 'lalt'])
             if keys:
-                key = keys[0]
-                if key == 'escape':
+                if self.check_quit_keys(keys):
                     core.quit()
+                key = keys[0]
                 else:
                     tut_rating = int(key)
                     break
@@ -2244,11 +2229,11 @@ Current rating: {}"""
         
         # Get FMT rating
         while True:
-            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'escape'])
+            keys = event.waitKeys(keyList=['1', '2', '3', '4', '5', '6', '7', 'Q', 'q', 'lctrl', 'lalt'])
             if keys:
-                key = keys[0]
-                if key == 'escape':
+                if self.check_quit_keys(keys):
                     core.quit()
+                key = keys[0]
                 else:
                     fmt_rating = int(key)
                     break
@@ -2312,9 +2297,10 @@ Current rating: {}"""
             self.mw_continue_button_text.draw()
             self.win.flip()
             
-            # Check for quit combination (Shift+Q)
-            if self.check_for_quit_combo(event.getKeys(modifiers=True)):
-                self.cleanup_and_quit()
+            # Check for quit key combination
+            keys = event.getKeys()
+            if self.check_quit_keys(keys):
+                core.quit()
             
             # Check for advancement (only if rating made)
             if rating_made:
@@ -2365,9 +2351,10 @@ Current rating: {}"""
             self.mw_continue_button_text.draw()
             self.win.flip()
             
-            # Check for quit combination (Shift+Q)
-            if self.check_for_quit_combo(event.getKeys(modifiers=True)):
-                self.cleanup_and_quit()
+            # Check for quit key combination
+            keys = event.getKeys()
+            if self.check_quit_keys(keys):
+                core.quit()
             
             # Check for advancement (only if rating made)
             if rating_made:
@@ -2625,18 +2612,15 @@ Current rating: {}"""
                     last_frame_time = current_frame_time
             
                 # Check for key presses throughout the entire trial duration
-                keys = self.kb.getKeys(keyList=['left', 'right', 'escape'], waitRelease=False)
+                keys = self.kb.getKeys(keyList=['left', 'right', 'Q', 'q', 'lctrl', 'lalt'], waitRelease=False)
                 if keys:
                     # Record the first key press (if multiple keys pressed)
                     if not keys_pressed:
                         keys_pressed = keys
                         first_key_time = self.trial_clock.getTime()  # Record when key was pressed
-                    # Handle quit combination immediately (Shift+Q)
-                    # Check if Shift+Q was pressed
-                    for k in keys:
-                        if k.name.lower() == 'q' and 'shift' in k.modifiers:
-                            print("🔴 QUIT COMBINATION DETECTED (Shift+Q) - Exiting experiment...")
-                            self.cleanup_and_quit()
+                    # Handle quit keys immediately
+                    if self.check_quit_keys([keys[0].name]):
+                        self.cleanup_and_quit()
                 
                 # Small wait to prevent excessive CPU usage
                 core.wait(0.01)  # Increased from 0.001 to 0.01 (10ms)
@@ -2825,10 +2809,9 @@ Current rating: {}"""
             break_main_loop = False
             if keys:
                 print(f"🔍 DEBUG TUT - Keys pressed: {keys}")
+                if self.check_quit_keys(keys):
+                    core.quit()
                 for key in keys:
-                    if key == 'escape':
-                        print("🔍 DEBUG TUT - ESCAPE key detected, quitting...")
-                        core.quit()
                     elif key == 'return':
                         print(f"🔍 DEBUG TUT - ENTER key pressed, confirming rating: {tut_value}")
                         print("🔍 DEBUG TUT - Breaking from TUT loop...")
@@ -2974,10 +2957,9 @@ Current rating: {}"""
             break_main_loop = False
             if keys:
                 print(f"🔍 DEBUG FMT - Keys pressed: {keys}")
+                if self.check_quit_keys(keys):
+                    core.quit()
                 for key in keys:
-                    if key == 'escape':
-                        print("🔍 DEBUG FMT - ESCAPE key detected, quitting...")
-                        core.quit()
                     elif key == 'return':
                         print(f"🔍 DEBUG FMT - ENTER key pressed, confirming rating: {fmt_value}")
                         print("🔍 DEBUG FMT - Breaking from FMT loop...")
@@ -3054,10 +3036,10 @@ Current rating: {}"""
         tut_rating = None
         while tut_rating is None:
             keys = event.waitKeys()
+            if self.check_quit_keys(keys):
+                core.quit()
             for key in keys:
-                if key == 'escape':
-                    core.quit()
-                elif key.isdigit() and 1 <= int(key) <= 7:
+                if key.isdigit() and 1 <= int(key) <= 7:
                     tut_rating = int(key)
         
         # FMT probe
@@ -3069,10 +3051,10 @@ Current rating: {}"""
         fmt_rating = None
         while fmt_rating is None:
             keys = event.waitKeys()
+            if self.check_quit_keys(keys):
+                core.quit()
             for key in keys:
-                if key == 'escape':
-                    core.quit()
-                elif key.isdigit() and 1 <= int(key) <= 7:
+                if key.isdigit() and 1 <= int(key) <= 7:
                     fmt_rating = int(key)
         
         # Print mind-wandering probe results to console
@@ -3151,10 +3133,10 @@ Current rating: {}"""
         choice = None
         while choice is None:
             keys = event.waitKeys()
+            if self.check_quit_keys(keys):
+                core.quit()
             for key in keys:
-                if key == 'escape':
-                    core.quit()
-                elif key in ['1', 'num_1']:
+                if key in ['1', 'num_1']:
                     choice = 'with_animals'
                     break
                 elif key in ['2', 'num_2']:
@@ -3219,14 +3201,19 @@ Current rating: {}"""
         loading_screen.text = "Loading complete! Press any key to continue."
         loading_screen.draw()
         self.win.flip()
-        keys = event.waitKeys(modifiers=True)
-        if self.check_for_quit_combo(keys):
-            self.cleanup_and_quit()
+        keys = event.waitKeys()
+        if self.check_quit_keys(keys):
+            core.quit()
     
     def run_experiment(self):
         """Run the complete experiment following the exact step sequence provided"""
         try:
-            # Step 1: Welcome screen
+            # Step 1: Welcome screen with quit key info
+            print("\n" + "="*60)
+            print("🔑 IMPORTANT: To quit the experiment, press Shift+Q")
+            print("   (ESC key has been disabled to prevent accidental exits)")
+            print("   Alternative emergency exit: Ctrl+Alt+Q")
+            print("="*60 + "\n")
             self.show_instruction('welcome')
             
             # Step 2: Collect participant info (email and counterbalancing)
@@ -3363,39 +3350,6 @@ Current rating: {}"""
             raise
         finally:
             self.cleanup_and_quit()
-    
-    def check_for_quit_combo(self, keys=None):
-        """Check if the quit key combination (Shift+Q) is pressed
-        
-        This replaces the default ESC-to-quit behavior with a harder-to-hit combination
-        to prevent accidental exits during the experiment.
-        
-        Args:
-            keys: List of keys from event.getKeys() or None to check current keys
-        
-        Returns:
-            bool: True if quit combo detected, False otherwise
-        """
-        if keys is None:
-            # Get current keys with modifiers
-            keys = event.getKeys(modifiers=True)
-        
-        # Check for Shift+Q combination
-        for key in keys:
-            if isinstance(key, tuple):
-                # Key with modifiers format: (key_name, modifiers_dict)
-                key_name = key[0] if len(key) > 0 else ''
-                modifiers = key[1] if len(key) > 1 else {}
-                if key_name.lower() == 'q' and modifiers.get('shift', False):
-                    print("🔴 QUIT COMBINATION DETECTED (Shift+Q) - Exiting experiment...")
-                    return True
-            elif isinstance(key, str):
-                # For simple string keys, check if it's uppercase Q (which implies Shift was held)
-                if key == 'Q':
-                    print("🔴 QUIT COMBINATION DETECTED (Shift+Q) - Exiting experiment...")
-                    return True
-        
-        return False
     
     def cleanup_and_quit(self):
         """Clean up resources and quit"""
