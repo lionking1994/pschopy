@@ -1031,7 +1031,14 @@ class MoodSARTExperimentSimple:
                     break
                 
                 # Check for keyboard input (spacebar or enter)
-                if any(key in ['space', 'return'] for key in keys):
+                key_names = []
+                for key_info in keys:
+                    if isinstance(key_info, tuple):
+                        key_names.append(key_info[0])
+                    else:
+                        key_names.append(key_info)
+                
+                if any(key in ['space', 'return'] for key in key_names):
                     print("📝 Keyboard advance used")
                     break
         
@@ -2003,7 +2010,13 @@ Current rating: {}"""
                     self.instruction_text.anchorHoriz = original_anchor
                     core.quit()
                 
-                for key in keys:
+                for key_info in keys:
+                    # Handle both tuple format (with modifiers) and plain string format
+                    if isinstance(key_info, tuple):
+                        key = key_info[0]
+                    else:
+                        key = key_info
+                    
                     if key == 'return':
                         # Confirm selection
                         print(f"📝 Velten Statement Rating: {current_value}/7 (mood alignment)")
@@ -2178,7 +2191,13 @@ Current rating: {}"""
                     self.instruction_text.anchorHoriz = original_anchor
                     core.quit()
                 
-                for key in keys:
+                for key_info in keys:
+                    # Handle both tuple format (with modifiers) and plain string format
+                    if isinstance(key_info, tuple):
+                        key = key_info[0]
+                    else:
+                        key = key_info
+                    
                     if key == 'return':
                         print(f"🔍 DEBUG - ENTER key pressed, confirming rating: {current_value}")
                         # Confirm selection
@@ -2325,7 +2344,7 @@ Current rating: {}"""
                 if mouse.isPressedIn(self.mw_continue_button):
                     break
                 # Check for keyboard press
-                keys = event.getKeys(['space', 'return'])
+                keys = event.getKeys(['space', 'return'], modifiers=True)
                 if keys:
                     break
         
@@ -2379,7 +2398,7 @@ Current rating: {}"""
                 if mouse.isPressedIn(self.mw_continue_button):
                     break
                 # Check for keyboard press
-                keys = event.getKeys(['space', 'return'])
+                keys = event.getKeys(['space', 'return'], modifiers=True)
                 if keys:
                     break
         
@@ -2835,7 +2854,13 @@ Current rating: {}"""
                 print(f"🔍 DEBUG TUT - Keys pressed: {keys}")
                 if self.check_quit_keys(keys):
                     core.quit()
-                for key in keys:
+                for key_info in keys:
+                    # Handle both tuple format (with modifiers) and plain string format
+                    if isinstance(key_info, tuple):
+                        key = key_info[0]
+                    else:
+                        key = key_info
+                    
                     if key == 'return':
                         print(f"🔍 DEBUG TUT - ENTER key pressed, confirming rating: {tut_value}")
                         print("🔍 DEBUG TUT - Breaking from TUT loop...")
@@ -2983,7 +3008,13 @@ Current rating: {}"""
                 print(f"🔍 DEBUG FMT - Keys pressed: {keys}")
                 if self.check_quit_keys(keys):
                     core.quit()
-                for key in keys:
+                for key_info in keys:
+                    # Handle both tuple format (with modifiers) and plain string format
+                    if isinstance(key_info, tuple):
+                        key = key_info[0]
+                    else:
+                        key = key_info
+                    
                     if key == 'return':
                         print(f"🔍 DEBUG FMT - ENTER key pressed, confirming rating: {fmt_value}")
                         print("🔍 DEBUG FMT - Breaking from FMT loop...")
