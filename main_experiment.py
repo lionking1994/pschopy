@@ -2431,29 +2431,31 @@ Current rating: {}"""
         trials = []
         total_trials = config.SART_PARAMS['total_trials']
         
-        if condition == 'RI':  # Response Inhibition - include target digit 3 at 15%
-            # Calculate exact number of target trials (15% of total for this condition)
-            target_trials = int(total_trials * 0.15)  # 18 trials out of 120
-            non_target_trials = total_trials - target_trials  # 102 trials
-            
-            # Create digit list with correct proportions
-            digit_list = []
-            # Add target trials (digit 3)
-            digit_list.extend([3] * target_trials)
-            # Add non-target trials (other digits 0-2, 4-9) - distribute evenly
-            other_digits = [d for d in config.SART_PARAMS['digits'] if d != 3]  # [0,1,2,4,5,6,7,8,9]
-            for i in range(non_target_trials):
-                digit_list.append(other_digits[i % len(other_digits)])
-            
-            print(f"📊 SART Block {block_number} ({condition}): Generated {target_trials} target trials (digit 3) ({target_trials/total_trials*100:.1f}%) out of {total_trials} total trials")
-        else:  # NRI - Non-Response Inhibition - no target digit 3
-            # All trials are non-target (digits 0-2, 4-9) - distribute evenly
-            other_digits = [d for d in config.SART_PARAMS['digits'] if d != 3]  # [0,1,2,4,5,6,7,8,9]
-            digit_list = []
-            for i in range(total_trials):
-                digit_list.append(other_digits[i % len(other_digits)])
-            
-            print(f"📊 SART Block {block_number} ({condition}): Generated 0 target trials (digit 3) - all digits are non-targets for NRI condition")
+        # Both conditions use the same digit distribution (all digits 0-9)
+        # The only difference is how digit 3 is treated (target in RI, non-target in NRI)
+        
+        # Calculate number of each digit for even distribution
+        # With 120 trials and 10 digits, we want 12 of each digit
+        digits_per_type = total_trials // len(config.SART_PARAMS['digits'])
+        remainder = total_trials % len(config.SART_PARAMS['digits'])
+        
+        # Create digit list with even distribution of all digits 0-9
+        digit_list = []
+        for digit in config.SART_PARAMS['digits']:
+            # Add the base number of each digit
+            digit_list.extend([digit] * digits_per_type)
+        
+        # Distribute remainder evenly
+        for i in range(remainder):
+            digit_list.append(config.SART_PARAMS['digits'][i])
+        
+        # Count how many 3's we have
+        num_threes = digit_list.count(3)
+        
+        if condition == 'RI':  # Response Inhibition - digit 3 is a target (no-go)
+            print(f"📊 SART Block {block_number} ({condition}): {num_threes} trials with digit 3 (target/no-go) out of {total_trials} total trials ({num_threes/total_trials*100:.1f}%)")
+        else:  # NRI - Non-Response Inhibition - digit 3 is treated like any other digit
+            print(f"📊 SART Block {block_number} ({condition}): {num_threes} trials with digit 3 (regular digit) out of {total_trials} total trials ({num_threes/total_trials*100:.1f}%)")
         
         # Shuffle to randomize order
         random.shuffle(digit_list)
